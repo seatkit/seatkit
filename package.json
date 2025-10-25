@@ -17,7 +17,8 @@
     "test": "turbo run test",
     "clean": "turbo run clean && rm -rf node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "typecheck:watch": "turbo run typecheck:watch"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.9",

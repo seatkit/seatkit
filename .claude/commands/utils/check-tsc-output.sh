@@ -25,6 +25,7 @@ TIMEOUT="${CLAUDE_TSC_TIMEOUT:-120}"
 # Only include packages with actual TypeScript code and typecheck:watch scripts
 TSC_PACKAGES=(
     "types"
+    "utils"
     # Add more packages here as they are developed:
     # "engine"
     # "api"

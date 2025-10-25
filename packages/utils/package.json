@@ -1,7 +1,7 @@
 {
-	"name": "@seatkit/types",
+	"name": "@seatkit/utils",
 	"version": "0.1.0",
-	"description": "Core type definitions and Zod schemas for SeatKit",
+	"description": "Shared utility functions for SeatKit",
 	"license": "Apache-2.0",
 	"type": "module",
 	"exports": {
@@ -9,9 +9,13 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
 		},
-		"./schemas": {
-			"types": "./dist/schemas/index.d.ts",
-			"import": "./dist/schemas/index.js"
+		"./date": {
+			"types": "./dist/date.d.ts",
+			"import": "./dist/date.js"
+		},
+		"./format": {
+			"types": "./dist/format.d.ts",
+			"import": "./dist/format.js"
 		}
 	},
 	"main": "./dist/index.js",
@@ -27,12 +31,11 @@
 		"typecheck:watch": "tsc --noEmit --watch",
 		"lint": "eslint . --max-warnings 0",
 		"lint:fix": "eslint . --fix",
-		"lint:prod": "NODE_ENV=production eslint . --max-warnings 0",
 		"test": "vitest run",
 		"test:watch": "vitest"
 	},
 	"dependencies": {
-		"zod": "^3.23.8"
+		"@seatkit/types": "workspace:*"
 	},
 	"devDependencies": {
 		"@seatkit/eslint-config": "workspace:*"

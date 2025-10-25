@@ -17,6 +17,12 @@ importers:
       '@seatkit/eslint-config':
         specifier: workspace:*
         version: link:packages/eslint-config
+      '@types/node':
+        specifier: ^22.8.6
+        version: 22.18.12
+      '@vitest/coverage-v8':
+        specifier: ^4.0.3
+        version: 4.0.3(vitest@4.0.3(@types/node@22.18.12))
       eslint:
         specifier: ^9.15.0
         version: 9.38.0
@@ -29,6 +35,9 @@ importers:
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
+      vitest:
+        specifier: ^4.0.3
+        version: 4.0.3(@types/node@22.18.12)
 
   packages/api: {}
 
@@ -64,21 +73,16 @@ importers:
       '@seatkit/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@types/node':
-        specifier: ^22.8.6
-        version: 22.18.12
-      '@vitest/coverage-v8':
-        specifier: ^4.0.3
-        version: 4.0.3(vitest@4.0.3(@types/node@22.18.12))
-      eslint:
-        specifier: ^9.15.0
-        version: 9.38.0
-      typescript:
-        specifier: ^5.6.3
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.3
-        version: 4.0.3(@types/node@22.18.12)
+
+  packages/utils:
+    dependencies:
+      '@seatkit/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      '@seatkit/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
 
 packages:
 

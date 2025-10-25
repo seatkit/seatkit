@@ -10,7 +10,7 @@ When you make changes to the codebase, you must check the TypeScript compilation
    .claude/commands/utils/check-tsc-output.sh
    ```
 
-2. **Wait for ongoing compilation**: When you execute the script and see that a compilation is still ongoing, wait for a few seconds and check the output of the script again.
+2. **Wait for ongoing compilation**: When you execuste the script and see that a compilation is still ongoing, wait for a few seconds and check the output of the script again.
 
 3. **Manual checking for untracked packages**: If you are making changes to a package for which no information is returned from the script, run TSC manually for that package and let the user know by showing this warning:
    ```

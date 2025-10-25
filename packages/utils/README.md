@@ -35,28 +35,22 @@ isBetween(reservationTime, dinnerStart, dinnerEnd); // true
 
 ### Formatting Utilities
 
-Consistent formatting for money and phone numbers:
+Money formatting using native `Intl.NumberFormat` for proper internationalization:
 
 ```typescript
-import {
-	formatMoney,
-	parseMoney,
-	formatPhone,
-	normalizePhone,
-} from '@seatkit/utils/format';
+import { formatMoney } from '@seatkit/utils/format';
 
-// Money formatting (cents to display)
-formatMoney(1050, 'USD'); // "$10.50"
-formatMoney(1050, 'EUR'); // "€10.50"
-formatMoney(1050, 'JPY'); // "¥11" (no decimals)
+// Money formatting with configurable locale
+formatMoney(1050, 'USD', 'en-US'); // "$10.50"
+formatMoney(1050, 'EUR', 'de-DE'); // "10,50 €"
+formatMoney(1050, 'JPY', 'ja-JP'); // "¥11" (auto-handles zero decimals)
 
-parseMoney('$10.50'); // 1050 cents
-
-// Phone number formatting
-formatPhone('5551234567'); // "(555) 123-4567"
-formatPhone('+15551234567'); // "+1 (555) 123-4567"
-normalizePhone('(555) 123-4567'); // "5551234567"
+// Use restaurant settings
+const { currency, locale } = restaurantSettings;
+formatMoney(salesAmount, currency, locale);
 ```
+
+**Phone Number Formatting:** Use [`libphonenumber-js`](https://www.npmjs.com/package/libphonenumber-js) directly for comprehensive international phone support.
 
 ## Design Goals
 

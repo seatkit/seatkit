@@ -12,33 +12,25 @@ pnpm add @seatkit/utils
 
 ### Date/Time Utilities
 
-Optimized date operations for restaurant management:
+Date operations for restaurant management. **All dates are handled in UTC** to avoid timezone ambiguity. The frontend is responsible for converting to/from local timezone for display.
 
 ```typescript
-import {
-	parseDateTime,
-	formatDateTime,
-	formatDateForDisplay,
-	addMinutes,
-	isSameDay,
-	isToday,
-	isBetween,
-} from '@seatkit/utils/date';
-
-// Fast ISO string parsing
-const date = parseDateTime('2025-01-15T14:30:00Z');
-
-// Format for display
-formatDateForDisplay(date, 'short'); // "1/15/2025"
-formatDateForDisplay(date, 'long'); // "January 15, 2025"
+import { addMinutes, isSameDay, isBetween } from '@seatkit/utils/date';
 
 // Immutable date operations
-const later = addMinutes(date, 90); // Original date unchanged
+const startTime = new Date('2025-01-15T19:00:00Z');
+const endTime = addMinutes(startTime, 90); // 90 minutes later, original unchanged
 
 // Date comparisons (UTC-based)
-isSameDay(date1, date2);
-isToday(date);
-isBetween(date, startTime, endTime);
+const morning = new Date('2025-01-15T08:00:00Z');
+const evening = new Date('2025-01-15T20:00:00Z');
+isSameDay(morning, evening); // true - same UTC day
+
+// Check reservation conflicts
+const reservationTime = new Date('2025-01-15T19:30:00Z');
+const dinnerStart = new Date('2025-01-15T18:00:00Z');
+const dinnerEnd = new Date('2025-01-15T22:00:00Z');
+isBetween(reservationTime, dinnerStart, dinnerEnd); // true
 ```
 
 ### Formatting Utilities

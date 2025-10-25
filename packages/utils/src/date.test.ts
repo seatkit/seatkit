@@ -5,59 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import {
-	parseDateTime,
-	formatDateTime,
-	formatDateForDisplay,
-	addMinutes,
-	isSameDay,
-	isToday,
-	isBetween,
-} from './date.js';
-
-describe('parseDateTime', () => {
-	it('should parse ISO 8601 datetime strings', () => {
-		const date = parseDateTime('2025-01-15T14:30:00Z');
-		expect(date).toBeInstanceOf(Date);
-		expect(date.toISOString()).toBe('2025-01-15T14:30:00.000Z');
-	});
-
-	it('should handle datetime with milliseconds', () => {
-		const date = parseDateTime('2025-01-15T14:30:00.123Z');
-		expect(date.toISOString()).toBe('2025-01-15T14:30:00.123Z');
-	});
-
-	it('should throw on invalid date strings', () => {
-		expect(() => parseDateTime('not-a-date')).toThrow();
-		expect(() => parseDateTime('2025-13-45')).toThrow();
-	});
-});
-
-describe('formatDateTime', () => {
-	it('should format Date to ISO string', () => {
-		const date = new Date('2025-01-15T14:30:00.000Z');
-		expect(formatDateTime(date)).toBe('2025-01-15T14:30:00.000Z');
-	});
-
-	it('should handle dates with milliseconds', () => {
-		const date = new Date('2025-01-15T14:30:00.123Z');
-		expect(formatDateTime(date)).toBe('2025-01-15T14:30:00.123Z');
-	});
-});
-
-describe('formatDateForDisplay', () => {
-	it('should format date in short format', () => {
-		const date = new Date('2025-01-15T14:30:00Z');
-		const formatted = formatDateForDisplay(date, 'short');
-		expect(formatted).toContain('1/15');
-	});
-
-	it('should format date in long format', () => {
-		const date = new Date('2025-01-15T14:30:00Z');
-		const formatted = formatDateForDisplay(date, 'long');
-		expect(formatted).toContain('January');
-	});
-});
+import { addMinutes, isBetween, isSameDay } from './date.js';
 
 describe('addMinutes', () => {
 	it('should add minutes to a date immutably', () => {
@@ -91,19 +39,6 @@ describe('isSameDay', () => {
 		const date1 = new Date('2025-01-15T23:00:00Z');
 		const date2 = new Date('2025-01-16T01:00:00Z');
 		expect(isSameDay(date1, date2)).toBe(false);
-	});
-});
-
-describe('isToday', () => {
-	it('should return true for today', () => {
-		const today = new Date();
-		expect(isToday(today)).toBe(true);
-	});
-
-	it('should return false for different day', () => {
-		const yesterday = new Date();
-		yesterday.setDate(yesterday.getDate() - 1);
-		expect(isToday(yesterday)).toBe(false);
 	});
 });
 

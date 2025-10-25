@@ -1,11 +1,52 @@
 {
 	"name": "@seatkit/api",
 	"version": "0.0.1",
-	"description": "SeatKit API placeholder.",
+	"description": "SeatKit Backend API - Fastify server with Supabase PostgreSQL",
+	"type": "module",
 	"license": "Apache-2.0",
-	"main": "index.js",
-	"types": "index.d.ts",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"publishConfig": {
 		"access": "public"
+	},
+	"engines": {
+		"node": ">=20.0.0"
+	},
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"build": "tsup",
+		"start": "node dist/index.js",
+		"typecheck": "tsc --noEmit",
+		"typecheck:watch": "tsc --noEmit --watch",
+		"test": "vitest",
+		"test:watch": "vitest --watch",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "tsx src/scripts/migrate.ts",
+		"db:studio": "drizzle-kit studio",
+		"secrets:setup": "tsx src/scripts/setup-simple-secrets.ts"
+	},
+	"dependencies": {
+		"@fastify/cors": "^10.0.1",
+		"@fastify/env": "^5.0.1",
+		"@fastify/helmet": "^12.0.1",
+		"@fastify/rate-limit": "^10.1.1",
+		"fastify-type-provider-zod": "^4.0.2",
+		"@fastify/websocket": "^11.0.1",
+		"@seatkit/types": "workspace:*",
+		"@seatkit/utils": "workspace:*",
+		"@supabase/supabase-js": "^2.48.0",
+		"@google-cloud/secret-manager": "^5.0.1",
+		"drizzle-orm": "^0.36.4",
+		"fastify": "^5.1.0",
+		"postgres": "^3.4.5",
+		"zod": "^3.23.8"
+	},
+	"devDependencies": {
+		"@types/node": "^22.8.7",
+		"drizzle-kit": "^0.28.1",
+		"tsup": "^8.3.5",
+		"tsx": "^4.19.2",
+		"typescript": "^5.6.3",
+		"vitest": "^2.1.4"
 	}
 }

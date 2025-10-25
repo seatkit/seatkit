@@ -26,6 +26,7 @@ TIMEOUT="${CLAUDE_TSC_TIMEOUT:-120}"
 TSC_PACKAGES=(
     "types"
     "utils"
+    "api"
     # Add more packages here as they are developed:
     # "engine"
     # "api"

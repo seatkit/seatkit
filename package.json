@@ -1,0 +1,7 @@
+{
+  "name": "seatkit",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
+}

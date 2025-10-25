@@ -1,0 +1,13 @@
+{
+  "name": "@seatkit/eslint-config",
+  "version": "0.0.1",
+  "description": "SeatKit shareable ESLint config (placeholder).",
+  "license": "Apache-2.0",
+  "main": "index.js",
+  "peerDependencies": {
+    "eslint": ">=8"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

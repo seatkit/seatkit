@@ -66,8 +66,8 @@ async function createServer() {
 		};
 	});
 
-	// API routes will be registered here
-	// await fastify.register(import('./routes/reservations.js'), { prefix: '/api' });
+	// API routes
+	await fastify.register(import('./routes/reservations.js'), { prefix: '/api' });
 
 	return fastify;
 }

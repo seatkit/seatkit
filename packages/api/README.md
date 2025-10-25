@@ -58,11 +58,29 @@ Server runs on `http://localhost:3001`
 ### Health Check
 - `GET /health` - Server health status
 
-### Reservations (Coming Soon)
-- `GET /api/reservations` - List reservations
+```json
+{
+  "status": "ok",
+  "timestamp": "2025-10-25T22:34:21.145Z",
+  "environment": "development"
+}
+```
+
+### Reservations
+- ✅ `GET /api/reservations` - List reservations
+
+```json
+{
+  "reservations": [],
+  "count": 0
+}
+```
+
+### Coming Soon
 - `POST /api/reservations` - Create reservation
+- `GET /api/reservations/:id` - Get specific reservation
 - `PUT /api/reservations/:id` - Update reservation
-- `DELETE /api/reservations/:id` - Delete reservation
+- `DELETE /api/reservations/:id` - Cancel reservation
 
 ## Scripts
 

@@ -1,1 +1,1 @@
-export const version: "0.0.1-placeholder";
+export const version: '0.0.1-placeholder';

@@ -38,6 +38,7 @@ Keep this terminal open! It will show TypeScript errors in real-time.
 ### 3. Start Coding
 
 When you (or Claude) edit a file:
+
 - ✅ **ESLint runs automatically** (via Claude Code hook)
 - ✅ **TypeScript shows errors** in your watch terminal
 - ✅ **Errors appear inline** for Claude to fix immediately
@@ -47,28 +48,33 @@ When you (or Claude) edit a file:
 ## 📋 ESLint Rules
 
 ### Type Safety (Errors)
+
 - `no-unused-vars` - No unused variables/imports (prefix with `_` to ignore)
 - `explicit-function-return-type` - All functions must have return types
 - `explicit-module-boundary-types` - Exported functions must have return types
 - `no-unsafe-assignment` - Prevent unsafe type assignments
 
 ### Promise Handling (Errors)
+
 - `no-floating-promises` - All promises must be awaited or handled
 - `await-thenable` - Only await actual promises
 - `no-misused-promises` - Prevent promise bugs
 
 ### Code Style (Errors)
+
 - `consistent-type-imports` - Use `import type` for types
 - `consistent-type-definitions` - Prefer `type` over `interface`
 - `import/order` - Consistent import ordering with groups
 
 ### Naming Conventions (Errors)
+
 - Variables: `camelCase`, `UPPER_CASE` (constants), `PascalCase` (React components)
 - Types: `PascalCase`
 - Enum members: `UPPER_CASE`
 - Functions: `camelCase`
 
 ### Warnings
+
 - `no-explicit-any` - Avoid `any` types (use `unknown` instead)
 - `no-non-null-assertion` - Avoid `!` operator
 - `no-console` - Development only (error in production)
@@ -121,20 +127,20 @@ The post-edit hook is configured in `.claude/settings.local.json`:
 
 ```json
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/post-edit.sh",
-            "timeout": 30
-          }
-        ]
-      }
-    ]
-  }
+	"hooks": {
+		"PostToolUse": [
+			{
+				"matcher": "Edit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": ".claude/hooks/post-edit.sh",
+						"timeout": 30
+					}
+				]
+			}
+		]
+	}
 }
 ```
 

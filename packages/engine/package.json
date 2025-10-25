@@ -1,11 +1,11 @@
 {
-  "name": "@seatkit/engine",
-  "version": "0.0.1",
-  "description": "SeatKit engine placeholder (reserving name & testing publish).",
-  "license": "Apache-2.0",
-  "main": "index.js",
-  "types": "index.d.ts",
-  "publishConfig": {
-    "access": "public"
-  }
+	"name": "@seatkit/engine",
+	"version": "0.0.1",
+	"description": "SeatKit engine placeholder (reserving name & testing publish).",
+	"license": "Apache-2.0",
+	"main": "index.js",
+	"types": "index.d.ts",
+	"publishConfig": {
+		"access": "public"
+	}
 }

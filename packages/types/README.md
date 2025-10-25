@@ -25,23 +25,23 @@ pnpm add @seatkit/types
 import { ReservationSchema, validate } from '@seatkit/types';
 
 const reservationData = {
-  date: '2025-01-15T19:00:00Z',
-  duration: 120,
-  customer: {
-    name: 'John Doe',
-    phone: '+1-555-123-4567',
-    email: 'john@example.com',
-  },
-  partySize: 4,
-  category: 'dinner',
+	date: '2025-01-15T19:00:00Z',
+	duration: 120,
+	customer: {
+		name: 'John Doe',
+		phone: '+1-555-123-4567',
+		email: 'john@example.com',
+	},
+	partySize: 4,
+	category: 'dinner',
 };
 
 const result = validate(ReservationSchema, reservationData);
 
 if (result.ok) {
-  console.log('Valid reservation:', result.value);
+	console.log('Valid reservation:', result.value);
 } else {
-  console.error('Validation failed:', result.error.fields);
+	console.error('Validation failed:', result.error.fields);
 }
 ```
 
@@ -51,8 +51,8 @@ if (result.ok) {
 import type { Reservation, Table, CreateReservation } from '@seatkit/types';
 
 function createReservation(data: CreateReservation): Reservation {
-  // TypeScript ensures data matches CreateReservation schema
-  // ...
+	// TypeScript ensures data matches CreateReservation schema
+	// ...
 }
 ```
 
@@ -62,53 +62,62 @@ function createReservation(data: CreateReservation): Reservation {
 import { Result, ok, err, isOk } from '@seatkit/types';
 
 function findTable(id: string): Result<Table, Error> {
-  const table = database.get(id);
+	const table = database.get(id);
 
-  if (!table) {
-    return err(new Error('Table not found'));
-  }
+	if (!table) {
+		return err(new Error('Table not found'));
+	}
 
-  return ok(table);
+	return ok(table);
 }
 
 const result = findTable('table-123');
 
 if (isOk(result)) {
-  console.log('Found table:', result.value);
+	console.log('Found table:', result.value);
 } else {
-  console.error('Error:', result.error.message);
+	console.error('Error:', result.error.message);
 }
 ```
 
 ## Domain Entities
 
 ### Reservation
+
 Customer bookings with time, party size, status, and category tracking.
 
 ### Table
+
 Physical restaurant tables with capacity, position, and availability.
 
 ### Session
+
 Active user sessions for collaborative editing and real-time presence.
 
 ### Sales
+
 Daily sales data with category breakdowns and metrics.
 
 ### Profile
+
 User accounts with roles, permissions, and preferences.
 
 ### Restaurant
+
 Restaurant configuration including operating hours and reservation settings.
 
 ## Validation Utilities
 
 ### `validate(schema, data)`
+
 Synchronous validation returning a Result type.
 
 ### `validateAsync(schema, data)`
+
 Async validation for schemas with async refinements.
 
 ### `validatePartial(schema, data)`
+
 Validates only provided fields (useful for PATCH operations).
 
 ## Result Type

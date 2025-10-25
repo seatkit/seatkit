@@ -70,9 +70,9 @@ export const CurrencyCodeSchema = z.string().length(3).toUpperCase();
  * Base entity fields that all domain entities share
  */
 export const BaseEntitySchema = z.object({
-  id: UUIDSchema,
-  createdAt: DateTimeSchema,
-  updatedAt: DateTimeSchema,
+	id: UUIDSchema,
+	createdAt: DateTimeSchema,
+	updatedAt: DateTimeSchema,
 });
 
 export type BaseEntity = z.infer<typeof BaseEntitySchema>;

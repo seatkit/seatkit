@@ -28,6 +28,7 @@ The Swift app uses a **layered service architecture** with clear separation of c
 ```
 
 **Key Services Identified**:
+
 1. **ReservationService** - Core reservation operations
 2. **LayoutServices** - Table layout calculations
 3. **ClusterServices** - Table clustering algorithms
@@ -48,6 +49,7 @@ The Swift app uses a **layered service architecture** with clear separation of c
 ### 1. ReservationService (Primary Business Logic)
 
 **Swift Implementation**:
+
 ```swift
 @MainActor
 class ReservationService: ObservableObject {
@@ -217,112 +219,120 @@ class ReservationService: ObservableObject {
 ```
 
 **TypeScript Migration Pattern**:
+
 ```typescript
 // @seatkit/engine/src/reservation/ReservationService.ts
 import type {
-  Reservation,
-  CreateReservationData,
-  ReservationRepository,
-  TableRepository
+	Reservation,
+	CreateReservationData,
+	ReservationRepository,
+	TableRepository,
 } from '@seatkit/types';
 
 export class ReservationService {
-  constructor(
-    private readonly reservationRepo: ReservationRepository,
-    private readonly tableRepo: TableRepository,
-    private readonly logger: Logger
-  ) {}
+	constructor(
+		private readonly reservationRepo: ReservationRepository,
+		private readonly tableRepo: TableRepository,
+		private readonly logger: Logger,
+	) {}
 
-  async createReservation(data: CreateReservationData): Promise<Reservation> {
-    // 1. Parse and validate input
-    const validatedData = CreateReservationDataSchema.parse(data);
+	async createReservation(data: CreateReservationData): Promise<Reservation> {
+		// 1. Parse and validate input
+		const validatedData = CreateReservationDataSchema.parse(data);
 
-    // 2. Business rules validation
-    await this.validateBusinessRules(validatedData);
+		// 2. Business rules validation
+		await this.validateBusinessRules(validatedData);
 
-    // 3. Create reservation entity
-    const reservation: Reservation = {
-      id: crypto.randomUUID(),
-      ...validatedData,
-      status: 'pending',
-      acceptance: 'toConfirm',
-      createdAt: new Date(),
-      lastEdited: new Date(),
-    };
+		// 3. Create reservation entity
+		const reservation: Reservation = {
+			id: crypto.randomUUID(),
+			...validatedData,
+			status: 'pending',
+			acceptance: 'toConfirm',
+			createdAt: new Date(),
+			lastEdited: new Date(),
+		};
 
-    // 4. Table assignment attempt
-    const optimalTable = await this.findOptimalTable(reservation);
-    if (optimalTable) {
-      reservation.tableId = optimalTable.id;
-    }
+		// 4. Table assignment attempt
+		const optimalTable = await this.findOptimalTable(reservation);
+		if (optimalTable) {
+			reservation.tableId = optimalTable.id;
+		}
 
-    // 5. Persist
-    await this.reservationRepo.insert(reservation);
+		// 5. Persist
+		await this.reservationRepo.insert(reservation);
 
-    // 6. Log and notify
-    this.logger.info('Reservation created', { reservationId: reservation.id });
+		// 6. Log and notify
+		this.logger.info('Reservation created', { reservationId: reservation.id });
 
-    return reservation;
-  }
+		return reservation;
+	}
 
-  private async validateBusinessRules(data: CreateReservationData): Promise<void> {
-    // Party size validation
-    if (data.numberOfPersons < 1 || data.numberOfPersons > 20) {
-      throw new ReservationError('Invalid party size', 'INVALID_PARTY_SIZE');
-    }
+	private async validateBusinessRules(
+		data: CreateReservationData,
+	): Promise<void> {
+		// Party size validation
+		if (data.numberOfPersons < 1 || data.numberOfPersons > 20) {
+			throw new ReservationError('Invalid party size', 'INVALID_PARTY_SIZE');
+		}
 
-    // Date validation
-    const reservationDate = new Date(data.dateString);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+		// Date validation
+		const reservationDate = new Date(data.dateString);
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
 
-    if (reservationDate < today) {
-      throw new ReservationError('Cannot create reservation for past date', 'PAST_DATE');
-    }
+		if (reservationDate < today) {
+			throw new ReservationError(
+				'Cannot create reservation for past date',
+				'PAST_DATE',
+			);
+		}
 
-    // Time slot validation
-    if (!this.isValidTimeSlot(data.startTime, data.category)) {
-      throw new ReservationError('Invalid time slot', 'INVALID_TIME_SLOT');
-    }
+		// Time slot validation
+		if (!this.isValidTimeSlot(data.startTime, data.category)) {
+			throw new ReservationError('Invalid time slot', 'INVALID_TIME_SLOT');
+		}
 
-    // Capacity check
-    await this.validateCapacityAvailable(data);
-  }
+		// Capacity check
+		await this.validateCapacityAvailable(data);
+	}
 
-  private async findOptimalTable(reservation: Reservation): Promise<Table | null> {
-    const availableTables = await this.tableRepo.findAvailable({
-      date: reservation.dateString,
-      startTime: reservation.startTime,
-      endTime: reservation.endTime,
-    });
+	private async findOptimalTable(
+		reservation: Reservation,
+	): Promise<Table | null> {
+		const availableTables = await this.tableRepo.findAvailable({
+			date: reservation.dateString,
+			startTime: reservation.startTime,
+			endTime: reservation.endTime,
+		});
 
-    if (availableTables.length === 0) return null;
+		if (availableTables.length === 0) return null;
 
-    // Find best table using scoring algorithm
-    let bestTable: Table | null = null;
-    let bestScore = Infinity;
+		// Find best table using scoring algorithm
+		let bestTable: Table | null = null;
+		let bestScore = Infinity;
 
-    for (const table of availableTables) {
-      const score = this.calculateTableScore(table, reservation);
-      if (score < bestScore) {
-        bestScore = score;
-        bestTable = table;
-      }
-    }
+		for (const table of availableTables) {
+			const score = this.calculateTableScore(table, reservation);
+			if (score < bestScore) {
+				bestScore = score;
+				bestTable = table;
+			}
+		}
 
-    return bestTable;
-  }
+		return bestTable;
+	}
 
-  private calculateTableScore(table: Table, reservation: Reservation): number {
-    const partySize = reservation.numberOfPersons;
-    const capacity = table.maxCapacity;
+	private calculateTableScore(table: Table, reservation: Reservation): number {
+		const partySize = reservation.numberOfPersons;
+		const capacity = table.maxCapacity;
 
-    // Minimize waste while ensuring comfort
-    const capacityWaste = Math.max(0, capacity - partySize) / capacity;
-    const overcrowdingPenalty = partySize > capacity ? 10 : 0;
+		// Minimize waste while ensuring comfort
+		const capacityWaste = Math.max(0, capacity - partySize) / capacity;
+		const overcrowdingPenalty = partySize > capacity ? 10 : 0;
 
-    return capacityWaste + overcrowdingPenalty;
-  }
+		return capacityWaste + overcrowdingPenalty;
+	}
 }
 ```
 
@@ -331,6 +341,7 @@ export class ReservationService {
 ### 2. LayoutServices (Complex Geometry Calculations)
 
 **Swift Implementation** (Simplified - Very Complex in Original):
+
 ```swift
 class LayoutServices {
     // MARK: - Layout Calculations
@@ -447,107 +458,110 @@ struct LayoutCollision {
 ```
 
 **TypeScript Migration** (Simplified Approach):
+
 ```typescript
 // @seatkit/engine/src/layout/LayoutService.ts
 export interface LayoutConfiguration {
-  date: string;
-  tables: Table[];
-  assignments: Map<string, TableAssignment>; // timeSlot -> assignments
+	date: string;
+	tables: Table[];
+	assignments: Map<string, TableAssignment>; // timeSlot -> assignments
 }
 
 export interface TableAssignment {
-  tableId: string;
-  reservationId?: string;
-  status: 'available' | 'occupied' | 'transitioning' | 'outOfService';
-  startTime: string;
-  endTime: string;
+	tableId: string;
+	reservationId?: string;
+	status: 'available' | 'occupied' | 'transitioning' | 'outOfService';
+	startTime: string;
+	endTime: string;
 }
 
 export class LayoutService {
-  constructor(
-    private readonly tableRepo: TableRepository,
-    private readonly reservationRepo: ReservationRepository
-  ) {}
+	constructor(
+		private readonly tableRepo: TableRepository,
+		private readonly reservationRepo: ReservationRepository,
+	) {}
 
-  async calculateDailyLayout(date: string): Promise<LayoutConfiguration> {
-    const [tables, reservations] = await Promise.all([
-      this.tableRepo.findAll(),
-      this.reservationRepo.findByDate(date),
-    ]);
+	async calculateDailyLayout(date: string): Promise<LayoutConfiguration> {
+		const [tables, reservations] = await Promise.all([
+			this.tableRepo.findAll(),
+			this.reservationRepo.findByDate(date),
+		]);
 
-    const assignments = new Map<string, TableAssignment>();
-    const timeSlots = this.generateTimeSlots(date);
+		const assignments = new Map<string, TableAssignment>();
+		const timeSlots = this.generateTimeSlots(date);
 
-    for (const timeSlot of timeSlots) {
-      const slotKey = `${timeSlot.startTime}-${timeSlot.endTime}`;
+		for (const timeSlot of timeSlots) {
+			const slotKey = `${timeSlot.startTime}-${timeSlot.endTime}`;
 
-      for (const table of tables) {
-        const reservation = this.findActiveReservation(
-          reservations,
-          table.id,
-          timeSlot
-        );
+			for (const table of tables) {
+				const reservation = this.findActiveReservation(
+					reservations,
+					table.id,
+					timeSlot,
+				);
 
-        assignments.set(`${slotKey}-${table.id}`, {
-          tableId: table.id,
-          reservationId: reservation?.id,
-          status: reservation ? 'occupied' : 'available',
-          startTime: timeSlot.startTime,
-          endTime: timeSlot.endTime,
-        });
-      }
-    }
+				assignments.set(`${slotKey}-${table.id}`, {
+					tableId: table.id,
+					reservationId: reservation?.id,
+					status: reservation ? 'occupied' : 'available',
+					startTime: timeSlot.startTime,
+					endTime: timeSlot.endTime,
+				});
+			}
+		}
 
-    return {
-      date,
-      tables,
-      assignments,
-    };
-  }
+		return {
+			date,
+			tables,
+			assignments,
+		};
+	}
 
-  // Simplified grid positioning (no complex collision detection)
-  calculateGridPositions(
-    tables: Table[],
-    containerWidth: number,
-    containerHeight: number
-  ): Map<string, { x: number; y: number }> {
-    const positions = new Map<string, { x: number; y: number }>();
-    const cols = Math.ceil(Math.sqrt(tables.length));
-    const rows = Math.ceil(tables.length / cols);
+	// Simplified grid positioning (no complex collision detection)
+	calculateGridPositions(
+		tables: Table[],
+		containerWidth: number,
+		containerHeight: number,
+	): Map<string, { x: number; y: number }> {
+		const positions = new Map<string, { x: number; y: number }>();
+		const cols = Math.ceil(Math.sqrt(tables.length));
+		const rows = Math.ceil(tables.length / cols);
 
-    const cellWidth = containerWidth / cols;
-    const cellHeight = containerHeight / rows;
+		const cellWidth = containerWidth / cols;
+		const cellHeight = containerHeight / rows;
 
-    tables.forEach((table, index) => {
-      const row = Math.floor(index / cols);
-      const col = index % cols;
+		tables.forEach((table, index) => {
+			const row = Math.floor(index / cols);
+			const col = index % cols;
 
-      positions.set(table.id, {
-        x: col * cellWidth + cellWidth / 2,
-        y: row * cellHeight + cellHeight / 2,
-      });
-    });
+			positions.set(table.id, {
+				x: col * cellWidth + cellWidth / 2,
+				y: row * cellHeight + cellHeight / 2,
+			});
+		});
 
-    return positions;
-  }
+		return positions;
+	}
 
-  private generateTimeSlots(date: string): Array<{ startTime: string; endTime: string }> {
-    const slots: Array<{ startTime: string; endTime: string }> = [];
+	private generateTimeSlots(
+		date: string,
+	): Array<{ startTime: string; endTime: string }> {
+		const slots: Array<{ startTime: string; endTime: string }> = [];
 
-    // Generate 15-minute slots from 10:00 to 24:00
-    for (let hour = 10; hour <= 23; hour++) {
-      for (let minute = 0; minute < 60; minute += 15) {
-        const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        const endMinute = minute + 15;
-        const endHour = endMinute === 60 ? hour + 1 : hour;
-        const endTime = `${endHour.toString().padStart(2, '0')}:${(endMinute % 60).toString().padStart(2, '0')}`;
+		// Generate 15-minute slots from 10:00 to 24:00
+		for (let hour = 10; hour <= 23; hour++) {
+			for (let minute = 0; minute < 60; minute += 15) {
+				const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+				const endMinute = minute + 15;
+				const endHour = endMinute === 60 ? hour + 1 : hour;
+				const endTime = `${endHour.toString().padStart(2, '0')}:${(endMinute % 60).toString().padStart(2, '0')}`;
 
-        slots.push({ startTime, endTime });
-      }
-    }
+				slots.push({ startTime, endTime });
+			}
+		}
 
-    return slots;
-  }
+		return slots;
+	}
 }
 ```
 
@@ -556,6 +570,7 @@ export class LayoutService {
 ### 3. ClusterServices (Table Combination Logic)
 
 **Swift Implementation**:
+
 ```swift
 class ClusterServices {
     // MARK: - Cluster Management
@@ -684,146 +699,165 @@ extension TableCluster {
 ```
 
 **TypeScript Migration**:
+
 ```typescript
 // @seatkit/engine/src/table/ClusterService.ts
 export interface TableCluster {
-  id: string;
-  name: string;
-  tableIds: string[];
-  totalCapacity: number;
-  isConnected: boolean;
+	id: string;
+	name: string;
+	tableIds: string[];
+	totalCapacity: number;
+	isConnected: boolean;
 }
 
 export class ClusterService {
-  constructor(private readonly tableRepo: TableRepository) {}
+	constructor(private readonly tableRepo: TableRepository) {}
 
-  async createOptimalClusters(
-    reservations: Reservation[],
-    availableTables: Table[]
-  ): Promise<TableCluster[]> {
-    const clusters: TableCluster[] = [];
-    const largeParties = reservations.filter(r => r.numberOfPersons > 6);
+	async createOptimalClusters(
+		reservations: Reservation[],
+		availableTables: Table[],
+	): Promise<TableCluster[]> {
+		const clusters: TableCluster[] = [];
+		const largeParties = reservations.filter(r => r.numberOfPersons > 6);
 
-    for (const reservation of largeParties) {
-      const cluster = await this.findOrCreateCluster(reservation, availableTables);
-      if (cluster) {
-        clusters.push(cluster);
-      }
-    }
+		for (const reservation of largeParties) {
+			const cluster = await this.findOrCreateCluster(
+				reservation,
+				availableTables,
+			);
+			if (cluster) {
+				clusters.push(cluster);
+			}
+		}
 
-    return clusters;
-  }
+		return clusters;
+	}
 
-  private async findOrCreateCluster(
-    reservation: Reservation,
-    availableTables: Table[]
-  ): Promise<TableCluster | null> {
-    const partySize = reservation.numberOfPersons;
+	private async findOrCreateCluster(
+		reservation: Reservation,
+		availableTables: Table[],
+	): Promise<TableCluster | null> {
+		const partySize = reservation.numberOfPersons;
 
-    // Try single table first
-    const singleTable = availableTables.find(t => t.maxCapacity >= partySize);
-    if (singleTable) {
-      return this.createSingleTableCluster(singleTable, reservation);
-    }
+		// Try single table first
+		const singleTable = availableTables.find(t => t.maxCapacity >= partySize);
+		if (singleTable) {
+			return this.createSingleTableCluster(singleTable, reservation);
+		}
 
-    // Try table combinations
-    const combinations = this.generateTableCombinations(availableTables, 4);
+		// Try table combinations
+		const combinations = this.generateTableCombinations(availableTables, 4);
 
-    for (const combination of combinations) {
-      const totalCapacity = combination.reduce((sum, t) => sum + t.maxCapacity, 0);
+		for (const combination of combinations) {
+			const totalCapacity = combination.reduce(
+				(sum, t) => sum + t.maxCapacity,
+				0,
+			);
 
-      if (totalCapacity >= partySize && await this.areTablesAdjacent(combination)) {
-        return this.createMultiTableCluster(combination, reservation);
-      }
-    }
+			if (
+				totalCapacity >= partySize &&
+				(await this.areTablesAdjacent(combination))
+			) {
+				return this.createMultiTableCluster(combination, reservation);
+			}
+		}
 
-    return null;
-  }
+		return null;
+	}
 
-  private async areTablesAdjacent(tables: Table[]): Promise<boolean> {
-    if (tables.length <= 1) return true;
+	private async areTablesAdjacent(tables: Table[]): Promise<boolean> {
+		if (tables.length <= 1) return true;
 
-    // Build adjacency map
-    const adjacencyMap = new Map<string, Set<string>>();
+		// Build adjacency map
+		const adjacencyMap = new Map<string, Set<string>>();
 
-    for (const table of tables) {
-      adjacencyMap.set(table.id, new Set(table.adjacentTableIds));
-    }
+		for (const table of tables) {
+			adjacencyMap.set(table.id, new Set(table.adjacentTableIds));
+		}
 
-    // Check connectivity using BFS
-    const tableIds = tables.map(t => t.id);
-    const visited = new Set<string>();
-    const queue = [tableIds[0]];
+		// Check connectivity using BFS
+		const tableIds = tables.map(t => t.id);
+		const visited = new Set<string>();
+		const queue = [tableIds[0]];
 
-    while (queue.length > 0) {
-      const current = queue.shift()!;
-      if (visited.has(current)) continue;
+		while (queue.length > 0) {
+			const current = queue.shift()!;
+			if (visited.has(current)) continue;
 
-      visited.add(current);
+			visited.add(current);
 
-      const adjacent = adjacencyMap.get(current) || new Set();
-      for (const adjacentId of adjacent) {
-        if (tableIds.includes(adjacentId) && !visited.has(adjacentId)) {
-          queue.push(adjacentId);
-        }
-      }
-    }
+			const adjacent = adjacencyMap.get(current) || new Set();
+			for (const adjacentId of adjacent) {
+				if (tableIds.includes(adjacentId) && !visited.has(adjacentId)) {
+					queue.push(adjacentId);
+				}
+			}
+		}
 
-    return visited.size === tableIds.length;
-  }
+		return visited.size === tableIds.length;
+	}
 
-  private generateTableCombinations(tables: Table[], maxTables: number): Table[][] {
-    const combinations: Table[][] = [];
+	private generateTableCombinations(
+		tables: Table[],
+		maxTables: number,
+	): Table[][] {
+		const combinations: Table[][] = [];
 
-    // Generate all combinations of 2 to maxTables
-    for (let size = 2; size <= Math.min(maxTables, tables.length); size++) {
-      this.addCombinations(tables, size, 0, [], combinations);
-    }
+		// Generate all combinations of 2 to maxTables
+		for (let size = 2; size <= Math.min(maxTables, tables.length); size++) {
+			this.addCombinations(tables, size, 0, [], combinations);
+		}
 
-    return combinations;
-  }
+		return combinations;
+	}
 
-  private addCombinations(
-    tables: Table[],
-    size: number,
-    start: number,
-    current: Table[],
-    result: Table[][]
-  ): void {
-    if (current.length === size) {
-      result.push([...current]);
-      return;
-    }
+	private addCombinations(
+		tables: Table[],
+		size: number,
+		start: number,
+		current: Table[],
+		result: Table[][],
+	): void {
+		if (current.length === size) {
+			result.push([...current]);
+			return;
+		}
 
-    for (let i = start; i < tables.length; i++) {
-      current.push(tables[i]);
-      this.addCombinations(tables, size, i + 1, current, result);
-      current.pop();
-    }
-  }
+		for (let i = start; i < tables.length; i++) {
+			current.push(tables[i]);
+			this.addCombinations(tables, size, i + 1, current, result);
+			current.pop();
+		}
+	}
 
-  private createSingleTableCluster(table: Table, reservation: Reservation): TableCluster {
-    return {
-      id: crypto.randomUUID(),
-      name: `Table ${table.name}`,
-      tableIds: [table.id],
-      totalCapacity: table.maxCapacity,
-      isConnected: true,
-    };
-  }
+	private createSingleTableCluster(
+		table: Table,
+		reservation: Reservation,
+	): TableCluster {
+		return {
+			id: crypto.randomUUID(),
+			name: `Table ${table.name}`,
+			tableIds: [table.id],
+			totalCapacity: table.maxCapacity,
+			isConnected: true,
+		};
+	}
 
-  private createMultiTableCluster(tables: Table[], reservation: Reservation): TableCluster {
-    const totalCapacity = tables.reduce((sum, t) => sum + t.maxCapacity, 0);
-    const names = tables.map(t => t.name).join(' + ');
+	private createMultiTableCluster(
+		tables: Table[],
+		reservation: Reservation,
+	): TableCluster {
+		const totalCapacity = tables.reduce((sum, t) => sum + t.maxCapacity, 0);
+		const names = tables.map(t => t.name).join(' + ');
 
-    return {
-      id: crypto.randomUUID(),
-      name: `Tables ${names}`,
-      tableIds: tables.map(t => t.id),
-      totalCapacity,
-      isConnected: true,
-    };
-  }
+		return {
+			id: crypto.randomUUID(),
+			name: `Tables ${names}`,
+			tableIds: tables.map(t => t.id),
+			totalCapacity,
+			isConnected: true,
+		};
+	}
 }
 ```
 
@@ -832,6 +866,7 @@ export class ClusterService {
 ### 4. ProfileService & SessionService (Multi-User Management)
 
 **Swift Implementation**:
+
 ```swift
 class SessionService: ObservableObject {
     @Published var activeSessions: [Session] = []
@@ -972,227 +1007,228 @@ class ProfileService: ObservableObject {
 ```
 
 **TypeScript Migration**:
+
 ```typescript
 // @seatkit/engine/src/session/SessionService.ts
 export class SessionService {
-  private activeSessions = new Map<string, Session>();
-  private heartbeatIntervals = new Map<string, NodeJS.Timeout>();
+	private activeSessions = new Map<string, Session>();
+	private heartbeatIntervals = new Map<string, NodeJS.Timeout>();
 
-  constructor(
-    private readonly sessionRepo: SessionRepository,
-    private readonly logger: Logger
-  ) {}
+	constructor(
+		private readonly sessionRepo: SessionRepository,
+		private readonly logger: Logger,
+	) {}
 
-  async startSession(
-    userId: string,
-    userName: string,
-    deviceName: string,
-    deviceType: DeviceType
-  ): Promise<Session> {
-    const session: Session = {
-      id: crypto.randomUUID(),
-      userId,
-      userName,
-      isEditing: false,
-      lastUpdate: new Date(),
-      isActive: true,
-      deviceName,
-      deviceType,
-      currentView: undefined,
-      editingEntityType: undefined,
-      editingEntityId: undefined,
-    };
+	async startSession(
+		userId: string,
+		userName: string,
+		deviceName: string,
+		deviceType: DeviceType,
+	): Promise<Session> {
+		const session: Session = {
+			id: crypto.randomUUID(),
+			userId,
+			userName,
+			isEditing: false,
+			lastUpdate: new Date(),
+			isActive: true,
+			deviceName,
+			deviceType,
+			currentView: undefined,
+			editingEntityType: undefined,
+			editingEntityId: undefined,
+		};
 
-    // Store session
-    await this.sessionRepo.insert(session);
-    this.activeSessions.set(session.id, session);
+		// Store session
+		await this.sessionRepo.insert(session);
+		this.activeSessions.set(session.id, session);
 
-    // Start heartbeat
-    this.startHeartbeat(session.id);
+		// Start heartbeat
+		this.startHeartbeat(session.id);
 
-    this.logger.info('Session started', { sessionId: session.id, userId });
-    return session;
-  }
+		this.logger.info('Session started', { sessionId: session.id, userId });
+		return session;
+	}
 
-  async updatePresence(
-    sessionId: string,
-    updates: {
-      isEditing?: boolean;
-      editingEntityType?: EntityType;
-      editingEntityId?: string;
-      currentView?: ViewType;
-    }
-  ): Promise<void> {
-    const session = this.activeSessions.get(sessionId);
-    if (!session) return;
+	async updatePresence(
+		sessionId: string,
+		updates: {
+			isEditing?: boolean;
+			editingEntityType?: EntityType;
+			editingEntityId?: string;
+			currentView?: ViewType;
+		},
+	): Promise<void> {
+		const session = this.activeSessions.get(sessionId);
+		if (!session) return;
 
-    const updatedSession: Session = {
-      ...session,
-      ...updates,
-      lastUpdate: new Date(),
-    };
+		const updatedSession: Session = {
+			...session,
+			...updates,
+			lastUpdate: new Date(),
+		};
 
-    this.activeSessions.set(sessionId, updatedSession);
-    await this.sessionRepo.update(updatedSession);
+		this.activeSessions.set(sessionId, updatedSession);
+		await this.sessionRepo.update(updatedSession);
 
-    // Broadcast to other sessions via WebSocket/SSE
-    await this.broadcastPresenceUpdate(updatedSession);
-  }
+		// Broadcast to other sessions via WebSocket/SSE
+		await this.broadcastPresenceUpdate(updatedSession);
+	}
 
-  checkEditingConflicts(
-    entityType: EntityType,
-    entityId: string,
-    excludeSessionId?: string
-  ): Session[] {
-    const conflicts: Session[] = [];
+	checkEditingConflicts(
+		entityType: EntityType,
+		entityId: string,
+		excludeSessionId?: string,
+	): Session[] {
+		const conflicts: Session[] = [];
 
-    for (const session of this.activeSessions.values()) {
-      if (
-        session.id !== excludeSessionId &&
-        session.isEditing &&
-        session.editingEntityType === entityType &&
-        session.editingEntityId === entityId
-      ) {
-        conflicts.push(session);
-      }
-    }
+		for (const session of this.activeSessions.values()) {
+			if (
+				session.id !== excludeSessionId &&
+				session.isEditing &&
+				session.editingEntityType === entityType &&
+				session.editingEntityId === entityId
+			) {
+				conflicts.push(session);
+			}
+		}
 
-    return conflicts;
-  }
+		return conflicts;
+	}
 
-  async endSession(sessionId: string): Promise<void> {
-    const session = this.activeSessions.get(sessionId);
-    if (!session) return;
+	async endSession(sessionId: string): Promise<void> {
+		const session = this.activeSessions.get(sessionId);
+		if (!session) return;
 
-    // Stop heartbeat
-    const heartbeat = this.heartbeatIntervals.get(sessionId);
-    if (heartbeat) {
-      clearInterval(heartbeat);
-      this.heartbeatIntervals.delete(sessionId);
-    }
+		// Stop heartbeat
+		const heartbeat = this.heartbeatIntervals.get(sessionId);
+		if (heartbeat) {
+			clearInterval(heartbeat);
+			this.heartbeatIntervals.delete(sessionId);
+		}
 
-    // Remove from active sessions
-    this.activeSessions.delete(sessionId);
-    await this.sessionRepo.delete(sessionId);
+		// Remove from active sessions
+		this.activeSessions.delete(sessionId);
+		await this.sessionRepo.delete(sessionId);
 
-    this.logger.info('Session ended', { sessionId });
-  }
+		this.logger.info('Session ended', { sessionId });
+	}
 
-  private startHeartbeat(sessionId: string): void {
-    const interval = setInterval(async () => {
-      await this.sendHeartbeat(sessionId);
-    }, 30_000); // 30 seconds
+	private startHeartbeat(sessionId: string): void {
+		const interval = setInterval(async () => {
+			await this.sendHeartbeat(sessionId);
+		}, 30_000); // 30 seconds
 
-    this.heartbeatIntervals.set(sessionId, interval);
-  }
+		this.heartbeatIntervals.set(sessionId, interval);
+	}
 
-  private async sendHeartbeat(sessionId: string): Promise<void> {
-    const session = this.activeSessions.get(sessionId);
-    if (!session) {
-      // Session no longer exists, cleanup heartbeat
-      const interval = this.heartbeatIntervals.get(sessionId);
-      if (interval) {
-        clearInterval(interval);
-        this.heartbeatIntervals.delete(sessionId);
-      }
-      return;
-    }
+	private async sendHeartbeat(sessionId: string): Promise<void> {
+		const session = this.activeSessions.get(sessionId);
+		if (!session) {
+			// Session no longer exists, cleanup heartbeat
+			const interval = this.heartbeatIntervals.get(sessionId);
+			if (interval) {
+				clearInterval(interval);
+				this.heartbeatIntervals.delete(sessionId);
+			}
+			return;
+		}
 
-    // Update last activity
-    session.lastUpdate = new Date();
-    await this.sessionRepo.update(session);
+		// Update last activity
+		session.lastUpdate = new Date();
+		await this.sessionRepo.update(session);
 
-    // Cleanup stale sessions
-    await this.cleanupStaleSessions();
-  }
+		// Cleanup stale sessions
+		await this.cleanupStaleSessions();
+	}
 
-  private async cleanupStaleSessions(): Promise<void> {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const staleSessions: string[] = [];
+	private async cleanupStaleSessions(): Promise<void> {
+		const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+		const staleSessions: string[] = [];
 
-    for (const [sessionId, session] of this.activeSessions.entries()) {
-      if (session.lastUpdate < fiveMinutesAgo) {
-        staleSessions.push(sessionId);
-      }
-    }
+		for (const [sessionId, session] of this.activeSessions.entries()) {
+			if (session.lastUpdate < fiveMinutesAgo) {
+				staleSessions.push(sessionId);
+			}
+		}
 
-    // Remove stale sessions
-    for (const sessionId of staleSessions) {
-      await this.endSession(sessionId);
-    }
-  }
+		// Remove stale sessions
+		for (const sessionId of staleSessions) {
+			await this.endSession(sessionId);
+		}
+	}
 
-  private async broadcastPresenceUpdate(session: Session): Promise<void> {
-    // Implementation depends on real-time solution (WebSocket, SSE, etc.)
-    // This would notify other connected clients about the presence update
-  }
+	private async broadcastPresenceUpdate(session: Session): Promise<void> {
+		// Implementation depends on real-time solution (WebSocket, SSE, etc.)
+		// This would notify other connected clients about the presence update
+	}
 }
 
 // Profile Service
 export class ProfileService {
-  constructor(
-    private readonly profileRepo: ProfileRepository,
-    private readonly logger: Logger
-  ) {}
+	constructor(
+		private readonly profileRepo: ProfileRepository,
+		private readonly logger: Logger,
+	) {}
 
-  async authenticateUser(userData: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  }): Promise<Profile> {
-    // Check existing profile
-    const existing = await this.profileRepo.findById(userData.id);
-    if (existing) {
-      // Update last login
-      await this.profileRepo.update({
-        ...existing,
-        lastLogin: new Date(),
-      });
-      return existing;
-    }
+	async authenticateUser(userData: {
+		id: string;
+		firstName: string;
+		lastName: string;
+		email: string;
+	}): Promise<Profile> {
+		// Check existing profile
+		const existing = await this.profileRepo.findById(userData.id);
+		if (existing) {
+			// Update last login
+			await this.profileRepo.update({
+				...existing,
+				lastLogin: new Date(),
+			});
+			return existing;
+		}
 
-    // Create new profile
-    const profile: Profile = {
-      ...userData,
-      phone: undefined,
-      language: 'italian',
-      profileImageURL: undefined,
-      avatarColor: this.generateAvatarColor(),
-      devices: [],
-      createdAt: new Date(),
-      lastLogin: new Date(),
-      isActive: true,
-    };
+		// Create new profile
+		const profile: Profile = {
+			...userData,
+			phone: undefined,
+			language: 'italian',
+			profileImageURL: undefined,
+			avatarColor: this.generateAvatarColor(),
+			devices: [],
+			createdAt: new Date(),
+			lastLogin: new Date(),
+			isActive: true,
+		};
 
-    await this.profileRepo.insert(profile);
-    this.logger.info('New profile created', { profileId: profile.id });
+		await this.profileRepo.insert(profile);
+		this.logger.info('New profile created', { profileId: profile.id });
 
-    return profile;
-  }
+		return profile;
+	}
 
-  async updateProfile(
-    profileId: string,
-    updates: UpdateProfileData
-  ): Promise<Profile> {
-    const existing = await this.profileRepo.findById(profileId);
-    if (!existing) {
-      throw new Error(`Profile not found: ${profileId}`);
-    }
+	async updateProfile(
+		profileId: string,
+		updates: UpdateProfileData,
+	): Promise<Profile> {
+		const existing = await this.profileRepo.findById(profileId);
+		if (!existing) {
+			throw new Error(`Profile not found: ${profileId}`);
+		}
 
-    const updated: Profile = {
-      ...existing,
-      ...updates,
-    };
+		const updated: Profile = {
+			...existing,
+			...updates,
+		};
 
-    await this.profileRepo.update(updated);
-    return updated;
-  }
+		await this.profileRepo.update(updated);
+		return updated;
+	}
 
-  private generateAvatarColor(): string {
-    const colors = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
-    return colors[Math.floor(Math.random() * colors.length)];
-  }
+	private generateAvatarColor(): string {
+		const colors = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
+		return colors[Math.floor(Math.random() * colors.length)];
+	}
 }
 ```
 
@@ -1203,6 +1239,7 @@ export class ProfileService {
 ### Service Communication & Dependencies
 
 **Swift Dependency Graph**:
+
 ```swift
 // Services depend on each other through injection
 ReservationService → TableStore, DataStore
@@ -1214,77 +1251,78 @@ ProfileService → DataStore
 ```
 
 **TypeScript Service Integration**:
+
 ```typescript
 // @seatkit/engine/src/index.ts - Service Factory
 export class ServiceContainer {
-  // Repositories (injected from API layer)
-  private readonly reservationRepo: ReservationRepository;
-  private readonly tableRepo: TableRepository;
-  private readonly profileRepo: ProfileRepository;
-  private readonly sessionRepo: SessionRepository;
+	// Repositories (injected from API layer)
+	private readonly reservationRepo: ReservationRepository;
+	private readonly tableRepo: TableRepository;
+	private readonly profileRepo: ProfileRepository;
+	private readonly sessionRepo: SessionRepository;
 
-  // Services (created lazily)
-  private _reservationService?: ReservationService;
-  private _layoutService?: LayoutService;
-  private _clusterService?: ClusterService;
-  private _sessionService?: SessionService;
-  private _profileService?: ProfileService;
+	// Services (created lazily)
+	private _reservationService?: ReservationService;
+	private _layoutService?: LayoutService;
+	private _clusterService?: ClusterService;
+	private _sessionService?: SessionService;
+	private _profileService?: ProfileService;
 
-  constructor(repositories: {
-    reservation: ReservationRepository;
-    table: TableRepository;
-    profile: ProfileRepository;
-    session: SessionRepository;
-  }) {
-    this.reservationRepo = repositories.reservation;
-    this.tableRepo = repositories.table;
-    this.profileRepo = repositories.profile;
-    this.sessionRepo = repositories.session;
-  }
+	constructor(repositories: {
+		reservation: ReservationRepository;
+		table: TableRepository;
+		profile: ProfileRepository;
+		session: SessionRepository;
+	}) {
+		this.reservationRepo = repositories.reservation;
+		this.tableRepo = repositories.table;
+		this.profileRepo = repositories.profile;
+		this.sessionRepo = repositories.session;
+	}
 
-  get reservationService(): ReservationService {
-    if (!this._reservationService) {
-      this._reservationService = new ReservationService(
-        this.reservationRepo,
-        this.tableRepo,
-        this.logger
-      );
-    }
-    return this._reservationService;
-  }
+	get reservationService(): ReservationService {
+		if (!this._reservationService) {
+			this._reservationService = new ReservationService(
+				this.reservationRepo,
+				this.tableRepo,
+				this.logger,
+			);
+		}
+		return this._reservationService;
+	}
 
-  get layoutService(): LayoutService {
-    if (!this._layoutService) {
-      this._layoutService = new LayoutService(
-        this.tableRepo,
-        this.reservationRepo
-      );
-    }
-    return this._layoutService;
-  }
+	get layoutService(): LayoutService {
+		if (!this._layoutService) {
+			this._layoutService = new LayoutService(
+				this.tableRepo,
+				this.reservationRepo,
+			);
+		}
+		return this._layoutService;
+	}
 
-  get clusterService(): ClusterService {
-    if (!this._clusterService) {
-      this._clusterService = new ClusterService(this.tableRepo);
-    }
-    return this._clusterService;
-  }
+	get clusterService(): ClusterService {
+		if (!this._clusterService) {
+			this._clusterService = new ClusterService(this.tableRepo);
+		}
+		return this._clusterService;
+	}
 
-  // ... other services
+	// ... other services
 }
 
 // Usage in API layer
 // @seatkit/api/src/app.ts
 const serviceContainer = new ServiceContainer({
-  reservation: reservationRepository,
-  table: tableRepository,
-  profile: profileRepository,
-  session: sessionRepository,
+	reservation: reservationRepository,
+	table: tableRepository,
+	profile: profileRepository,
+	session: sessionRepository,
 });
 
 app.post('/api/reservations', async (req, res) => {
-  const service = serviceContainer.reservationService;
-  // ... use service
+	const service = serviceContainer.reservationService;
+	// ... use service
 });
 ```
 
@@ -1293,6 +1331,7 @@ app.post('/api/reservations', async (req, res) => {
 ## 🧪 Service Testing Patterns
 
 ### Swift Testing Approach
+
 ```swift
 // Mock protocol implementations
 class MockFirestoreDataStore: FirestoreDataStoreProtocol {
@@ -1343,83 +1382,85 @@ class ReservationServiceTests: XCTestCase {
 ```
 
 **TypeScript Testing Approach**:
+
 ```typescript
 // @seatkit/engine/src/reservation/__tests__/ReservationService.test.ts
 describe('ReservationService', () => {
-  let service: ReservationService;
-  let mockReservationRepo: jest.Mocked<ReservationRepository>;
-  let mockTableRepo: jest.Mocked<TableRepository>;
-  let mockLogger: jest.Mocked<Logger>;
+	let service: ReservationService;
+	let mockReservationRepo: jest.Mocked<ReservationRepository>;
+	let mockTableRepo: jest.Mocked<TableRepository>;
+	let mockLogger: jest.Mocked<Logger>;
 
-  beforeEach(() => {
-    mockReservationRepo = {
-      insert: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      findById: jest.fn(),
-      findByDate: jest.fn(),
-      findAvailable: jest.fn(),
-    } as any;
+	beforeEach(() => {
+		mockReservationRepo = {
+			insert: jest.fn(),
+			update: jest.fn(),
+			delete: jest.fn(),
+			findById: jest.fn(),
+			findByDate: jest.fn(),
+			findAvailable: jest.fn(),
+		} as any;
 
-    mockTableRepo = {
-      findAll: jest.fn(),
-      findAvailable: jest.fn(),
-      findById: jest.fn(),
-    } as any;
+		mockTableRepo = {
+			findAll: jest.fn(),
+			findAvailable: jest.fn(),
+			findById: jest.fn(),
+		} as any;
 
-    mockLogger = {
-      info: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-    } as any;
+		mockLogger = {
+			info: jest.fn(),
+			error: jest.fn(),
+			warn: jest.fn(),
+		} as any;
 
-    service = new ReservationService(
-      mockReservationRepo,
-      mockTableRepo,
-      mockLogger
-    );
-  });
+		service = new ReservationService(
+			mockReservationRepo,
+			mockTableRepo,
+			mockLogger,
+		);
+	});
 
-  describe('createReservation', () => {
-    it('should create reservation with valid data', async () => {
-      const reservationData: CreateReservationData = {
-        name: 'John Doe',
-        phone: '123-456-7890',
-        numberOfPersons: 2,
-        dateString: '2025-10-26',
-        startTime: '19:30',
-        category: 'dinner',
-        type: 'inAdvance',
-        status: 'pending',
-        acceptance: 'toConfirm',
-      };
+	describe('createReservation', () => {
+		it('should create reservation with valid data', async () => {
+			const reservationData: CreateReservationData = {
+				name: 'John Doe',
+				phone: '123-456-7890',
+				numberOfPersons: 2,
+				dateString: '2025-10-26',
+				startTime: '19:30',
+				category: 'dinner',
+				type: 'inAdvance',
+				status: 'pending',
+				acceptance: 'toConfirm',
+			};
 
-      mockTableRepo.findAvailable.mockResolvedValue([
-        { id: '1', name: 'Table 1', maxCapacity: 4, minCapacity: 2 } as Table
-      ]);
+			mockTableRepo.findAvailable.mockResolvedValue([
+				{ id: '1', name: 'Table 1', maxCapacity: 4, minCapacity: 2 } as Table,
+			]);
 
-      const result = await service.createReservation(reservationData);
+			const result = await service.createReservation(reservationData);
 
-      expect(result.name).toBe('John Doe');
-      expect(result.numberOfPersons).toBe(2);
-      expect(mockReservationRepo.insert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'John Doe',
-          numberOfPersons: 2,
-        })
-      );
-    });
+			expect(result.name).toBe('John Doe');
+			expect(result.numberOfPersons).toBe(2);
+			expect(mockReservationRepo.insert).toHaveBeenCalledWith(
+				expect.objectContaining({
+					name: 'John Doe',
+					numberOfPersons: 2,
+				}),
+			);
+		});
 
-    it('should throw error for invalid party size', async () => {
-      const invalidData: CreateReservationData = {
-        // ... other fields
-        numberOfPersons: 0, // Invalid
-      } as any;
+		it('should throw error for invalid party size', async () => {
+			const invalidData: CreateReservationData = {
+				// ... other fields
+				numberOfPersons: 0, // Invalid
+			} as any;
 
-      await expect(service.createReservation(invalidData))
-        .rejects.toThrow('Invalid party size');
-    });
-  });
+			await expect(service.createReservation(invalidData)).rejects.toThrow(
+				'Invalid party size',
+			);
+		});
+	});
 });
 ```
 

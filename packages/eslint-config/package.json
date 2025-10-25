@@ -1,29 +1,29 @@
 {
-  "name": "@seatkit/eslint-config",
-  "version": "0.1.0",
-  "description": "Shared ESLint configuration for SeatKit",
-  "license": "Apache-2.0",
-  "type": "module",
-  "main": "./index.js",
-  "exports": {
-    ".": "./index.js",
-    "./production": "./production.js"
-  },
-  "files": [
-    "index.js",
-    "production.js"
-  ],
-  "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.15.0",
-    "@typescript-eslint/parser": "^8.15.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.31.0"
-  },
-  "peerDependencies": {
-    "eslint": "^9.0.0",
-    "typescript": "^5.0.0"
-  },
-  "publishConfig": {
-    "access": "public"
-  }
+	"name": "@seatkit/eslint-config",
+	"version": "0.1.0",
+	"description": "Shared ESLint configuration for SeatKit",
+	"license": "Apache-2.0",
+	"type": "module",
+	"main": "./index.js",
+	"exports": {
+		".": "./index.js",
+		"./production": "./production.js"
+	},
+	"files": [
+		"index.js",
+		"production.js"
+	],
+	"dependencies": {
+		"@typescript-eslint/eslint-plugin": "^8.15.0",
+		"@typescript-eslint/parser": "^8.15.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-import": "^2.31.0"
+	},
+	"peerDependencies": {
+		"eslint": "^9.0.0",
+		"typescript": "^5.0.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
 }

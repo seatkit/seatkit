@@ -5,6 +5,7 @@ When you make changes to the codebase, you must check the TypeScript compilation
 ## Usage
 
 1. **Use the automated script** to check TS compilation across tracked packages:
+
    ```bash
    .claude/commands/utils/check-tsc-output.sh
    ```
@@ -21,6 +22,7 @@ When you make changes to the codebase, you must check the TypeScript compilation
 ## Initial Setup
 
 Before continuing with any TypeScript changes:
+
 1. Execute the script to verify it works correctly
 2. Confirm you are starting from a point with no compilation errors
 3. Explain to the user which packages are being monitored by the script
@@ -28,6 +30,7 @@ Before continuing with any TypeScript changes:
 ## Currently Monitored Packages
 
 The script currently monitors TypeScript compilation for these packages:
+
 - **@seatkit/types** - Core type definitions and Zod schemas
 
 As more packages are developed with TypeScript code, add them to the `TSC_PACKAGES` array in the script.
@@ -58,16 +61,18 @@ You can customize the behavior with environment variables:
 When a new package with TypeScript code is created:
 
 1. Ensure the package has these scripts in its `package.json`:
+
    ```json
    {
-     "scripts": {
-       "typecheck": "tsc --noEmit",
-       "typecheck:watch": "tsc --noEmit --watch"
-     }
+   	"scripts": {
+   		"typecheck": "tsc --noEmit",
+   		"typecheck:watch": "tsc --noEmit --watch"
+   	}
    }
    ```
 
 2. Add the package name to `TSC_PACKAGES` array in `.claude/commands/utils/check-tsc-output.sh`:
+
    ```bash
    TSC_PACKAGES=(
        "types"

@@ -12,6 +12,7 @@
 ### Reservation Model (Primary Entity)
 
 **Swift Implementation**:
+
 ```swift
 struct Reservation: Codable, Identifiable, Hashable, Equatable {
     // MARK: - Identity
@@ -189,56 +190,76 @@ extension Reservation {
 ```
 
 **TypeScript Migration**:
+
 ```typescript
 // @seatkit/types/src/reservation.ts
 import { z } from 'zod';
 
 // Enums with metadata
-export const ReservationCategorySchema = z.enum(['lunch', 'dinner', 'noBookingZone']);
-export const ReservationTypeSchema = z.enum(['walkIn', 'inAdvance', 'waitingList', 'na']);
+export const ReservationCategorySchema = z.enum([
+	'lunch',
+	'dinner',
+	'noBookingZone',
+]);
+export const ReservationTypeSchema = z.enum([
+	'walkIn',
+	'inAdvance',
+	'waitingList',
+	'na',
+]);
 export const ReservationStatusSchema = z.enum([
-  'pending', 'canceled', 'noShow', 'showedUp', 'late', 'toHandle', 'deleted', 'na'
+	'pending',
+	'canceled',
+	'noShow',
+	'showedUp',
+	'late',
+	'toHandle',
+	'deleted',
+	'na',
 ]);
 export const AcceptanceSchema = z.enum(['confirmed', 'toConfirm', 'na']);
 
 // Main reservation schema
 export const ReservationSchema = z.object({
-  // Identity
-  id: z.string().uuid(),
+	// Identity
+	id: z.string().uuid(),
 
-  // Guest information
-  name: z.string().min(1).max(100),
-  phone: z.string().min(1).max(20),
-  numberOfPersons: z.number().int().min(1).max(20),
+	// Guest information
+	name: z.string().min(1).max(100),
+	phone: z.string().min(1).max(20),
+	numberOfPersons: z.number().int().min(1).max(20),
 
-  // Timing
-  dateString: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+	// Timing
+	dateString: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+	startTime: z.string().regex(/^\d{2}:\d{2}$/),
+	endTime: z
+		.string()
+		.regex(/^\d{2}:\d{2}$/)
+		.optional(),
 
-  // Classification
-  category: ReservationCategorySchema,
-  type: ReservationTypeSchema,
-  acceptance: AcceptanceSchema,
-  status: ReservationStatusSchema,
+	// Classification
+	category: ReservationCategorySchema,
+	type: ReservationTypeSchema,
+	acceptance: AcceptanceSchema,
+	status: ReservationStatusSchema,
 
-  // Enhanced information
-  specialRequests: z.string().max(500).optional(),
-  dietaryRestrictions: z.string().max(200).optional(),
-  language: z.enum(['italian', 'english', 'japanese']).optional(),
-  imageURL: z.string().url().optional(),
+	// Enhanced information
+	specialRequests: z.string().max(500).optional(),
+	dietaryRestrictions: z.string().max(200).optional(),
+	language: z.enum(['italian', 'english', 'japanese']).optional(),
+	imageURL: z.string().url().optional(),
 
-  // Visual/UX
-  colorHue: z.number().min(0).max(360).optional(),
+	// Visual/UX
+	colorHue: z.number().min(0).max(360).optional(),
 
-  // System metadata
-  createdAt: z.date(),
-  lastEdited: z.date(),
-  editedBy: z.string().optional(),
+	// System metadata
+	createdAt: z.date(),
+	lastEdited: z.date(),
+	editedBy: z.string().optional(),
 
-  // Table assignment
-  tableId: z.string().uuid().optional(),
-  clusterId: z.string().uuid().optional(),
+	// Table assignment
+	tableId: z.string().uuid().optional(),
+	clusterId: z.string().uuid().optional(),
 });
 
 export type Reservation = z.infer<typeof ReservationSchema>;
@@ -248,68 +269,80 @@ export type ReservationStatus = z.infer<typeof ReservationStatusSchema>;
 export type Acceptance = z.infer<typeof AcceptanceSchema>;
 
 // Enum metadata (replaces Swift computed properties)
-export const ReservationCategoryMeta: Record<ReservationCategory, {
-  displayName: string;
-  defaultDurationMinutes: number;
-  color: string;
-}> = {
-  lunch: {
-    displayName: 'Pranzo',
-    defaultDurationMinutes: 90,
-    color: '#3B82F6', // blue
-  },
-  dinner: {
-    displayName: 'Cena',
-    defaultDurationMinutes: 120,
-    color: '#8B5CF6', // purple
-  },
-  noBookingZone: {
-    displayName: 'Zona Libera',
-    defaultDurationMinutes: 60,
-    color: '#F59E0B', // orange
-  },
+export const ReservationCategoryMeta: Record<
+	ReservationCategory,
+	{
+		displayName: string;
+		defaultDurationMinutes: number;
+		color: string;
+	}
+> = {
+	lunch: {
+		displayName: 'Pranzo',
+		defaultDurationMinutes: 90,
+		color: '#3B82F6', // blue
+	},
+	dinner: {
+		displayName: 'Cena',
+		defaultDurationMinutes: 120,
+		color: '#8B5CF6', // purple
+	},
+	noBookingZone: {
+		displayName: 'Zona Libera',
+		defaultDurationMinutes: 60,
+		color: '#F59E0B', // orange
+	},
 };
 
-export const ReservationStatusMeta: Record<ReservationStatus, {
-  displayName: string;
-  color: string;
-  isActive: boolean;
-}> = {
-  pending: { displayName: 'In Attesa', color: '#EAB308', isActive: true },
-  canceled: { displayName: 'Cancellata', color: '#EF4444', isActive: false },
-  noShow: { displayName: 'Assenza', color: '#DC2626', isActive: false },
-  showedUp: { displayName: 'Arrivato', color: '#10B981', isActive: true },
-  late: { displayName: 'Ritardo', color: '#F59E0B', isActive: true },
-  toHandle: { displayName: 'Da Gestire', color: '#8B5CF6', isActive: true },
-  deleted: { displayName: 'Eliminata', color: '#6B7280', isActive: false },
-  na: { displayName: 'N/A', color: '#6B7280', isActive: false },
+export const ReservationStatusMeta: Record<
+	ReservationStatus,
+	{
+		displayName: string;
+		color: string;
+		isActive: boolean;
+	}
+> = {
+	pending: { displayName: 'In Attesa', color: '#EAB308', isActive: true },
+	canceled: { displayName: 'Cancellata', color: '#EF4444', isActive: false },
+	noShow: { displayName: 'Assenza', color: '#DC2626', isActive: false },
+	showedUp: { displayName: 'Arrivato', color: '#10B981', isActive: true },
+	late: { displayName: 'Ritardo', color: '#F59E0B', isActive: true },
+	toHandle: { displayName: 'Da Gestire', color: '#8B5CF6', isActive: true },
+	deleted: { displayName: 'Eliminata', color: '#6B7280', isActive: false },
+	na: { displayName: 'N/A', color: '#6B7280', isActive: false },
 };
 
 // Helper functions (replaces Swift computed properties)
 export const ReservationUtils = {
-  displayName: (reservation: Reservation): string => {
-    return reservation.name || 'Guest';
-  },
+	displayName: (reservation: Reservation): string => {
+		return reservation.name || 'Guest';
+	},
 
-  duration: (reservation: Reservation): number => {
-    if (reservation.endTime) {
-      return calculateDurationMinutes(reservation.startTime, reservation.endTime);
-    }
-    return ReservationCategoryMeta[reservation.category].defaultDurationMinutes;
-  },
+	duration: (reservation: Reservation): number => {
+		if (reservation.endTime) {
+			return calculateDurationMinutes(
+				reservation.startTime,
+				reservation.endTime,
+			);
+		}
+		return ReservationCategoryMeta[reservation.category].defaultDurationMinutes;
+	},
 
-  isToday: (reservation: Reservation): boolean => {
-    const today = new Date().toISOString().split('T')[0];
-    return reservation.dateString === today;
-  },
+	isToday: (reservation: Reservation): boolean => {
+		const today = new Date().toISOString().split('T')[0];
+		return reservation.dateString === today;
+	},
 
-  isActive: (reservation: Reservation): boolean => {
-    return ReservationStatusMeta[reservation.status].isActive;
-  },
+	isActive: (reservation: Reservation): boolean => {
+		return ReservationStatusMeta[reservation.status].isActive;
+	},
 };
 
 // Creation and update types
-export type CreateReservationData = Omit<Reservation, 'id' | 'createdAt' | 'lastEdited'>;
+export type CreateReservationData = Omit<
+	Reservation,
+	'id' | 'createdAt' | 'lastEdited'
+>;
 export type UpdateReservationData = Partial<Omit<Reservation, 'id'>>;
 ```
 
@@ -318,6 +351,7 @@ export type UpdateReservationData = Partial<Omit<Reservation, 'id'>>;
 ## 🪑 Table Model
 
 **Swift Implementation**:
+
 ```swift
 struct TableModel: Codable, Identifiable, Hashable {
     // MARK: - Identity
@@ -403,6 +437,7 @@ struct CachedCluster: Codable {
 ```
 
 **TypeScript Migration** (Simplified):
+
 ```typescript
 // @seatkit/types/src/table.ts
 import { z } from 'zod';
@@ -410,41 +445,41 @@ import { z } from 'zod';
 export const TableTypeSchema = z.enum(['dining', 'bar', 'private']);
 
 export const TableSchema = z.object({
-  // Identity
-  id: z.string().uuid(),
-  name: z.string().min(1).max(50),
+	// Identity
+	id: z.string().uuid(),
+	name: z.string().min(1).max(50),
 
-  // Capacity
-  maxCapacity: z.number().int().min(1).max(20),
-  minCapacity: z.number().int().min(1).max(20),
+	// Capacity
+	maxCapacity: z.number().int().min(1).max(20),
+	minCapacity: z.number().int().min(1).max(20),
 
-  // Position (simplified from complex Swift layout)
-  position: z.object({
-    row: z.number().int().min(0),
-    column: z.number().int().min(0),
-  }),
+	// Position (simplified from complex Swift layout)
+	position: z.object({
+		row: z.number().int().min(0),
+		column: z.number().int().min(0),
+	}),
 
-  // Properties
-  isVisible: z.boolean().default(true),
-  tableType: TableTypeSchema,
-  notes: z.string().max(200).optional(),
+	// Properties
+	isVisible: z.boolean().default(true),
+	tableType: TableTypeSchema,
+	notes: z.string().max(200).optional(),
 
-  // Relationships
-  adjacentTableIds: z.array(z.string().uuid()).default([]),
-  clusterId: z.string().uuid().optional(),
+	// Relationships
+	adjacentTableIds: z.array(z.string().uuid()).default([]),
+	clusterId: z.string().uuid().optional(),
 
-  // Metadata
-  createdAt: z.date(),
-  updatedAt: z.date(),
+	// Metadata
+	createdAt: z.date(),
+	updatedAt: z.date(),
 });
 
 export const TableClusterSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1).max(50),
-  tableIds: z.array(z.string().uuid()).min(1),
-  isActive: z.boolean().default(true),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+	id: z.string().uuid(),
+	name: z.string().min(1).max(50),
+	tableIds: z.array(z.string().uuid()).min(1),
+	isActive: z.boolean().default(true),
+	createdAt: z.date(),
+	updatedAt: z.date(),
 });
 
 export type Table = z.infer<typeof TableSchema>;
@@ -452,31 +487,34 @@ export type TableType = z.infer<typeof TableTypeSchema>;
 export type TableCluster = z.infer<typeof TableClusterSchema>;
 
 // Metadata
-export const TableTypeMeta: Record<TableType, {
-  displayName: string;
-  icon: string;
-  color: string;
-}> = {
-  dining: { displayName: 'Tavolo', icon: '🪑', color: '#3B82F6' },
-  bar: { displayName: 'Bancone', icon: '🍷', color: '#8B5CF6' },
-  private: { displayName: 'Privato', icon: '🚪', color: '#10B981' },
+export const TableTypeMeta: Record<
+	TableType,
+	{
+		displayName: string;
+		icon: string;
+		color: string;
+	}
+> = {
+	dining: { displayName: 'Tavolo', icon: '🪑', color: '#3B82F6' },
+	bar: { displayName: 'Bancone', icon: '🍷', color: '#8B5CF6' },
+	private: { displayName: 'Privato', icon: '🚪', color: '#10B981' },
 };
 
 // Helper functions
 export const TableUtils = {
-  displayCapacity: (table: Table): string => {
-    return table.minCapacity === table.maxCapacity
-      ? `${table.maxCapacity}`
-      : `${table.minCapacity}-${table.maxCapacity}`;
-  },
+	displayCapacity: (table: Table): string => {
+		return table.minCapacity === table.maxCapacity
+			? `${table.maxCapacity}`
+			: `${table.minCapacity}-${table.maxCapacity}`;
+	},
 
-  canAccommodate: (table: Table, partySize: number): boolean => {
-    return partySize >= table.minCapacity && partySize <= table.maxCapacity;
-  },
+	canAccommodate: (table: Table, partySize: number): boolean => {
+		return partySize >= table.minCapacity && partySize <= table.maxCapacity;
+	},
 
-  isAvailable: (table: Table): boolean => {
-    return table.isVisible;
-  },
+	isAvailable: (table: Table): boolean => {
+		return table.isVisible;
+	},
 };
 
 // Creation types
@@ -489,6 +527,7 @@ export type UpdateTableData = Partial<Omit<Table, 'id'>>;
 ## 💰 Sales Data Models
 
 **Swift Implementation**:
+
 ```swift
 // MARK: - Individual Sale Category
 struct SaleCategory: Codable, Identifiable, Hashable {
@@ -629,6 +668,7 @@ struct YearlySalesRecap: Codable, Identifiable {
 ```
 
 **TypeScript Migration**:
+
 ```typescript
 // @seatkit/types/src/sales.ts
 import { z } from 'zod';
@@ -636,46 +676,46 @@ import { z } from 'zod';
 export const CategoryTypeSchema = z.enum(['lunch', 'dinner']);
 
 export const SaleCategorySchema = z.object({
-  id: z.string().uuid(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  type: CategoryTypeSchema,
+	id: z.string().uuid(),
+	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+	type: CategoryTypeSchema,
 
-  // Core sales metrics
-  letturaCassa: z.number().min(0),      // Cash register
-  fatture: z.number().min(0),           // Invoices
-  yami: z.number().min(0),              // Waste
-  yamiPulito: z.number().min(0),        // Net waste
+	// Core sales metrics
+	letturaCassa: z.number().min(0), // Cash register
+	fatture: z.number().min(0), // Invoices
+	yami: z.number().min(0), // Waste
+	yamiPulito: z.number().min(0), // Net waste
 
-  // Service-specific metrics (conditional based on type)
-  bento: z.number().min(0).optional(),   // Lunch only
-  cocai: z.number().min(0).optional(),   // Dinner only
-  persone: z.number().int().min(0).optional(), // Lunch only
+	// Service-specific metrics (conditional based on type)
+	bento: z.number().min(0).optional(), // Lunch only
+	cocai: z.number().min(0).optional(), // Dinner only
+	persone: z.number().int().min(0).optional(), // Lunch only
 
-  // Metadata
-  enteredBy: z.string().min(1),
-  enteredAt: z.date(),
-  modifiedBy: z.string().optional(),
-  modifiedAt: z.date().optional(),
+	// Metadata
+	enteredBy: z.string().min(1),
+	enteredAt: z.date(),
+	modifiedBy: z.string().optional(),
+	modifiedAt: z.date().optional(),
 });
 
 export const DailySalesSchema = z.object({
-  id: z.string().uuid(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  lunchSales: SaleCategorySchema.optional(),
-  dinnerSales: SaleCategorySchema.optional(),
+	id: z.string().uuid(),
+	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+	lunchSales: SaleCategorySchema.optional(),
+	dinnerSales: SaleCategorySchema.optional(),
 });
 
 export const MonthlySalesRecapSchema = z.object({
-  id: z.string().uuid(),
-  year: z.number().int().min(2020).max(2100),
-  month: z.number().int().min(1).max(12),
-  dailySales: z.array(DailySalesSchema),
+	id: z.string().uuid(),
+	year: z.number().int().min(2020).max(2100),
+	month: z.number().int().min(1).max(12),
+	dailySales: z.array(DailySalesSchema),
 });
 
 export const YearlySalesRecapSchema = z.object({
-  id: z.string().uuid(),
-  year: z.number().int().min(2020).max(2100),
-  monthlySales: z.array(MonthlySalesRecapSchema),
+	id: z.string().uuid(),
+	year: z.number().int().min(2020).max(2100),
+	monthlySales: z.array(MonthlySalesRecapSchema),
 });
 
 export type SaleCategory = z.infer<typeof SaleCategorySchema>;
@@ -686,77 +726,89 @@ export type YearlySalesRecap = z.infer<typeof YearlySalesRecapSchema>;
 
 // Business logic helpers
 export const SalesUtils = {
-  totalSales: (sale: SaleCategory): number => {
-    return sale.letturaCassa + sale.fatture - sale.yami + sale.yamiPulito;
-  },
+	totalSales: (sale: SaleCategory): number => {
+		return sale.letturaCassa + sale.fatture - sale.yami + sale.yamiPulito;
+	},
 
-  averageSpend: (sale: SaleCategory): number | null => {
-    if (!sale.persone || sale.persone === 0) return null;
-    const total = SalesUtils.totalSales(sale);
-    return total / sale.persone;
-  },
+	averageSpend: (sale: SaleCategory): number | null => {
+		if (!sale.persone || sale.persone === 0) return null;
+		const total = SalesUtils.totalSales(sale);
+		return total / sale.persone;
+	},
 
-  dailyTotal: (daily: DailySales): number => {
-    const lunch = daily.lunchSales ? SalesUtils.totalSales(daily.lunchSales) : 0;
-    const dinner = daily.dinnerSales ? SalesUtils.totalSales(daily.dinnerSales) : 0;
-    return lunch + dinner;
-  },
+	dailyTotal: (daily: DailySales): number => {
+		const lunch = daily.lunchSales
+			? SalesUtils.totalSales(daily.lunchSales)
+			: 0;
+		const dinner = daily.dinnerSales
+			? SalesUtils.totalSales(daily.dinnerSales)
+			: 0;
+		return lunch + dinner;
+	},
 
-  monthlyTotal: (monthly: MonthlySalesRecap): number => {
-    return monthly.dailySales.reduce((sum, daily) => sum + SalesUtils.dailyTotal(daily), 0);
-  },
+	monthlyTotal: (monthly: MonthlySalesRecap): number => {
+		return monthly.dailySales.reduce(
+			(sum, daily) => sum + SalesUtils.dailyTotal(daily),
+			0,
+		);
+	},
 
-  isEditable: (sale: SaleCategory): boolean => {
-    const hoursSinceEntry = (Date.now() - sale.enteredAt.getTime()) / (1000 * 60 * 60);
-    return hoursSinceEntry < 24;
-  },
+	isEditable: (sale: SaleCategory): boolean => {
+		const hoursSinceEntry =
+			(Date.now() - sale.enteredAt.getTime()) / (1000 * 60 * 60);
+		return hoursSinceEntry < 24;
+	},
 };
 
 // Validation helpers
 export const SalesValidation = {
-  validateSaleCategory: (sale: SaleCategory): { valid: boolean; errors: string[] } => {
-    const errors: string[] = [];
+	validateSaleCategory: (
+		sale: SaleCategory,
+	): { valid: boolean; errors: string[] } => {
+		const errors: string[] = [];
 
-    // Type-specific validation
-    if (sale.type === 'lunch') {
-      if (sale.cocai !== undefined) {
-        errors.push('Cocai should not be present for lunch sales');
-      }
-      if (sale.bento === undefined) {
-        errors.push('Bento is required for lunch sales');
-      }
-      if (sale.persone === undefined) {
-        errors.push('Persone (guest count) is required for lunch sales');
-      }
-    } else if (sale.type === 'dinner') {
-      if (sale.bento !== undefined) {
-        errors.push('Bento should not be present for dinner sales');
-      }
-      if (sale.persone !== undefined) {
-        errors.push('Persone should not be present for dinner sales');
-      }
-      if (sale.cocai === undefined) {
-        errors.push('Cocai is required for dinner sales');
-      }
-    }
+		// Type-specific validation
+		if (sale.type === 'lunch') {
+			if (sale.cocai !== undefined) {
+				errors.push('Cocai should not be present for lunch sales');
+			}
+			if (sale.bento === undefined) {
+				errors.push('Bento is required for lunch sales');
+			}
+			if (sale.persone === undefined) {
+				errors.push('Persone (guest count) is required for lunch sales');
+			}
+		} else if (sale.type === 'dinner') {
+			if (sale.bento !== undefined) {
+				errors.push('Bento should not be present for dinner sales');
+			}
+			if (sale.persone !== undefined) {
+				errors.push('Persone should not be present for dinner sales');
+			}
+			if (sale.cocai === undefined) {
+				errors.push('Cocai is required for dinner sales');
+			}
+		}
 
-    // Business rule validation
-    const total = SalesUtils.totalSales(sale);
-    if (total < 0) {
-      errors.push('Total sales cannot be negative');
-    }
+		// Business rule validation
+		const total = SalesUtils.totalSales(sale);
+		if (total < 0) {
+			errors.push('Total sales cannot be negative');
+		}
 
-    if (sale.yami > sale.letturaCassa + sale.fatture) {
-      errors.push('Waste cannot exceed total revenue');
-    }
+		if (sale.yami > sale.letturaCassa + sale.fatture) {
+			errors.push('Waste cannot exceed total revenue');
+		}
 
-    return { valid: errors.length === 0, errors };
-  },
+		return { valid: errors.length === 0, errors };
+	},
 };
 
 // Creation types
 export type CreateSaleCategoryData = Omit<SaleCategory, 'id' | 'enteredAt'>;
-export type UpdateSaleCategoryData = Partial<Omit<SaleCategory, 'id' | 'enteredAt' | 'enteredBy'>>;
+export type UpdateSaleCategoryData = Partial<
+	Omit<SaleCategory, 'id' | 'enteredAt' | 'enteredBy'>
+>;
 ```
 
 ---
@@ -764,6 +816,7 @@ export type UpdateSaleCategoryData = Partial<Omit<SaleCategory, 'id' | 'enteredA
 ## 👤 User & Session Models
 
 **Swift Implementation**:
+
 ```swift
 // MARK: - User Profile
 struct Profile: Codable, Identifiable, Hashable {
@@ -900,65 +953,75 @@ struct Session: Codable, Identifiable {
 ```
 
 **TypeScript Migration**:
+
 ```typescript
 // @seatkit/types/src/user.ts
 import { z } from 'zod';
 
 export const DeviceTypeSchema = z.enum(['mobile', 'tablet', 'desktop']);
-export const ViewTypeSchema = z.enum(['timeline', 'list', 'layout', 'sales', 'settings']);
+export const ViewTypeSchema = z.enum([
+	'timeline',
+	'list',
+	'layout',
+	'sales',
+	'settings',
+]);
 export const EntityTypeSchema = z.enum(['reservation', 'table', 'sales']);
 
 export const DeviceSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1).max(100),
-  type: DeviceTypeSchema,
-  lastActive: z.date(),
-  isActive: z.boolean(),
-  appVersion: z.string().optional(),
-  userAgent: z.string().optional(),
+	id: z.string().uuid(),
+	name: z.string().min(1).max(100),
+	type: DeviceTypeSchema,
+	lastActive: z.date(),
+	isActive: z.boolean(),
+	appVersion: z.string().optional(),
+	userAgent: z.string().optional(),
 });
 
 export const ProfileSchema = z.object({
-  // Identity
-  id: z.string().uuid(),
+	// Identity
+	id: z.string().uuid(),
 
-  // Personal information
-  firstName: z.string().min(1).max(50),
-  lastName: z.string().min(1).max(50),
-  email: z.string().email(),
-  phone: z.string().max(20).optional(),
+	// Personal information
+	firstName: z.string().min(1).max(50),
+	lastName: z.string().min(1).max(50),
+	email: z.string().email(),
+	phone: z.string().max(20).optional(),
 
-  // Preferences
-  language: z.enum(['italian', 'english', 'japanese']).default('italian'),
-  profileImageURL: z.string().url().optional(),
-  avatarColor: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+	// Preferences
+	language: z.enum(['italian', 'english', 'japanese']).default('italian'),
+	profileImageURL: z.string().url().optional(),
+	avatarColor: z
+		.string()
+		.regex(/^#[0-9A-F]{6}$/i)
+		.optional(),
 
-  // System
-  devices: z.array(DeviceSchema).default([]),
-  createdAt: z.date(),
-  lastLogin: z.date().optional(),
-  isActive: z.boolean().default(true),
+	// System
+	devices: z.array(DeviceSchema).default([]),
+	createdAt: z.date(),
+	lastLogin: z.date().optional(),
+	isActive: z.boolean().default(true),
 });
 
 export const SessionSchema = z.object({
-  id: z.string().uuid(),
-  userId: z.string().uuid(),
-  userName: z.string().min(1),
+	id: z.string().uuid(),
+	userId: z.string().uuid(),
+	userName: z.string().min(1),
 
-  // Activity state
-  isEditing: z.boolean().default(false),
-  lastUpdate: z.date(),
-  isActive: z.boolean().default(true),
+	// Activity state
+	isEditing: z.boolean().default(false),
+	lastUpdate: z.date(),
+	isActive: z.boolean().default(true),
 
-  // Device info
-  deviceName: z.string().min(1),
-  deviceType: DeviceTypeSchema,
-  profileImageURL: z.string().url().optional(),
+	// Device info
+	deviceName: z.string().min(1),
+	deviceType: DeviceTypeSchema,
+	profileImageURL: z.string().url().optional(),
 
-  // Current activity
-  currentView: ViewTypeSchema.optional(),
-  editingEntityType: EntityTypeSchema.optional(),
-  editingEntityId: z.string().uuid().optional(),
+	// Current activity
+	currentView: ViewTypeSchema.optional(),
+	editingEntityType: EntityTypeSchema.optional(),
+	editingEntityId: z.string().uuid().optional(),
 });
 
 export type Device = z.infer<typeof DeviceSchema>;
@@ -970,48 +1033,57 @@ export type EntityType = z.infer<typeof EntityTypeSchema>;
 
 // Helper functions
 export const ProfileUtils = {
-  displayName: (profile: Profile): string => {
-    const first = profile.firstName.trim();
-    const last = profile.lastName.trim();
+	displayName: (profile: Profile): string => {
+		const first = profile.firstName.trim();
+		const last = profile.lastName.trim();
 
-    if (first && last) return `${first} ${last}`;
-    if (first) return first;
-    if (last) return last;
-    return 'User';
-  },
+		if (first && last) return `${first} ${last}`;
+		if (first) return first;
+		if (last) return last;
+		return 'User';
+	},
 
-  initials: (profile: Profile): string => {
-    const first = profile.firstName.charAt(0).toUpperCase();
-    const last = profile.lastName.charAt(0).toUpperCase();
-    return `${first}${last}`;
-  },
+	initials: (profile: Profile): string => {
+		const first = profile.firstName.charAt(0).toUpperCase();
+		const last = profile.lastName.charAt(0).toUpperCase();
+		return `${first}${last}`;
+	},
 
-  fullName: (profile: Profile): string => {
-    return `${profile.firstName} ${profile.lastName}`.trim();
-  },
+	fullName: (profile: Profile): string => {
+		return `${profile.firstName} ${profile.lastName}`.trim();
+	},
 };
 
 export const SessionUtils = {
-  isEditingEntity: (session: Session, entityType: EntityType, entityId: string): boolean => {
-    return session.isEditing &&
-           session.editingEntityType === entityType &&
-           session.editingEntityId === entityId;
-  },
+	isEditingEntity: (
+		session: Session,
+		entityType: EntityType,
+		entityId: string,
+	): boolean => {
+		return (
+			session.isEditing &&
+			session.editingEntityType === entityType &&
+			session.editingEntityId === entityId
+		);
+	},
 
-  isRecentlyActive: (session: Session, minutes: number = 5): boolean => {
-    const cutoff = new Date(Date.now() - minutes * 60 * 1000);
-    return session.lastUpdate > cutoff;
-  },
+	isRecentlyActive: (session: Session, minutes: number = 5): boolean => {
+		const cutoff = new Date(Date.now() - minutes * 60 * 1000);
+		return session.lastUpdate > cutoff;
+	},
 };
 
 // Device metadata
-export const DeviceTypeMeta: Record<DeviceType, {
-  displayName: string;
-  icon: string;
-}> = {
-  mobile: { displayName: 'Mobile', icon: '📱' },
-  tablet: { displayName: 'Tablet', icon: '📱' },
-  desktop: { displayName: 'Desktop', icon: '💻' },
+export const DeviceTypeMeta: Record<
+	DeviceType,
+	{
+		displayName: string;
+		icon: string;
+	}
+> = {
+	mobile: { displayName: 'Mobile', icon: '📱' },
+	tablet: { displayName: 'Tablet', icon: '📱' },
+	desktop: { displayName: 'Desktop', icon: '💻' },
 };
 
 // Creation types
@@ -1079,65 +1151,79 @@ erDiagram
 ### Business Rules & Constraints
 
 **Reservation Constraints**:
+
 ```typescript
 // Business rule validations
 export const ReservationConstraints = {
-  // Timing constraints
-  maxAdvanceBookingDays: 60,
-  minAdvanceBookingHours: 2,
-  maxReservationDurationHours: 4,
+	// Timing constraints
+	maxAdvanceBookingDays: 60,
+	minAdvanceBookingHours: 2,
+	maxReservationDurationHours: 4,
 
-  // Party size constraints
-  minPartySize: 1,
-  maxPartySize: 20,
-  largePartyThreshold: 8, // Requires manager approval
+	// Party size constraints
+	minPartySize: 1,
+	maxPartySize: 20,
+	largePartyThreshold: 8, // Requires manager approval
 
-  // Time slot constraints
-  lunchStartHour: 12,
-  lunchEndHour: 15,
-  dinnerStartHour: 19,
-  dinnerEndHour: 23,
+	// Time slot constraints
+	lunchStartHour: 12,
+	lunchEndHour: 15,
+	dinnerStartHour: 19,
+	dinnerEndHour: 23,
 
-  // Status transition rules
-  allowedTransitions: {
-    pending: ['confirmed', 'canceled'],
-    confirmed: ['showedUp', 'noShow', 'late', 'canceled'],
-    showedUp: ['deleted'], // Soft delete after service
-    late: ['showedUp', 'noShow'],
-    canceled: [], // Terminal state
-    noShow: [], // Terminal state
-    deleted: [], // Terminal state
-  } as const,
+	// Status transition rules
+	allowedTransitions: {
+		pending: ['confirmed', 'canceled'],
+		confirmed: ['showedUp', 'noShow', 'late', 'canceled'],
+		showedUp: ['deleted'], // Soft delete after service
+		late: ['showedUp', 'noShow'],
+		canceled: [], // Terminal state
+		noShow: [], // Terminal state
+		deleted: [], // Terminal state
+	} as const,
 };
 
 // Table assignment constraints
 export const TableConstraints = {
-  // Capacity optimization
-  optimalCapacityUsage: 0.8, // Prefer 80% table utilization
-  maxOverCapacity: 1, // Allow 1 extra person max
+	// Capacity optimization
+	optimalCapacityUsage: 0.8, // Prefer 80% table utilization
+	maxOverCapacity: 1, // Allow 1 extra person max
 
-  // Combination rules
-  maxTablesInCluster: 4,
-  adjacencyRequired: true, // Only adjacent tables can combine
+	// Combination rules
+	maxTablesInCluster: 4,
+	adjacencyRequired: true, // Only adjacent tables can combine
 
-  // Availability windows
-  setupTimeMinutes: 15, // Time needed between reservations
-  cleanupTimeMinutes: 10,
+	// Availability windows
+	setupTimeMinutes: 15, // Time needed between reservations
+	cleanupTimeMinutes: 10,
 };
 
 // Sales validation rules
 export const SalesConstraints = {
-  // Entry timing
-  maxEditWindowHours: 24,
-  managerOnlyEdit: true,
+	// Entry timing
+	maxEditWindowHours: 24,
+	managerOnlyEdit: true,
 
-  // Value ranges
-  maxDailySales: 10000, // Sanity check
-  maxWastePercentage: 0.2, // 20% waste maximum
+	// Value ranges
+	maxDailySales: 10000, // Sanity check
+	maxWastePercentage: 0.2, // 20% waste maximum
 
-  // Required fields by service type
-  lunchRequiredFields: ['letturaCassa', 'fatture', 'yami', 'yamiPulito', 'bento', 'persone'],
-  dinnerRequiredFields: ['letturaCassa', 'fatture', 'yami', 'yamiPulito', 'cocai'],
+	// Required fields by service type
+	lunchRequiredFields: [
+		'letturaCassa',
+		'fatture',
+		'yami',
+		'yamiPulito',
+		'bento',
+		'persone',
+	],
+	dinnerRequiredFields: [
+		'letturaCassa',
+		'fatture',
+		'yami',
+		'yamiPulito',
+		'cocai',
+	],
 };
 ```
 

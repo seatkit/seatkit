@@ -5,6 +5,7 @@
 ### Added
 
 #### Core Domain Schemas
+
 - **Reservation**: Customer bookings with time, party size, status tracking, and category management
   - Statuses: pending, confirmed, seated, completed, cancelled, no_show
   - Categories: lunch, dinner, special, walk_in
@@ -51,6 +52,7 @@
   - Address and branding information
 
 #### Utilities
+
 - **Result Type**: Functional error handling inspired by Rust
   - `ok(value)`, `err(error)` constructors
   - Type guards: `isOk`, `isErr`
@@ -64,6 +66,7 @@
   - Detailed field-level error reporting
 
 #### Common Types
+
 - DateTime, Date, Time, UUID schemas
 - Email, Phone validation
 - Money (integer cents) with currency support
@@ -73,6 +76,7 @@
 ### Design Decisions
 
 #### V1 Scope Simplifications
+
 - **Roles**: Reduced from 5 roles (owner/manager/host/server/viewer) to 3 (owner/manager/staff)
 - **User Preferences**: Removed SMS notifications, moved reservation defaults to restaurant settings
 - **Restaurant**: Single restaurant support (multi-restaurant deferred)
@@ -81,6 +85,7 @@
 - **Collaborative**: Context tracking enabled, cursor position removed
 
 #### Schema Refinements
+
 - Table shape: Simplified to circle, square, rectangle (removed oval)
 - Table organization: Changed `area` to `roomId` with configurable Room entities
 - Reservation linking: Tables track currentReservationId and currentPartySize
@@ -88,6 +93,7 @@
 - Sales verification: Removed `verifiedBy`/`verifiedAt` (deferred)
 
 ### Technical
+
 - Pure ESM package
 - TypeScript 5.6+ with strict mode
 - Zod 3.x for runtime validation

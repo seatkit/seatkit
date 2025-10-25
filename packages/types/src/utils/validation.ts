@@ -3,8 +3,11 @@
  * @module utils/validation
  */
 
-import { z, ZodError } from 'zod';
-import { Result, ok, err } from './result.js';
+import { ok, err } from './result.js';
+
+import type { Result} from './result.js';
+import type { z, ZodError } from 'zod';
+
 
 /**
  * Validation error with field-level details
@@ -28,7 +31,10 @@ export function zodErrorToValidationError(error: ZodError): ValidationError {
     if (!fields[fieldKey]) {
       fields[fieldKey] = [];
     }
-    fields[fieldKey]!.push(issue.message);
+    const fieldErrors = fields[fieldKey];
+    if (fieldErrors) {
+      fieldErrors.push(issue.message);
+    }
   }
 
   return {

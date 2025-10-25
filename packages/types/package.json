@@ -24,6 +24,10 @@
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "lint:prod": "NODE_ENV=production eslint . --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -31,7 +35,9 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@seatkit/eslint-config": "workspace:*",
     "@types/node": "^22.8.6",
+    "eslint": "^9.15.0",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"
   },

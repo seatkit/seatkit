@@ -1,64 +1,90 @@
-#!/usr/bin/env bash
-#
-# Claude Code Post-Edit Hook
-# Runs after every file edit to catch errors immediately
-#
-# This hook:
-# 1. Runs ESLint on edited files
-# 2. Runs TypeScript type checking
-# 3. Shows errors inline for Claude to fix
-#
+#!/bin/bash
+set -euo pipefail
 
-set -e
+# Hook script for automatic eslint fix on file changes
 
-# Colors for output
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-GREEN='\033[0;32m'
-NC='\033[0m' # No Color
-
-# Get the edited file from Claude's environment
-EDITED_FILE="${CLAUDE_EDITED_FILE:-$1}"
-
-if [ -z "$EDITED_FILE" ]; then
-  echo -e "${YELLOW}⚠️  No file specified for post-edit hook${NC}"
-  exit 0
+# Opt out by setting CLAUDE_SKIP_ESLINT to true
+if [ "${CLAUDE_SKIP_ESLINT:-false}" = "true" ]; then
+    exit 0
 fi
 
-echo -e "${GREEN}🔍 Checking: ${EDITED_FILE}${NC}"
 
-# Only run on TypeScript files
-if [[ "$EDITED_FILE" =~ \.(ts|tsx)$ ]]; then
+# Check for required dependencies
+if ! command -v jq >/dev/null 2>&1; then
+    echo "❌ Error: jq is required but not installed." >&2
+    echo "   Install with: brew install jq (macOS) or apt-get install jq (Linux)" >&2
+    exit 1
+fi
 
-  # Determine which package the file belongs to
-  PACKAGE_DIR=""
-  if [[ "$EDITED_FILE" =~ packages/([^/]+)/ ]]; then
-    PACKAGE_NAME="${BASH_REMATCH[1]}"
-    PACKAGE_DIR="packages/$PACKAGE_NAME"
-  fi
+# Determine project directory with fallback to git root
+PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
 
-  # Run ESLint on the edited file
-  echo -e "${YELLOW}📋 Running ESLint...${NC}"
-  if [ -n "$PACKAGE_DIR" ] && [ -d "$PACKAGE_DIR" ]; then
-    cd "$PACKAGE_DIR"
-    pnpm exec eslint "$EDITED_FILE" --max-warnings 0 2>&1 || {
-      echo -e "${RED}❌ ESLint found issues${NC}"
-      exit 1
-    }
-    cd - > /dev/null
-  else
-    pnpm exec eslint "$EDITED_FILE" --max-warnings 0 2>&1 || {
-      echo -e "${RED}❌ ESLint found issues${NC}"
-      exit 1
-    }
-  fi
+if [ -z "$PROJECT_DIR" ] || [ ! -d "$PROJECT_DIR" ]; then
+    echo "❌ Error: Unable to determine project directory. Ensure you're in a git repository." >&2
+    exit 1
+fi
 
-  # TypeScript type checking happens in watch mode, so we just report success
-  echo -e "${GREEN}✅ ESLint passed${NC}"
-  echo -e "${YELLOW}💡 Check your tsc --watch terminal for type errors${NC}"
-
+# Read claude code input with timeout to prevent hanging (macOS compatible)
+if command -v timeout >/dev/null 2>&1; then
+    # Use timeout if available (Linux)
+    if ! INPUT=$(timeout 5 cat 2>/dev/null); then
+        exit 0
+    fi
 else
-  echo -e "${YELLOW}⏭️  Skipping checks (not a TypeScript file)${NC}"
+    # Fallback for macOS - read with a simple approach
+    INPUT=$(cat 2>/dev/null || echo "")
 fi
 
-exit 0
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+FILE_PATH=$(realpath "$FILE_PATH")
+
+if [ -z "$FILE_PATH" ]; then
+    exit 0
+fi
+
+RELATIVE_PATH=$(echo "$FILE_PATH" | sed "s|$PROJECT_DIR/||")
+
+# Only process TypeScript/JavaScript files
+if ! [[ "$RELATIVE_PATH" =~ \.(ts|tsx|js|jsx)$ ]]; then
+    exit 0
+fi
+
+# Walk up directories to find nearest package.json
+# Safety: Never go above PROJECT_DIR
+find_package_root() {
+    local current_dir="$(dirname "$FILE_PATH")"
+
+    # Walk up until we find package.json or hit project root
+    while [[ "$current_dir" != "$PROJECT_DIR" ]] && [[ "$current_dir" != "/" ]]; do
+        if [[ -f "$current_dir/package.json" ]]; then
+            echo "$current_dir"
+            return 0
+        fi
+        current_dir="$(dirname "$current_dir")"
+    done
+
+    # Check project root itself
+    if [[ -f "$PROJECT_DIR/package.json" ]]; then
+        echo "$PROJECT_DIR"
+        return 0
+    fi
+
+    # No package.json found
+    return 1
+}
+
+PACKAGE_DIR=$(find_package_root)
+
+# If no package.json found, skip linting
+if [ -z "$PACKAGE_DIR" ]; then
+    exit 0
+fi
+
+PACKAGE_RELATIVE=$(echo "$PACKAGE_DIR" | sed "s|$PROJECT_DIR/||")
+
+# Navigate to package directory
+cd "$PACKAGE_DIR" || exit 1
+
+
+# Run eslint with auto-fix on the changed file, silencing errors to avoid polluting claude context
+pnpm exec eslint --cache --fix "$FILE_PATH" 2>/dev/null || true

@@ -41,8 +41,8 @@ describe('validate', () => {
 		expect(isErr(result)).toBe(true);
 		if (isErr(result)) {
 			expect(result.error.code).toBe('VALIDATION_ERROR');
-			expect(result.error.fields.name).toBeDefined();
-			expect(result.error.fields.age).toBeDefined();
+			expect(result.error.fields['name']).toBeDefined();
+			expect(result.error.fields['age']).toBeDefined();
 		}
 	});
 

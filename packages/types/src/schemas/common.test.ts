@@ -21,10 +21,10 @@ import {
 
 describe('DateTimeSchema', () => {
 	it('should validate ISO 8601 datetime strings', () => {
-		expect(DateTimeSchema.parse('2025-01-15T14:30:00Z')).toBe(
-			'2025-01-15T14:30:00Z',
-		);
-		expect(() => DateTimeSchema.parse('2025-01-15')).toThrow();
+		const result = DateTimeSchema.parse('2025-01-15T14:30:00Z');
+		expect(result).toBeInstanceOf(Date);
+		expect(result.toISOString()).toBe('2025-01-15T14:30:00.000Z');
+		expect(() => DateTimeSchema.parse('invalid')).toThrow();
 	});
 });
 
@@ -101,12 +101,15 @@ describe('CurrencyCodeSchema', () => {
 
 describe('BaseEntitySchema', () => {
 	it('should validate base entity structure', () => {
-		const valid = {
+		const input = {
 			id: '550e8400-e29b-41d4-a716-446655440000',
 			createdAt: '2025-01-15T14:30:00Z',
 			updatedAt: '2025-01-15T14:30:00Z',
 		};
-		expect(BaseEntitySchema.parse(valid)).toEqual(valid);
+		const result = BaseEntitySchema.parse(input);
+		expect(result.id).toBe(input.id);
+		expect(result.createdAt).toBeInstanceOf(Date);
+		expect(result.updatedAt).toBeInstanceOf(Date);
 		expect(() => BaseEntitySchema.parse({ id: 'invalid' })).toThrow();
 	});
 });

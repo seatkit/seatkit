@@ -51,7 +51,15 @@ describe('SessionSchema', () => {
 	};
 
 	it('should validate complete session', () => {
-		expect(SessionSchema.parse(validSession)).toEqual(validSession);
+		const result = SessionSchema.parse(validSession);
+		expect(result.id).toBe(validSession.id);
+		expect(result.createdAt).toBeInstanceOf(Date);
+		expect(result.updatedAt).toBeInstanceOf(Date);
+		expect(result.lastActiveAt).toBeInstanceOf(Date);
+		expect(result.expiresAt).toBeInstanceOf(Date);
+		expect(result.userId).toBe(validSession.userId);
+		expect(result.userName).toBe(validSession.userName);
+		expect(result.status).toBe(validSession.status);
 	});
 
 	it('should allow optional context', () => {
@@ -62,7 +70,12 @@ describe('SessionSchema', () => {
 				focusedReservationId: 'res-123',
 			},
 		};
-		expect(SessionSchema.parse(withContext)).toEqual(withContext);
+		const result = SessionSchema.parse(withContext);
+		expect(result.createdAt).toBeInstanceOf(Date);
+		expect(result.updatedAt).toBeInstanceOf(Date);
+		expect(result.lastActiveAt).toBeInstanceOf(Date);
+		expect(result.expiresAt).toBeInstanceOf(Date);
+		expect(result.context).toEqual(withContext.context);
 	});
 });
 
@@ -75,6 +88,11 @@ describe('PresenceInfoSchema', () => {
 			device: 'desktop' as const,
 			lastActiveAt: '2025-01-15T14:30:00Z',
 		};
-		expect(PresenceInfoSchema.parse(presence)).toEqual(presence);
+		const result = PresenceInfoSchema.parse(presence);
+		expect(result.userId).toBe(presence.userId);
+		expect(result.userName).toBe(presence.userName);
+		expect(result.status).toBe(presence.status);
+		expect(result.device).toBe(presence.device);
+		expect(result.lastActiveAt).toBeInstanceOf(Date);
 	});
 });

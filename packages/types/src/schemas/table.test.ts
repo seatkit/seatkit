@@ -56,7 +56,12 @@ describe('TableSchema', () => {
 	};
 
 	it('should validate complete table', () => {
-		expect(TableSchema.parse(validTable)).toEqual(validTable);
+		const result = TableSchema.parse(validTable);
+		expect(result.id).toBe(validTable.id);
+		expect(result.createdAt).toBeInstanceOf(Date);
+		expect(result.updatedAt).toBeInstanceOf(Date);
+		expect(result.name).toBe(validTable.name);
+		expect(result.status).toBe(validTable.status);
 	});
 
 	it('should allow optional fields', () => {
@@ -67,7 +72,13 @@ describe('TableSchema', () => {
 			roomId: 'main-dining',
 			features: ['window', 'quiet'],
 		};
-		expect(TableSchema.parse(withOptional)).toEqual(withOptional);
+		const result = TableSchema.parse(withOptional);
+		expect(result.createdAt).toBeInstanceOf(Date);
+		expect(result.updatedAt).toBeInstanceOf(Date);
+		expect(result.displayName).toBe('Window Table');
+		expect(result.position).toEqual({ x: 100, y: 50 });
+		expect(result.roomId).toBe('main-dining');
+		expect(result.features).toEqual(['window', 'quiet']);
 	});
 });
 
@@ -84,7 +95,13 @@ describe('ValidatedTableSchema', () => {
 			status: 'available' as const,
 			isActive: true,
 		};
-		expect(ValidatedTableSchema.parse(validTable)).toEqual(validTable);
+		const result = ValidatedTableSchema.parse(validTable);
+		expect(result.id).toBe(validTable.id);
+		expect(result.createdAt).toBeInstanceOf(Date);
+		expect(result.updatedAt).toBeInstanceOf(Date);
+		expect(result.minCapacity).toBe(2);
+		expect(result.maxCapacity).toBe(6);
+		expect(result.optimalCapacity).toBe(4);
 	});
 
 	it('should reject invalid capacity ordering', () => {

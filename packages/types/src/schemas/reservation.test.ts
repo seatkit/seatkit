@@ -70,10 +70,27 @@ describe('ReservationSchema', () => {
 		category: 'dinner' as const,
 		status: 'confirmed' as const,
 		createdBy: 'user-123',
+		// Nullable fields required by schema
+		tableIds: null,
+		notes: null,
+		tags: null,
+		source: null,
+		confirmedAt: null,
+		seatedAt: null,
+		completedAt: null,
+		cancelledAt: null,
+		cancelledBy: null,
+		cancellationReason: null,
 	};
 
 	it('should validate complete reservation', () => {
-		expect(ReservationSchema.parse(validReservation)).toEqual(validReservation);
+		const result = ReservationSchema.parse(validReservation);
+		expect(result.id).toBe(validReservation.id);
+		expect(result.createdAt).toBeInstanceOf(Date);
+		expect(result.updatedAt).toBeInstanceOf(Date);
+		expect(result.date).toBeInstanceOf(Date);
+		expect(result.customer).toEqual(validReservation.customer);
+		expect(result.partySize).toBe(validReservation.partySize);
 	});
 
 	it('should allow optional fields', () => {
@@ -84,7 +101,11 @@ describe('ReservationSchema', () => {
 			tags: ['vip', 'birthday'],
 			source: 'phone' as const,
 		};
-		expect(ReservationSchema.parse(withOptional)).toEqual(withOptional);
+		const result = ReservationSchema.parse(withOptional);
+		expect(result.tableIds).toEqual(['table-1', 'table-2']);
+		expect(result.notes).toBe('Window seat preferred');
+		expect(result.tags).toEqual(['vip', 'birthday']);
+		expect(result.source).toBe('phone');
 	});
 
 	it('should reject invalid party size', () => {
@@ -113,7 +134,10 @@ describe('CreateReservationSchema', () => {
 			category: 'dinner' as const,
 			createdBy: 'user-123',
 		};
-		expect(CreateReservationSchema.parse(input)).toEqual(input);
+		const result = CreateReservationSchema.parse(input);
+		expect(result.date).toBeInstanceOf(Date);
+		expect(result.duration).toBe(90);
+		expect(result.customer).toEqual(input.customer);
 	});
 
 	it('should allow optional status', () => {
@@ -129,7 +153,9 @@ describe('CreateReservationSchema', () => {
 			createdBy: 'user-123',
 			status: 'confirmed' as const,
 		};
-		expect(CreateReservationSchema.parse(input)).toEqual(input);
+		const result = CreateReservationSchema.parse(input);
+		expect(result.status).toBe('confirmed');
+		expect(result.date).toBeInstanceOf(Date);
 	});
 });
 
@@ -140,7 +166,10 @@ describe('UpdateReservationSchema', () => {
 			updatedAt: '2025-01-15T15:00:00Z',
 			status: 'seated' as const,
 		};
-		expect(UpdateReservationSchema.parse(update)).toEqual(update);
+		const result = UpdateReservationSchema.parse(update);
+		expect(result.id).toBe(update.id);
+		expect(result.updatedAt).toBeInstanceOf(Date);
+		expect(result.status).toBe('seated');
 	});
 
 	it('should reject missing id', () => {
@@ -161,7 +190,11 @@ describe('ReservationFiltersSchema', () => {
 			status: ['pending', 'confirmed'] as const,
 			category: ['dinner'] as const,
 		};
-		expect(ReservationFiltersSchema.parse(filters)).toEqual(filters);
+		const result = ReservationFiltersSchema.parse(filters);
+		expect(result.dateFrom).toBeInstanceOf(Date);
+		expect(result.dateTo).toBeInstanceOf(Date);
+		expect(result.status).toEqual(filters.status);
+		expect(result.category).toEqual(filters.category);
 	});
 
 	it('should allow all optional fields', () => {

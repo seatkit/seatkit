@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Simple Google Secret Manager integration
  * Minimal implementation that works for both dev and production
@@ -8,12 +9,12 @@ import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || 'seatkit-dev'; // Hardcoded fallback
 const ENVIRONMENT = process.env.NODE_ENV || 'development';
 
-interface Secrets {
+type Secrets = {
 	supabaseUrl: string;
-	supabasePublishableKey: string; // New publishable key (replaces anon)
-	supabaseSecretKey: string;      // New secret key (replaces service_role)
+	supabasePublishableKey: string;
+	supabaseSecretKey: string;
 	databaseUrl: string;
-}
+};
 
 /**
  * Simple function to get a secret from Google Secret Manager
@@ -75,14 +76,14 @@ async function loadFromSecretManager(): Promise<Secrets> {
  */
 function loadFromEnv(): Secrets {
 	const secrets = {
-		supabaseUrl: process.env.SUPABASE_URL!,
-		supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY!,
-		supabaseSecretKey: process.env.SUPABASE_SECRET_KEY!,
-		databaseUrl: process.env.DATABASE_URL!,
+		supabaseUrl: process.env.SUPABASE_URL ?? '',
+		supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY ?? '',
+		supabaseSecretKey: process.env.SUPABASE_SECRET_KEY ?? '',
+		databaseUrl: process.env.DATABASE_URL ?? '',
 	};
 
 	const missing = Object.entries(secrets)
-		.filter(([_, value]) => !value)
+		.filter(([, value]) => !value)
 		.map(([key]) => key);
 
 	if (missing.length > 0) {
@@ -120,5 +121,7 @@ export async function getSecrets(): Promise<Secrets> {
 		return loadFromEnv();
 	}
 
-	throw new Error('No secret source available. Set GOOGLE_CLOUD_PROJECT or provide .env in development');
+	throw new Error(
+		'No secret source available. Set GOOGLE_CLOUD_PROJECT or provide .env in development',
+	);
 }

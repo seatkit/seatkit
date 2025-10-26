@@ -60,7 +60,7 @@ export const ReservationSchema = BaseEntitySchema.extend({
 	// When & Where
 	date: DateTimeSchema, // Reservation date and time
 	duration: PositiveIntSchema, // Expected duration in minutes
-	tableIds: z.array(z.string()).optional(), // Assigned table IDs (can be multiple for large parties)
+	tableIds: z.array(z.string()).nullable(), // Assigned table IDs (can be null from database)
 
 	// Who
 	customer: CustomerInfoSchema,
@@ -71,18 +71,18 @@ export const ReservationSchema = BaseEntitySchema.extend({
 	status: ReservationStatusSchema,
 
 	// Additional Info
-	notes: z.string().optional(), // Internal staff notes
-	tags: z.array(z.string()).optional(), // Flexible tagging (VIP, birthday, anniversary, etc.)
+	notes: z.string().nullable(), // Internal staff notes (can be null from database)
+	tags: z.array(z.string()).nullable(), // Flexible tagging (can be null from database)
 
 	// Metadata
 	createdBy: z.string(), // User ID who created the reservation
-	source: z.enum(['phone', 'web', 'walk_in', 'email', 'other']).optional(),
-	confirmedAt: DateTimeSchema.optional(),
-	seatedAt: DateTimeSchema.optional(),
-	completedAt: DateTimeSchema.optional(),
-	cancelledAt: DateTimeSchema.optional(),
-	cancelledBy: z.string().optional(), // User ID who cancelled
-	cancellationReason: z.string().optional(),
+	source: z.enum(['phone', 'web', 'walk_in', 'email', 'other']).nullable(),
+	confirmedAt: DateTimeSchema.nullable(),
+	seatedAt: DateTimeSchema.nullable(),
+	completedAt: DateTimeSchema.nullable(),
+	cancelledAt: DateTimeSchema.nullable(),
+	cancelledBy: z.string().nullable(), // User ID who cancelled (can be null)
+	cancellationReason: z.string().nullable(),
 });
 
 export type Reservation = z.infer<typeof ReservationSchema>;

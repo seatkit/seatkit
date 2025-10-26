@@ -16,6 +16,10 @@
 		"./format": {
 			"types": "./dist/format.d.ts",
 			"import": "./dist/format.js"
+		},
+		"./database": {
+			"types": "./dist/database.d.ts",
+			"import": "./dist/database.js"
 		}
 	},
 	"main": "./dist/index.js",
@@ -35,7 +39,9 @@
 		"test:watch": "vitest"
 	},
 	"dependencies": {
-		"@seatkit/types": "workspace:*"
+		"@seatkit/types": "workspace:*",
+		"drizzle-orm": "^0.36.4",
+		"postgres": "^3.4.5"
 	},
 	"devDependencies": {
 		"@seatkit/eslint-config": "workspace:*"

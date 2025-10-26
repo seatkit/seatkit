@@ -3,8 +3,8 @@
 		// Language and Environment
 		"target": "ES2022",
 		"lib": ["ES2022"],
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
+		"module": "ESNext",
+		"moduleResolution": "Node",
 
 		// Emit
 		"declaration": true,
@@ -36,6 +36,6 @@
 		// Completeness
 		"skipLibCheck": true
 	},
-	"include": ["src/**/*", "vitest.config.ts"],
+	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist"]
 }

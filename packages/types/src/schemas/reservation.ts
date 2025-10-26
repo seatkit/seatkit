@@ -89,7 +89,7 @@ export type Reservation = z.infer<typeof ReservationSchema>;
 
 /**
  * Input schema for creating a new reservation
- * Omits auto-generated fields
+ * Omits auto-generated fields and makes nullable fields optional
  */
 export const CreateReservationSchema = ReservationSchema.omit({
 	id: true,
@@ -100,8 +100,14 @@ export const CreateReservationSchema = ReservationSchema.omit({
 	seatedAt: true,
 	completedAt: true,
 	cancelledAt: true,
+	cancelledBy: true, // Not needed during creation
+	cancellationReason: true, // Not needed during creation
 }).extend({
 	status: ReservationStatusSchema.optional(),
+	tableIds: z.array(z.string()).nullable().optional(), // Optional during creation
+	notes: z.string().nullable().optional(), // Optional during creation
+	tags: z.array(z.string()).nullable().optional(), // Optional during creation
+	source: z.enum(['phone', 'web', 'walk_in', 'email', 'other']).nullable().optional(), // Optional during creation
 });
 
 export type CreateReservation = z.infer<typeof CreateReservationSchema>;

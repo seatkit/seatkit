@@ -71,7 +71,7 @@ describe('Reservations API', () => {
 			expect(response.statusCode).toBe(400);
 
 			const body = JSON.parse(response.body);
-			expect(body.error).toBe('Validation error');
+			expect(body.error).toBe('Bad Request');
 		});
 
 		it('should return 400 for missing required fields', async () => {

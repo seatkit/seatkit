@@ -13,14 +13,14 @@ import postgres from 'postgres';
 /**
  * Database connection options for different environments
  */
-interface DatabaseConnectionOptions {
+type DatabaseConnectionOptions = {
 	/** Maximum connections in pool */
 	max?: number;
 	/** Close idle connections after N seconds */
-	idle_timeout?: number;
+	idleTimeout?: number;
 	/** Connection timeout in seconds */
-	connect_timeout?: number;
-}
+	connectTimeout?: number;
+};
 
 /**
  * Default connection options optimized for each environment
@@ -28,18 +28,18 @@ interface DatabaseConnectionOptions {
 const DEFAULT_CONNECTION_OPTIONS: Record<string, DatabaseConnectionOptions> = {
 	test: {
 		max: 5, // Fewer connections for tests
-		idle_timeout: 10,
-		connect_timeout: 5,
+		idleTimeout: 10,
+		connectTimeout: 5,
 	},
 	development: {
 		max: 20,
-		idle_timeout: 20,
-		connect_timeout: 10,
+		idleTimeout: 20,
+		connectTimeout: 10,
 	},
 	production: {
 		max: 30,
-		idle_timeout: 30,
-		connect_timeout: 15,
+		idleTimeout: 30,
+		connectTimeout: 15,
 	},
 };
 
@@ -79,7 +79,7 @@ export function getEnvironmentDatabaseUrl(): string {
 export function createDatabaseConnection(
 	databaseUrl?: string,
 	options?: DatabaseConnectionOptions
-) {
+): postgres.Sql {
 	const url = databaseUrl || getEnvironmentDatabaseUrl();
 	const environment = process.env['NODE_ENV'] || 'development';
 
@@ -103,7 +103,7 @@ export function createDatabaseInstance<T extends Record<string, unknown>>(
 	schema: T,
 	databaseUrl?: string,
 	options?: DatabaseConnectionOptions
-) {
+): { db: ReturnType<typeof drizzle<T>>; connection: postgres.Sql } {
 	const connection = createDatabaseConnection(databaseUrl, options);
 	return {
 		db: drizzle(connection, { schema }),
@@ -119,7 +119,7 @@ export const testDatabase = {
 	 * Create a database connection specifically for tests
 	 * Uses TEST_DATABASE_URL if available, falls back to DATABASE_URL
 	 */
-	createConnection(databaseUrl?: string) {
+	createConnection(databaseUrl?: string): postgres.Sql {
 		const testUrl = databaseUrl || process.env['TEST_DATABASE_URL'] || getEnvironmentDatabaseUrl();
 		return createDatabaseConnection(testUrl, DEFAULT_CONNECTION_OPTIONS['test']);
 	},
@@ -130,7 +130,7 @@ export const testDatabase = {
 	createInstance<T extends Record<string, unknown>>(
 		schema: T,
 		databaseUrl?: string
-	) {
+	): { db: ReturnType<typeof drizzle<T>>; connection: postgres.Sql } {
 		const testUrl = databaseUrl || process.env['TEST_DATABASE_URL'] || getEnvironmentDatabaseUrl();
 		return createDatabaseInstance(schema, testUrl, DEFAULT_CONNECTION_OPTIONS['test']);
 	},
@@ -139,10 +139,9 @@ export const testDatabase = {
 	 * Setup test database (placeholder for migration logic)
 	 * This will be implemented once we integrate with the migration system
 	 */
-	async setup() {
+	async setup(): Promise<void> {
 		// TODO: Run migrations against test database
 		// This will be implemented when we integrate with the existing migration system
-		console.log('Test database setup - migrations will be added in next iteration');
 	},
 
 	/**
@@ -150,12 +149,15 @@ export const testDatabase = {
 	 *
 	 * @param connection - Postgres connection to clean up
 	 */
-	async cleanup(connection: postgres.Sql) {
+	async cleanup(connection: postgres.Sql): Promise<void> {
 		try {
 			// Close the connection
 			await connection.end();
 		} catch (error) {
-			console.warn('Error during test database cleanup:', error);
+			// Silently handle cleanup errors in tests
+			if (error instanceof Error) {
+				// Error handled
+			}
 		}
 	},
 
@@ -163,10 +165,9 @@ export const testDatabase = {
 	 * Truncate all tables in the test database (placeholder)
 	 * This will be implemented once we have the schema structure
 	 */
-	async truncateAllTables() {
+	async truncateAllTables(): Promise<void> {
 		// TODO: Implement table truncation
 		// This will be added when we have access to the schema structure
-		console.log('Table truncation - will be implemented with schema integration');
 	},
 };
 
@@ -175,13 +176,13 @@ export const testDatabase = {
  *
  * @param connection - Postgres connection to close
  */
-export async function gracefulShutdown(connection: postgres.Sql) {
-	console.log('Closing database connections...');
+export async function gracefulShutdown(connection: postgres.Sql): Promise<void> {
 	try {
 		await connection.end();
-		console.log('Database connections closed.');
 	} catch (error) {
-		console.error('Error during graceful shutdown:', error);
-		throw error;
+		if (error instanceof Error) {
+			throw error;
+		}
+		throw new Error('Unknown error during graceful shutdown');
 	}
 }

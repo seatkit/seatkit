@@ -6,10 +6,12 @@
 import { z } from 'zod';
 
 /**
- * ISO 8601 date-time string
- * Example: "2025-01-15T14:30:00Z"
+ * Date-time field
+ * Input: Accepts ISO strings and converts to Date objects
+ * Internal: Works with Date objects throughout the application
+ * Output: Custom serializer converts to ISO strings in JSON responses
  */
-export const DateTimeSchema = z.string().datetime();
+export const DateTimeSchema = z.coerce.date();
 
 /**
  * ISO 8601 date string (date only, no time)

@@ -5,6 +5,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
+
+import { isOk, isErr } from './result.js';
 import {
 	validate,
 	validateAsync,
@@ -12,7 +14,6 @@ import {
 	isValidationError,
 	zodErrorToValidationError,
 } from './validation.js';
-import { isOk, isErr } from './result.js';
 
 const TestSchema = z.object({
 	name: z.string().min(1),

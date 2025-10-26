@@ -149,6 +149,13 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete details:
 - **Performance**: Profile and optimize real-time operations
 - **Security**: Validate all inputs, secure authentication, audit dependencies
 
+### Recent Architectural Decisions (Date Handling)
+
+- **Date Objects**: Use `z.coerce.date()` for unified Date handling across API/DB layers
+- **Serialization**: Custom Fastify serializer converts Date objects to ISO strings in JSON responses
+- **Validation**: Single Zod schema serves as source of truth for both input validation and type definitions
+- **Error Handling**: Standardized error responses (to be centralized in future PR)
+
 ---
 
 ## 📊 Project Architecture
@@ -192,11 +199,16 @@ Current implementation progress across packages:
   - Business logic layer (reservations, table clustering, availability)
   - Domain operations and algorithms
 
-- ✅ **@seatkit/api** - Backend Infrastructure Complete
+- ✅ **@seatkit/api** - CRUD Endpoints In Progress
   - Fastify backend server with Google Secret Manager integration
   - Drizzle ORM + Supabase PostgreSQL with Session Pooler
   - Database schema and migrations working
-  - REST API endpoints: GET /api/reservations ✅
+  - Custom Date serializer for Fastify + Zod + Drizzle integration
+  - REST API endpoints:
+    - GET /api/reservations ✅
+    - POST /api/reservations ✅
+    - PUT /api/reservations/:id (pending)
+    - DELETE /api/reservations/:id (pending)
   - Health check endpoint ✅
 
 - 🚧 **@seatkit/ui** - Not Started

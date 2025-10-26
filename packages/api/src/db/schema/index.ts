@@ -3,10 +3,10 @@
  * Centralizes all table definitions for Drizzle ORM
  */
 
-export * from './reservations.js';
+export * from './reservations';
 
 // Export all tables in a single object for Drizzle
-export { reservations } from './reservations.js';
+export { reservations } from './reservations';
 
 // Will add more tables as we implement them:
 // export { tables } from './tables.js';

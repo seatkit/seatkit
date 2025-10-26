@@ -21,7 +21,7 @@ const envSchema = {
 		NODE_ENV: { type: 'string', default: 'development' },
 		PORT: { type: 'string', default: '3001' },
 		HOST: { type: 'string', default: '0.0.0.0' },
-		GOOGLE_CLOUD_PROJECT: { type: 'string' }, // Optional: for Secret Manager
+		GOOGLE_CLOUD_PROJECT: { type: 'string', default: 'seatkit-dev' },
 	},
 	required: [], // Secrets are loaded separately
 } as const;
@@ -33,35 +33,36 @@ async function createServer() {
 		},
 	}).withTypeProvider<ZodTypeProvider>();
 
-	// Set up Zod validation and serialization
 	fastify.setValidatorCompiler(validatorCompiler);
 	fastify.setSerializerCompiler(serializerCompiler);
 
-	// Environment variables validation
 	await fastify.register(env, {
 		schema: envSchema,
 	});
 
-	// Security plugins
 	await fastify.register(helmet);
 	await fastify.register(cors, {
-		origin: process.env.NODE_ENV === 'production'
-			? ['https://your-domain.com'] // Update in production
-			: true, // Allow all origins in development
+		origin:
+			process.env.NODE_ENV === 'production'
+				? ['https://your-domain.com']
+				: true,
 	});
 
-	// Rate limiting
 	await fastify.register(rateLimit, {
-		max: 100, // 100 requests
+		max: 100,
 		timeWindow: '1 minute',
 	});
 
-	// Health check endpoint
-	fastify.get('/health', async () => {
+	fastify.get('/health', () => {
+		const environment = process.env.NODE_ENV;
+		if (!environment) {
+			throw new Error('NODE_ENV environment variable must be set');
+		}
+
 		return {
 			status: 'ok',
 			timestamp: new Date().toISOString(),
-			environment: process.env.NODE_ENV,
+			environment,
 		};
 	});
 
@@ -73,11 +74,9 @@ async function createServer() {
 
 async function start() {
 	try {
-		// Load secrets first
 		console.log('🔐 Loading application secrets...');
 		const secrets = await getSecrets();
 
-		// Set secrets as environment variables for other parts of the app
 		process.env.SUPABASE_URL = secrets.supabaseUrl;
 		process.env.SUPABASE_PUBLISHABLE_KEY = secrets.supabasePublishableKey;
 		process.env.SUPABASE_SECRET_KEY = secrets.supabaseSecretKey;

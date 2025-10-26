@@ -13,6 +13,7 @@ SeatKit is an open-source restaurant reservation management system being ported 
 Since the project is in early phase, there are currently no build/test/lint commands configured. The packages are placeholders.
 
 ### Package Management
+
 ```bash
 # Install dependencies (when they exist)
 pnpm install
@@ -44,49 +45,53 @@ seatkit/
 
 ### Technology Stack (Decided)
 
-| Category | Technology | Configuration |
-|----------|-----------|---------------|
-| **Language** | TypeScript 5.x | Maximum strictness enabled |
-| **Runtime** | Node.js 22.x | >=20.0.0 fallback, Pure ESM |
-| **Validation** | Zod | At HTTP/DB boundaries only |
-| **Monorepo** | Turborepo + pnpm | Caching and orchestration |
-| **Package Manager** | pnpm | Fast, efficient, monorepo-native |
+| Category            | Technology       | Configuration                    |
+| ------------------- | ---------------- | -------------------------------- |
+| **Language**        | TypeScript 5.x   | Maximum strictness enabled       |
+| **Runtime**         | Node.js 22.x     | >=20.0.0 fallback, Pure ESM      |
+| **Validation**      | Zod              | At HTTP/DB boundaries only       |
+| **Monorepo**        | Turborepo + pnpm | Caching and orchestration        |
+| **Package Manager** | pnpm             | Fast, efficient, monorepo-native |
 
 ### TypeScript Strictness
 
 All packages use maximum TypeScript strictness:
+
 ```json
 {
-  "compilerOptions": {
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "exactOptionalPropertyTypes": true
-  }
+	"compilerOptions": {
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+		"exactOptionalPropertyTypes": true
+	}
 }
 ```
 
 ### Module System
 
 Pure ESM is required for all packages:
+
 ```json
 {
-  "type": "module",
-  "engines": {
-    "node": ">=20.0.0"
-  }
+	"type": "module",
+	"engines": {
+		"node": ">=20.0.0"
+	}
 }
 ```
 
 ### Validation Strategy
 
 **Zod** is used for validation at boundaries:
+
 - ✅ HTTP API boundaries (requests/responses) - use `safeParse()` for explicit error handling
 - ✅ Database boundaries (reads/writes) - use `safeParse()` for explicit error handling
 - ❌ Package boundaries - deferred, all packages are internal
 - Internally use `parse()` for cleaner code with already-validated data
 
 **Schema Organization**: Schemas live in `@seatkit/types` alongside TypeScript types
+
 ```typescript
 // Example pattern
 export const ReservationSchema = z.object({...});
@@ -96,6 +101,7 @@ export type Reservation = z.infer<typeof ReservationSchema>;
 ### Pending Architecture Decisions (Phase 2+)
 
 The following are **not yet decided** - do not assume implementations:
+
 - Database (considering PostgreSQL, SQLite, Supabase)
 - API Style (considering REST, tRPC, GraphQL)
 - Backend Framework (considering Fastify, Hono, NestJS)
@@ -116,20 +122,23 @@ Refer to `ARCHITECTURE.md` for detailed options and considerations for each deci
 ### Git Strategy
 
 **GitHub Flow** (trunk-based):
+
 - `main` branch is always deployable
 - Create feature branches for work
 - Open PRs even for solo work (good discipline)
 - Merge when ready
 
 ### Branch Naming
+
 - `feat/description` - New features
-- `fix/description` - Bug fixes  
+- `fix/description` - Bug fixes
 - `chore/description` - Maintenance tasks
 - `docs/description` - Documentation only
 
 ### Commit Convention
 
 **Conventional Commits** (will be enforced with Husky + Commitlint):
+
 - Format: `type(scope): description`
 - Types: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `style`, `perf`
 - Example: `feat(engine): add table clustering algorithm`
@@ -138,6 +147,7 @@ Refer to `ARCHITECTURE.md` for detailed options and considerations for each deci
 ### Release Management
 
 **Changesets** for monorepo versioning:
+
 ```bash
 pnpm changeset           # Document changes
 pnpm changeset version   # Bump versions
@@ -149,6 +159,7 @@ pnpm release             # Build + publish to npm
 The original Swift app provides insight into the domain model that will be ported:
 
 ### Core Entities
+
 - **Reservations**: Customer bookings with status tracking, time slots, party size
 - **Tables**: Restaurant seating with layout management, clustering
 - **Sessions**: Active user tracking, device management, editing state
@@ -156,6 +167,7 @@ The original Swift app provides insight into the domain model that will be porte
 - **Layout**: Table arrangements, clustering algorithms, visual positioning
 
 ### Key Business Logic
+
 - **Clustering**: Grouping tables for larger parties
 - **Real-time Updates**: Multi-device synchronization
 - **Offline-first**: Local SQLite + Firestore cloud sync (dual-write)
@@ -163,7 +175,9 @@ The original Swift app provides insight into the domain model that will be porte
 - **Session Tracking**: `isEditing` flags to prevent conflicts
 
 ### Enums & Types
+
 Strong typing is critical - the Swift app uses extensive enums for:
+
 - Reservation status
 - Table types
 - User roles
@@ -183,13 +197,15 @@ Packages are published to npm under the `@seatkit` scope with public access. The
 ## Origin Context
 
 **Original Application**: KoenjiApp (Swift/iOS)
+
 - Mature Swift/SwiftUI iOS app
 - Uses Combine framework (ObservableObject, @Published)
 - Firebase Firestore for cloud sync
 - SQLite for local storage (actor-based)
 - Apple Sign-In authentication
 
-**Port Goals**: 
+**Port Goals**:
+
 - Maintain strong typing discipline from Swift
 - Preserve business logic fidelity
 - Enable web/multi-platform access

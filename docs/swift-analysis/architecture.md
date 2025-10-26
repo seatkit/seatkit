@@ -24,6 +24,7 @@
 ```
 
 **Key Architectural Components**:
+
 1. **AppDependencies**: Centralized dependency injection container
 2. **Protocol-Based Design**: Abstractions for data persistence
 3. **Observable Pattern**: SwiftUI's @ObservedObject + Combine
@@ -95,6 +96,7 @@ class AppDependencies: ObservableObject {
 ```
 
 **Key Insights for TypeScript Migration**:
+
 - **Centralized DI**: Single source for all dependencies
 - **Lazy Loading**: Services created on first access
 - **Conditional Dependencies**: Firebase only in production
@@ -102,27 +104,25 @@ class AppDependencies: ObservableObject {
 - **Type Safety**: All dependencies strongly typed
 
 **TypeScript Equivalent Pattern**:
+
 ```typescript
 // DI container using dependency injection pattern
 class AppDependencies {
-  // Singleton stores
-  private _reservationStore?: ReservationStore;
-  private _tableStore?: TableStore;
+	// Singleton stores
+	private _reservationStore?: ReservationStore;
+	private _tableStore?: TableStore;
 
-  get reservationStore(): ReservationStore {
-    if (!this._reservationStore) {
-      this._reservationStore = new ReservationStore(this.reservationRepository);
-    }
-    return this._reservationStore;
-  }
+	get reservationStore(): ReservationStore {
+		if (!this._reservationStore) {
+			this._reservationStore = new ReservationStore(this.reservationRepository);
+		}
+		return this._reservationStore;
+	}
 
-  // Services with dependency injection
-  get reservationService(): ReservationService {
-    return new ReservationService(
-      this.reservationRepository,
-      this.tableStore
-    );
-  }
+	// Services with dependency injection
+	get reservationService(): ReservationService {
+		return new ReservationService(this.reservationRepository, this.tableStore);
+	}
 }
 ```
 
@@ -155,6 +155,7 @@ protocol FirestoreDataStoreProtocol {
 **Multiple Implementations**:
 
 1. **SQLiteReservationStore** (Local, Offline-First):
+
 ```swift
 actor SQLiteReservationStore: FirestoreDataStoreProtocol {
     private let db: Connection
@@ -190,6 +191,7 @@ actor SQLiteReservationStore: FirestoreDataStoreProtocol {
 ```
 
 2. **FirestoreDataStore** (Cloud Sync):
+
 ```swift
 class FirestoreDataStore: FirestoreDataStoreProtocol {
     private let db = Firestore.firestore()
@@ -219,35 +221,37 @@ class FirestoreDataStore: FirestoreDataStoreProtocol {
 ```
 
 **Migration Insights**:
+
 - **Dual Storage**: SQLite for offline, Firestore for sync
 - **Actor Isolation**: Thread-safe database operations
 - **Stream-Based**: Real-time updates via AsyncThrowingStream
 - **Protocol Abstraction**: Easy to swap implementations
 
 **TypeScript Repository Pattern**:
+
 ```typescript
 interface ReservationRepository {
-  insert(reservation: Reservation): Promise<void>;
-  update(reservation: Reservation): Promise<void>;
-  delete(id: string): Promise<void>;
-  findAll(): Promise<Reservation[]>;
-  streamReservations(): AsyncGenerator<Reservation[], void, unknown>;
+	insert(reservation: Reservation): Promise<void>;
+	update(reservation: Reservation): Promise<void>;
+	delete(id: string): Promise<void>;
+	findAll(): Promise<Reservation[]>;
+	streamReservations(): AsyncGenerator<Reservation[], void, unknown>;
 }
 
 class SQLiteReservationRepository implements ReservationRepository {
-  async *streamReservations(): AsyncGenerator<Reservation[]> {
-    // WebSocket or polling-based implementation
-    const eventSource = new EventSource('/api/reservations/stream');
+	async *streamReservations(): AsyncGenerator<Reservation[]> {
+		// WebSocket or polling-based implementation
+		const eventSource = new EventSource('/api/reservations/stream');
 
-    while (true) {
-      const event = await new Promise(resolve => {
-        eventSource.onmessage = resolve;
-      });
+		while (true) {
+			const event = await new Promise(resolve => {
+				eventSource.onmessage = resolve;
+			});
 
-      const reservations = JSON.parse(event.data);
-      yield reservations;
-    }
-  }
+			const reservations = JSON.parse(event.data);
+			yield reservations;
+		}
+	}
 }
 ```
 
@@ -258,6 +262,7 @@ class SQLiteReservationRepository implements ReservationRepository {
 ### Store Pattern with @Published Properties
 
 **ReservationStore** (Central State Management):
+
 ```swift
 @MainActor
 class ReservationStore: ObservableObject {
@@ -315,6 +320,7 @@ class ReservationStore: ObservableObject {
 ```
 
 **Key Patterns**:
+
 - **@MainActor**: UI updates on main thread
 - **@Published**: Automatic UI updates when state changes
 - **Singleton Pattern**: Shared state across app
@@ -322,51 +328,52 @@ class ReservationStore: ObservableObject {
 - **Error Handling**: Centralized error state management
 
 **TypeScript State Management Equivalent** (Zustand):
+
 ```typescript
 interface ReservationStore {
-  // State
-  reservations: Reservation[];
-  selectedDate: string;
-  isLoading: boolean;
-  errorMessage: string | null;
+	// State
+	reservations: Reservation[];
+	selectedDate: string;
+	isLoading: boolean;
+	errorMessage: string | null;
 
-  // Actions
-  setReservations: (reservations: Reservation[]) => void;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
-  addReservation: (reservation: Reservation) => Promise<void>;
+	// Actions
+	setReservations: (reservations: Reservation[]) => void;
+	setLoading: (loading: boolean) => void;
+	setError: (error: string | null) => void;
+	addReservation: (reservation: Reservation) => Promise<void>;
 }
 
 const useReservationStore = create<ReservationStore>((set, get) => ({
-  // Initial state
-  reservations: [],
-  selectedDate: new Date().toISOString().split('T')[0],
-  isLoading: false,
-  errorMessage: null,
+	// Initial state
+	reservations: [],
+	selectedDate: new Date().toISOString().split('T')[0],
+	isLoading: false,
+	errorMessage: null,
 
-  // Actions
-  setReservations: (reservations) => set({ reservations }),
-  setLoading: (isLoading) => set({ isLoading }),
-  setError: (errorMessage) => set({ errorMessage }),
+	// Actions
+	setReservations: reservations => set({ reservations }),
+	setLoading: isLoading => set({ isLoading }),
+	setError: errorMessage => set({ errorMessage }),
 
-  addReservation: async (reservation) => {
-    set({ isLoading: true });
-    try {
-      await reservationRepository.insert(reservation);
-      // Real-time updates will refresh the list
-    } catch (error) {
-      set({ errorMessage: error.message, isLoading: false });
-    }
-  },
+	addReservation: async reservation => {
+		set({ isLoading: true });
+		try {
+			await reservationRepository.insert(reservation);
+			// Real-time updates will refresh the list
+		} catch (error) {
+			set({ errorMessage: error.message, isLoading: false });
+		}
+	},
 }));
 
 // Real-time subscription
 const setupRealtimeUpdates = () => {
-  const unsubscribe = reservationService.subscribe((reservations) => {
-    useReservationStore.getState().setReservations(reservations);
-  });
+	const unsubscribe = reservationService.subscribe(reservations => {
+		useReservationStore.getState().setReservations(reservations);
+	});
 
-  return unsubscribe;
+	return unsubscribe;
 };
 ```
 
@@ -377,6 +384,7 @@ const setupRealtimeUpdates = () => {
 ### Business Logic Services
 
 **ReservationService** (Core Business Logic):
+
 ```swift
 @MainActor
 class ReservationService: ObservableObject {
@@ -454,6 +462,7 @@ class ReservationService: ObservableObject {
 ```
 
 **TableAssignmentService** (Complex Algorithm):
+
 ```swift
 class TableAssignmentService {
     private let tableStore: TableStore
@@ -518,6 +527,7 @@ class TableAssignmentService {
 ```
 
 **Migration Insights**:
+
 - **Dependency Injection**: Services receive dependencies via constructor
 - **Business Rule Validation**: Clear separation of concerns
 - **Complex Algorithms**: Table assignment logic can be preserved
@@ -530,6 +540,7 @@ class TableAssignmentService {
 ### MVVM Pattern in Views
 
 **ReservationListView** (Data-Driven UI):
+
 ```swift
 struct ReservationListView: View {
     // MARK: - Dependencies
@@ -629,6 +640,7 @@ struct ReservationListView: View {
 ```
 
 **Timeline View** (Complex Layout):
+
 ```swift
 struct TimelineView: View {
     @ObservedObject var reservationService: ReservationService
@@ -706,6 +718,7 @@ struct TimelineView: View {
 ```
 
 **Migration Insights**:
+
 - **Reactive UI**: Views automatically update when state changes
 - **Gesture Handling**: Complex touch interactions (drag, zoom, swipe)
 - **Computed Properties**: Efficient filtering and sorting
@@ -713,6 +726,7 @@ struct TimelineView: View {
 - **Toolbar Integration**: Native iOS patterns
 
 **React Equivalent Patterns**:
+
 ```typescript
 // List view with hooks
 function ReservationListView() {
@@ -793,6 +807,7 @@ function TimelineView() {
 ### Caching Strategy
 
 **Multiple Cache Layers**:
+
 ```swift
 // 1. Current Reservations Cache
 class CurrentReservationsCache: ObservableObject {
@@ -847,6 +862,7 @@ class NormalizedTimeCache {
 ### Database Optimizations
 
 **SQLite Performance Patterns**:
+
 ```swift
 actor SQLiteReservationStore {
     private let db: Connection
@@ -884,44 +900,45 @@ actor SQLiteReservationStore {
 ```
 
 **TypeScript Performance Equivalent**:
+
 ```typescript
 // Query optimization with proper indexing
 class ReservationRepository {
-  // Use database indexes for common queries
-  async findByDateRange(startDate: string, endDate: string): Promise<Reservation[]> {
-    // SQL with proper indexes: (date_string, start_time)
-    return await this.db.reservation.findMany({
-      where: {
-        dateString: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      orderBy: [
-        { dateString: 'asc' },
-        { startTime: 'asc' },
-      ],
-    });
-  }
+	// Use database indexes for common queries
+	async findByDateRange(
+		startDate: string,
+		endDate: string,
+	): Promise<Reservation[]> {
+		// SQL with proper indexes: (date_string, start_time)
+		return await this.db.reservation.findMany({
+			where: {
+				dateString: {
+					gte: startDate,
+					lte: endDate,
+				},
+			},
+			orderBy: [{ dateString: 'asc' }, { startTime: 'asc' }],
+		});
+	}
 
-  // Batch operations for performance
-  async insertMany(reservations: Reservation[]): Promise<void> {
-    await this.db.$transaction(async (tx) => {
-      for (const reservation of reservations) {
-        await tx.reservation.create({ data: reservation });
-      }
-    });
-  }
+	// Batch operations for performance
+	async insertMany(reservations: Reservation[]): Promise<void> {
+		await this.db.$transaction(async tx => {
+			for (const reservation of reservations) {
+				await tx.reservation.create({ data: reservation });
+			}
+		});
+	}
 }
 
 // React Query caching
 const useReservations = (date: string) => {
-  return useQuery({
-    queryKey: ['reservations', date],
-    queryFn: () => reservationRepository.findByDate(date),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-  });
+	return useQuery({
+		queryKey: ['reservations', date],
+		queryFn: () => reservationRepository.findByDate(date),
+		staleTime: 5 * 60 * 1000, // 5 minutes
+		cacheTime: 10 * 60 * 1000, // 10 minutes
+	});
 };
 ```
 
@@ -971,50 +988,51 @@ func createReservation(...) async throws -> Reservation {
 ```
 
 **TypeScript Error Handling Equivalent**:
+
 ```typescript
 export class ReservationError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly statusCode: number = 400
-  ) {
-    super(message);
-    this.name = 'ReservationError';
-  }
+	constructor(
+		message: string,
+		public readonly code: string,
+		public readonly statusCode: number = 400,
+	) {
+		super(message);
+		this.name = 'ReservationError';
+	}
 }
 
 export class ReservationService {
-  async createReservation(data: CreateReservationData): Promise<Reservation> {
-    if (data.partySize < 1 || data.partySize > 20) {
-      throw new ReservationError(
-        'Party size must be between 1 and 20 people',
-        'INVALID_PARTY_SIZE'
-      );
-    }
+	async createReservation(data: CreateReservationData): Promise<Reservation> {
+		if (data.partySize < 1 || data.partySize > 20) {
+			throw new ReservationError(
+				'Party size must be between 1 and 20 people',
+				'INVALID_PARTY_SIZE',
+			);
+		}
 
-    try {
-      const reservation = ReservationSchema.parse({
-        id: crypto.randomUUID(),
-        ...data,
-      });
+		try {
+			const reservation = ReservationSchema.parse({
+				id: crypto.randomUUID(),
+				...data,
+			});
 
-      await this.repository.insert(reservation);
-      return reservation;
-    } catch (error) {
-      if (error instanceof ZodError) {
-        throw new ReservationError(
-          'Invalid reservation data',
-          'VALIDATION_ERROR'
-        );
-      }
+			await this.repository.insert(reservation);
+			return reservation;
+		} catch (error) {
+			if (error instanceof ZodError) {
+				throw new ReservationError(
+					'Invalid reservation data',
+					'VALIDATION_ERROR',
+				);
+			}
 
-      throw new ReservationError(
-        'Failed to create reservation',
-        'DATABASE_ERROR',
-        500
-      );
-    }
-  }
+			throw new ReservationError(
+				'Failed to create reservation',
+				'DATABASE_ERROR',
+				500,
+			);
+		}
+	}
 }
 ```
 

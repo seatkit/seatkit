@@ -2,7 +2,7 @@
 
 > Open-source restaurant reservation management system for high-turnover, small-seat restaurants
 
-[![CI](https://github.com/matteonassini/seatkit/actions/workflows/ci.yml/badge.svg)](https://github.com/matteonassini/seatkit/actions/workflows/ci.yml)
+[![CI](https://github.com/seatkit/seatkit/actions/workflows/ci.yml/badge.svg)](https://github.com/seatkit/seatkit/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE.md)
 
 **Status**: 🚧 Early Development - API Backend Phase
@@ -35,7 +35,7 @@ SeatKit is a modern, modular reservation management system built specifically fo
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/matteonassini/seatkit.git
+git clone https://github.com/seatkit/seatkit.git
 cd seatkit
 ```
 
@@ -390,8 +390,8 @@ See [NOTICE.md](NOTICE.md) for third-party software attributions.
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/matteonassini/seatkit/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/matteonassini/seatkit/discussions)
+- **Issues**: [GitHub Issues](https://github.com/seatkit/seatkit/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/seatkit/seatkit/discussions)
 - **Email**: matteo@seatkit.dev (coming soon)
 
 ---

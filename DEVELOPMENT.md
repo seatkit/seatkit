@@ -7,7 +7,7 @@ This project uses automated linting and type checking to catch errors immediatel
 ### How It Works
 
 1. **Claude Code Hook**: After every file edit, ESLint runs automatically via a post-edit hook
-2. **TypeScript Watch**: Run `tsc --watch` in a separate terminal to see type errors in real-time
+2. **Claude Code Command**: At the start of each session, you can run `/check-ts` to ensure type correctness
 3. **Continuous Feedback**: Both systems run concurrently, catching issues as you code
 
 ---
@@ -130,11 +130,11 @@ The post-edit hook is configured in `.claude/settings.local.json`:
 	"hooks": {
 		"PostToolUse": [
 			{
-				"matcher": "Edit|Write",
+				"matcher": "Write|Edit|MultiEdit|Update",
 				"hooks": [
 					{
 						"type": "command",
-						"command": ".claude/hooks/post-edit.sh",
+						"command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit.sh",
 						"timeout": 30
 					}
 				]
@@ -143,14 +143,6 @@ The post-edit hook is configured in `.claude/settings.local.json`:
 	}
 }
 ```
-
-### Hook Behavior
-
-- **Runs on**: Every `Edit` or `Write` tool use by Claude
-- **Checks**: TypeScript files (`.ts`, `.tsx`)
-- **Reports**: ESLint errors inline
-- **Timeout**: 30 seconds per file
-- **TypeScript**: Relies on `tsc --watch` terminal (not run in hook)
 
 ---
 
@@ -175,42 +167,6 @@ claude-code
 4. **Claude sees**: Any ESLint errors inline
 5. **You see**: Any TypeScript errors in Terminal 1
 6. **Fix immediately**: Before moving to next file
-
----
-
-## 🎯 Benefits
-
-- ✅ **Catch errors immediately** - Before they compound
-- ✅ **Type safety enforced** - No implicit `any`, explicit return types
-- ✅ **Consistent code style** - Auto-formatted imports, naming
-- ✅ **Promise safety** - No unhandled promises or async bugs
-- ✅ **Fast feedback loop** - No need to wait for CI
-
----
-
-## 🔍 Troubleshooting
-
-### Hook Not Running
-
-Check `.claude/settings.local.json` has the hooks configured properly.
-
-### ESLint Errors Not Showing
-
-1. Ensure dependencies are installed: `pnpm install`
-2. Check the hook script is executable: `chmod +x .claude/hooks/post-edit.sh`
-3. Test manually: `.claude/hooks/post-edit.sh packages/types/src/index.ts`
-
-### TypeScript Errors Not Showing
-
-1. Make sure `tsc --watch` is running in a terminal
-2. Check `tsconfig.json` includes your files
-3. Verify no `@ts-ignore` comments hiding errors
-
-### False Positives
-
-- **Unused vars**: Prefix with `_` (e.g., `_unusedParam`)
-- **Any types**: Use `unknown` or proper types
-- **Console logs**: OK in development, removed in production builds
 
 ---
 

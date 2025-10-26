@@ -6,7 +6,11 @@ export default defineConfig({
 	target: 'node20',
 	outDir: 'dist',
 	clean: true,
-	dts: true,
+	dts: {
+		compilerOptions: {
+			composite: false,
+		},
+	},
 	sourcemap: true,
-	minify: false, // Keep readable for debugging
+	minify: false,
 });

@@ -8,7 +8,6 @@
 		"allowImportingTsExtensions": false,
 		"resolveJsonModule": true,
 		"isolatedModules": true,
-		"noEmit": true,
 		"jsx": "preserve",
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
@@ -19,7 +18,8 @@
 		"outDir": "./dist"
 	},
 	"include": [
-		"src/**/*"
+		"src/**/*",
+		"tsup.config.ts"
 	],
 	"exclude": [
 		"dist",

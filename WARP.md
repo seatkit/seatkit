@@ -4,25 +4,73 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-SeatKit is an open-source restaurant reservation management system being ported from a Swift iOS app (KoenjiApp) to a modular TypeScript web application. The project is in **Phase 1** (Foundation Complete) with a monorepo structure using pnpm workspaces.
+SeatKit is an open-source restaurant reservation management system being ported from a Swift iOS app (KoenjiApp) to a modular TypeScript web application. The project is currently in **Phase 2** (Backend API Development) with a fully functional monorepo structure using pnpm workspaces and Turborepo.
 
-**Current Status**: Early development - packages are placeholders for name reservation and npm publishing workflow testing.
+**Current Status**: Backend API with GET/POST reservations endpoints, CI/CD pipeline, comprehensive testing.
 
-## Commands
+---
 
-Since the project is in early phase, there are currently no build/test/lint commands configured. The packages are placeholders.
+## Quick Start Commands
 
-### Package Management
+### Setup
 
 ```bash
-# Install dependencies (when they exist)
+# Clone and install
+git clone https://github.com/matteonassini/seatkit.git
+cd seatkit
 pnpm install
 
-# Publish packages to npm (via GitHub Actions)
-# Triggered on git tags matching v*
-git tag v0.0.2
-git push --tags
+# Build all packages
+pnpm build
+
+# Set up databases
+createdb seatkit_dev
+createdb seatkit_test
+
+# Run migrations
+cd packages/api
+pnpm db:migrate
+pnpm db:migrate:test
 ```
+
+### Development
+
+```bash
+# Start API server (port 3001)
+cd packages/api
+pnpm dev
+
+# Run tests
+pnpm test
+
+# Run tests in watch mode
+pnpm --filter @seatkit/api test:watch
+
+# Lint code
+pnpm lint
+
+# Type check
+pnpm typecheck
+
+# Type check in watch mode
+pnpm typecheck:watch
+```
+
+### Database
+
+```bash
+# Generate new migration
+cd packages/api
+pnpm db:generate
+
+# Run migrations
+pnpm db:migrate
+
+# Open Drizzle Studio (database GUI)
+pnpm db:studio
+```
+
+---
 
 ## Architecture
 
@@ -31,182 +79,219 @@ git push --tags
 ```
 seatkit/
 ├── packages/
-│   ├── types/       - TypeScript types + Zod schemas (foundation, built FIRST)
-│   ├── utils/       - Shared utilities
-│   ├── engine/      - Business logic (reservations, layout, clustering)
-│   ├── ui/          - Design System components (shadcn-based)
-│   ├── api/         - Backend API/data layer
-│   ├── web/         - Web application (responsive)
-│   └── config/      - Shared configs (ESLint, TS, Prettier)
-└── package.json     - Workspace root
+│   ├── types/          # ✅ Zod schemas + TypeScript types
+│   ├── utils/          # ✅ Shared utilities (date, money, database)
+│   ├── eslint-config/  # ✅ Shared ESLint configuration
+│   ├── api/            # 🚧 Fastify backend + Drizzle ORM (GET/POST working)
+│   ├── engine/         # 📝 Business logic (planned)
+│   ├── ui/             # 📝 React components (planned)
+│   └── web/            # 📝 Next.js frontend (planned)
+└── .github/workflows/  # CI/CD with PostgreSQL + GCP auth
 ```
 
-**Build Order**: Dependencies flow `types` → `utils`/`engine`/`ui` → `api`/`web`
+**Legend**: ✅ Complete | 🚧 In Progress | 📝 Planned
 
-### Technology Stack (Decided)
+### Tech Stack
 
-| Category            | Technology       | Configuration                    |
-| ------------------- | ---------------- | -------------------------------- |
-| **Language**        | TypeScript 5.x   | Maximum strictness enabled       |
-| **Runtime**         | Node.js 22.x     | >=20.0.0 fallback, Pure ESM      |
-| **Validation**      | Zod              | At HTTP/DB boundaries only       |
-| **Monorepo**        | Turborepo + pnpm | Caching and orchestration        |
-| **Package Manager** | pnpm             | Fast, efficient, monorepo-native |
+- **Language**: TypeScript 5.x (strict mode) + Node.js 22
+- **Package Manager**: pnpm 9.12.3 + workspaces
+- **Build**: Turborepo 2.x with caching
+- **Backend**: Fastify 5.x + Drizzle ORM + PostgreSQL
+- **Validation**: Zod 3.x for runtime type safety
+- **Testing**: Vitest 4.x with PostgreSQL service
+- **CI/CD**: GitHub Actions with lint, typecheck, test, build
 
-### TypeScript Strictness
+---
 
-All packages use maximum TypeScript strictness:
+## Key Design Decisions
 
-```json
-{
-	"compilerOptions": {
-		"strict": true,
-		"noUncheckedIndexedAccess": true,
-		"noImplicitOverride": true,
-		"exactOptionalPropertyTypes": true
-	}
-}
-```
+### Date Handling
 
-### Module System
-
-Pure ESM is required for all packages:
-
-```json
-{
-	"type": "module",
-	"engines": {
-		"node": ">=20.0.0"
-	}
-}
-```
-
-### Validation Strategy
-
-**Zod** is used for validation at boundaries:
-
-- ✅ HTTP API boundaries (requests/responses) - use `safeParse()` for explicit error handling
-- ✅ Database boundaries (reads/writes) - use `safeParse()` for explicit error handling
-- ❌ Package boundaries - deferred, all packages are internal
-- Internally use `parse()` for cleaner code with already-validated data
-
-**Schema Organization**: Schemas live in `@seatkit/types` alongside TypeScript types
+**All date fields use `z.coerce.date()`**:
+- **Input**: Accepts ISO 8601 strings
+- **Internal**: Works with native Date objects
+- **Output**: Fastify custom serializer converts to ISO strings in JSON
 
 ```typescript
-// Example pattern
-export const ReservationSchema = z.object({...});
-export type Reservation = z.infer<typeof ReservationSchema>;
+// Schema
+const schema = z.object({
+  createdAt: z.coerce.date()
+});
+
+// Parses string → Date object
+const result = schema.parse({ createdAt: '2025-01-15T14:30:00Z' });
+// result.createdAt is Date object
+
+// JSON response automatically serialized to string
+// { "createdAt": "2025-01-15T14:30:00.000Z" }
 ```
 
-### Pending Architecture Decisions (Phase 2+)
+### Nullable vs Optional
 
-The following are **not yet decided** - do not assume implementations:
+- **Nullable** (`null`): Database columns that can be NULL
+  ```typescript
+  notes: z.string().nullable() // Can be null in DB
+  ```
 
-- Database (considering PostgreSQL, SQLite, Supabase)
-- API Style (considering REST, tRPC, GraphQL)
-- Backend Framework (considering Fastify, Hono, NestJS)
-- Frontend Framework (considering Next.js, Remix, SvelteKit)
-- State Management
-- Authentication/Authorization
-- Real-time Synchronization
-- File Storage
-- Testing Framework
-- Deployment Platform
-- i18n Library
-- Logging/Monitoring
+- **Optional** (`undefined`): Fields that don't need to be provided
+  ```typescript
+  notes: z.string().optional() // Can be omitted in API request
+  ```
 
-Refer to `ARCHITECTURE.md` for detailed options and considerations for each decision.
+See [docs/ADR-001-undefined-vs-null-handling.md](./docs/ADR-001-undefined-vs-null-handling.md)
 
-## Development Workflow
+### Error Handling
 
-### Git Strategy
+Uses Result types for type-safe error handling:
 
-**GitHub Flow** (trunk-based):
+```typescript
+import { ok, err, type Result } from '@seatkit/types';
 
-- `main` branch is always deployable
-- Create feature branches for work
-- Open PRs even for solo work (good discipline)
-- Merge when ready
+function divide(a: number, b: number): Result<number, string> {
+  if (b === 0) return err('Division by zero');
+  return ok(a / b);
+}
 
-### Branch Naming
+const result = divide(10, 2);
+if (result.ok) {
+  console.log(result.value); // 5
+} else {
+  console.error(result.error);
+}
+```
 
-- `feat/description` - New features
-- `fix/description` - Bug fixes
-- `chore/description` - Maintenance tasks
-- `docs/description` - Documentation only
+---
 
-### Commit Convention
+## Common Patterns
 
-**Conventional Commits** (will be enforced with Husky + Commitlint):
+### Creating a New API Endpoint
 
-- Format: `type(scope): description`
-- Types: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `style`, `perf`
-- Example: `feat(engine): add table clustering algorithm`
-- Example: `fix(api): resolve reservation conflict validation`
+1. **Define schema** in `packages/types/src/schemas/`
+2. **Add route** in `packages/api/src/routes/`
+3. **Register route** in `packages/api/src/index.ts`
+4. **Write tests** in `packages/api/src/routes/*.test.ts`
 
-### Release Management
+Example:
 
-**Changesets** for monorepo versioning:
+```typescript
+// packages/api/src/routes/reservations.ts
+import { ReservationSchema } from '@seatkit/types';
+
+export async function reservationRoutes(fastify: FastifyInstance) {
+  fastify.get('/api/reservations', {
+    schema: {
+      response: {
+        200: z.object({
+          reservations: z.array(ReservationSchema),
+        }),
+      },
+    },
+  }, async () => {
+    const reservations = await db.select().from(reservationsTable);
+    return { reservations };
+  });
+}
+```
+
+### Running Migrations
 
 ```bash
-pnpm changeset           # Document changes
-pnpm changeset version   # Bump versions
-pnpm release             # Build + publish to npm
+# 1. Make changes to schema in packages/api/src/db/schema/
+# 2. Generate migration
+pnpm db:generate
+
+# 3. Review migration in packages/api/src/db/migrations/
+# 4. Apply migration
+pnpm db:migrate
+
+# For tests
+pnpm db:migrate:test
 ```
 
-## Domain Model (from Swift App)
+---
 
-The original Swift app provides insight into the domain model that will be ported:
+## CI/CD Pipeline
 
-### Core Entities
+GitHub Actions runs on every PR and push to main:
 
-- **Reservations**: Customer bookings with status tracking, time slots, party size
-- **Tables**: Restaurant seating with layout management, clustering
-- **Sessions**: Active user tracking, device management, editing state
-- **Profiles**: User accounts with Apple ID integration
-- **Layout**: Table arrangements, clustering algorithms, visual positioning
+1. **Lint Job**: ESLint on all packages
+2. **Type Check Job**: TypeScript strict checking
+3. **Test Job**:
+   - Spins up PostgreSQL 16 container
+   - Authenticates with GCP Secret Manager
+   - Runs migrations
+   - Executes Vitest tests
+4. **Build Job**: Verifies all packages compile
 
-### Key Business Logic
+**Required Secrets**:
+- `GCP_SERVICE_ACCOUNT_KEY`: JSON key for Secret Manager
+- `GCP_PROJECT_ID`: GCP project ID
 
-- **Clustering**: Grouping tables for larger parties
-- **Real-time Updates**: Multi-device synchronization
-- **Offline-first**: Local SQLite + Firestore cloud sync (dual-write)
-- **Status Management**: Complex reservation state machine
-- **Session Tracking**: `isEditing` flags to prevent conflicts
+---
 
-### Enums & Types
+## Troubleshooting
 
-Strong typing is critical - the Swift app uses extensive enums for:
+### Tests failing with "Database URL not configured"
 
-- Reservation status
-- Table types
-- User roles
-- Localized strings (Italian primary)
+Ensure `TEST_DATABASE_URL` is in turbo.json env passthrough:
 
-## Important Files
+```json
+{
+  "tasks": {
+    "test": {
+      "env": ["NODE_ENV", "TEST_DATABASE_URL", "GOOGLE_CLOUD_PROJECT"]
+    }
+  }
+}
+```
 
-- **ARCHITECTURE.md** - Comprehensive architectural decisions document with options and rationale
-- **SECURITY.md** - Security policy, vulnerability reporting (security@seatkit.dev)
-- **LICENSE** - Apache 2.0 license
-- **.npmrc** - npm registry configuration for @seatkit scope
+### TypeScript can't find package types
 
-## Publishing
+Build dependencies first:
 
-Packages are published to npm under the `@seatkit` scope with public access. The GitHub Actions workflow (`.github/workflows/release.yml`) handles automated publishing when tags matching `v*` are pushed.
+```bash
+pnpm build
+```
 
-## Origin Context
+### ESLint not running in IDE
 
-**Original Application**: KoenjiApp (Swift/iOS)
+Add to `.vscode/settings.json`:
 
-- Mature Swift/SwiftUI iOS app
-- Uses Combine framework (ObservableObject, @Published)
-- Firebase Firestore for cloud sync
-- SQLite for local storage (actor-based)
-- Apple Sign-In authentication
+```json
+{
+  "eslint.useFlatConfig": true,
+  "eslint.validate": ["javascript", "typescript"]
+}
+```
 
-**Port Goals**:
+---
 
-- Maintain strong typing discipline from Swift
-- Preserve business logic fidelity
-- Enable web/multi-platform access
-- Open source the platform
+## Documentation
+
+- **[README.md](./README.md)** - Project overview & setup guide
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Technical architecture
+- **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Development workflow
+- **[CLAUDE.md](./CLAUDE.md)** - AI context & project state
+- **[docs/](./docs/)** - Domain, features, migration notes
+
+---
+
+## Git Workflow
+
+```bash
+# Create feature branch
+git checkout -b feat/your-feature
+
+# Commit with conventional commits
+git commit -m "feat(api): add DELETE /api/reservations/:id"
+
+# Push and create PR
+git push origin feat/your-feature
+gh pr create
+```
+
+**Commit Types**: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `ci`
+
+---
+
+**Last Updated**: 2025-01-26 (CI/CD Pipeline Complete)

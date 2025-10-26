@@ -22,6 +22,7 @@
 		"test:watch": "vitest --watch",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "tsx src/scripts/migrate.ts",
+		"db:migrate:test": "tsx src/scripts/migrate-test.ts",
 		"db:studio": "drizzle-kit studio",
 		"secrets:setup": "tsx src/scripts/setup-simple-secrets.ts"
 	},

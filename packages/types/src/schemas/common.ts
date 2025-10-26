@@ -37,9 +37,21 @@ export const EmailSchema = z.string().email();
 
 /**
  * Phone number (international format recommended)
- * Accepts various formats: +1-555-123-4567, (555) 123-4567, 555.123.4567
+ * Accepts various formats: +1-555-123-4567, (555) 123-4567, 555.123.4567, +15551234567
+ * Must contain only digits, spaces, parentheses, hyphens, dots, and plus sign
  */
-export const PhoneSchema = z.string().min(10).max(20);
+export const PhoneSchema = z.string()
+	.min(10, "Phone number too short")
+	.max(20, "Phone number too long")
+	.regex(
+		/^[\d\s\-()+.]+$/,
+		"Phone number can only contain digits, spaces, hyphens, parentheses, dots, and plus sign"
+	)
+	.refine((val) => {
+		// Count only digits
+		const digits = val.replace(/\D/g, '');
+		return digits.length >= 10 && digits.length <= 15;
+	}, "Phone number must contain between 10 and 15 digits");
 
 /**
  * Positive integer (1, 2, 3, ...)

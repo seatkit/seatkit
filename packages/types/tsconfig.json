@@ -1,7 +1,5 @@
 {
 	"compilerOptions": {
-		"composite": true,
-
 		// Language and Environment
 		"target": "ES2022",
 		"lib": ["ES2022"],

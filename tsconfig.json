@@ -7,10 +7,5 @@
 		"skipLibCheck": true
 	},
 	"include": ["packages/*/src/**/*"],
-	"exclude": ["node_modules", "dist"],
-	"references": [
-		{ "path": "./packages/api" },
-		{ "path": "./packages/types" },
-		{ "path": "./packages/utils" }
-	]
+	"exclude": ["node_modules", "dist"]
 }

@@ -1,6 +1,5 @@
 {
 	"compilerOptions": {
-		"composite": true,
 		"target": "ES2022",
 		"module": "ESNext",
 		"moduleResolution": "Node",
@@ -25,9 +24,5 @@
 	"exclude": [
 		"dist",
 		"node_modules"
-	],
-	"references": [
-		{ "path": "../types" },
-		{ "path": "../utils" }
 	]
 }

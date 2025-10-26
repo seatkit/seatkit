@@ -57,11 +57,11 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					...request.body,
 					date: new Date(request.body.date),
 					status: request.body.status || 'pending',
-				} as const;
+				};
 
 				const [createdReservation] = await db
 					.insert(reservations)
-					.values(reservationData as any) // Type assertion needed due to exact optional types
+					.values(reservationData)
 					.returning();
 
 				if (!createdReservation) {

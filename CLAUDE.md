@@ -350,6 +350,7 @@ Current implementation progress across packages:
 - **[MIGRATION.md](./docs/MIGRATION.md)** - Swift to TypeScript migration strategy
 - **[FEATURES.md](./docs/FEATURES.md)** - Feature specifications and roadmap
 - **[TECHNICAL_CONTEXT.md](./docs/TECHNICAL_CONTEXT.md)** - Development standards and patterns
+- **[ADR-001](./docs/ADR-001-undefined-vs-null-handling.md)** - Architecture Decision: Using `undefined` vs `null` for optional fields
 
 ---
 

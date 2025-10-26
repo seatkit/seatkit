@@ -9,7 +9,7 @@ import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import env from '@fastify/env';
 import {
-	serializerCompiler,
+	createSerializerCompiler,
 	validatorCompiler,
 	type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
@@ -33,8 +33,20 @@ async function createServer() {
 		},
 	}).withTypeProvider<ZodTypeProvider>();
 
+	// Custom serializer with Date object handling
+	const replacer = function (
+		this: Record<string, unknown>,
+		key: string,
+		value: unknown,
+	) {
+		if (this[key] instanceof Date) {
+			return (value as Date).toISOString();
+		}
+		return value;
+	};
+
 	fastify.setValidatorCompiler(validatorCompiler);
-	fastify.setSerializerCompiler(serializerCompiler);
+	fastify.setSerializerCompiler(createSerializerCompiler({ replacer }));
 
 	await fastify.register(env, {
 		schema: envSchema,
@@ -67,7 +79,9 @@ async function createServer() {
 	});
 
 	// API routes
-	await fastify.register(import('./routes/reservations.js'), { prefix: '/api' });
+	await fastify.register(import('./routes/reservations.js'), {
+		prefix: '/api',
+	});
 
 	return fastify;
 }

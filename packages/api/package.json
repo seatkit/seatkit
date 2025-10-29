@@ -20,6 +20,7 @@
 		"typecheck:watch": "tsc --noEmit --watch",
 		"test": "vitest",
 		"test:watch": "vitest --watch",
+		"test:local": "bash src/scripts/test-with-db.sh",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "tsx src/scripts/migrate.ts",
 		"db:migrate:test": "tsx src/scripts/migrate-test.ts",

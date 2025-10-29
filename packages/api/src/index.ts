@@ -3,16 +3,18 @@
  * Fastify-based backend with Supabase PostgreSQL
  */
 
-import Fastify from 'fastify';
-import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
-import rateLimit from '@fastify/rate-limit';
 import env from '@fastify/env';
+import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
+import sensible from '@fastify/sensible';
+import Fastify from 'fastify';
 import {
 	createSerializerCompiler,
 	validatorCompiler,
 	type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
+
 import { getSecrets } from './lib/simple-secrets.js';
 
 const envSchema = {
@@ -52,6 +54,7 @@ async function createServer() {
 		schema: envSchema,
 	});
 
+	await fastify.register(sensible);
 	await fastify.register(helmet);
 	await fastify.register(cors, {
 		origin:

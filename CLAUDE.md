@@ -149,12 +149,18 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete details:
 - **Performance**: Profile and optimize real-time operations
 - **Security**: Validate all inputs, secure authentication, audit dependencies
 
-### Recent Architectural Decisions (Date Handling)
+### Recent Architectural Decisions
 
+**Date Handling:**
 - **Date Objects**: Use `z.coerce.date()` for unified Date handling across API/DB layers
 - **Serialization**: Custom Fastify serializer converts Date objects to ISO strings in JSON responses
 - **Validation**: Single Zod schema serves as source of truth for both input validation and type definitions
-- **Error Handling**: Standardized error responses (to be centralized in future PR)
+
+**Error Handling:**
+- **HTTP Errors**: Using `@fastify/sensible` plugin for standardized HTTP error objects
+- **Pattern**: Throw HTTP errors directly (`fastify.httpErrors.notFound()`, `.badRequest()`, etc.)
+- **Framework Handling**: Fastify automatically catches thrown HTTP errors and converts to proper responses
+- **No Try-Catch**: HTTP error throws don't need try-catch wrapping - framework handles them
 
 ---
 
@@ -200,21 +206,22 @@ Current implementation progress across packages:
   - Business logic layer (reservations, table clustering, availability)
   - Domain operations and algorithms
 
-- 🚧 **@seatkit/api** - CRUD Endpoints In Progress
+- ✅ **@seatkit/api** - CRUD Endpoints Complete
   - Fastify backend server with Google Secret Manager integration
   - Drizzle ORM + Supabase PostgreSQL with Session Pooler
   - Database schema and migrations working
   - Custom Date serializer for Fastify + Zod + Drizzle integration
+  - `@fastify/sensible` for standardized HTTP error handling
   - **GitHub Actions CI/CD** ✅
     - PostgreSQL 16 service container
     - Lint + TypeCheck + Test + Build pipeline
     - GCP Secret Manager auth in CI
     - Turborepo caching and parallel execution
-  - REST API endpoints:
+  - **REST API endpoints:** ✅
     - GET /api/reservations ✅
     - POST /api/reservations ✅
-    - PUT /api/reservations/:id (pending)
-    - DELETE /api/reservations/:id (pending)
+    - PUT /api/reservations/:id ✅
+    - DELETE /api/reservations/:id ✅
   - Health check endpoint ✅
   - Comprehensive test coverage with Vitest ✅
 

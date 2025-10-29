@@ -33,7 +33,7 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get<{
 		// eslint-disable-next-line @typescript-eslint/naming-convention
 		Reply: ListReservationsResponse | ErrorResponse;
-	}>('/reservations', async (request, reply) => {
+	}>('/reservations', async (_request, reply) => {
 		try {
 			fastify.log.info('Fetching reservations from database');
 
@@ -88,11 +88,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					.returning();
 
 				if (!createdReservation) {
-					fastify.log.error('Database insertion failed - no data returned');
-					return reply.status(500).send({
-						error: 'Database error',
-						message: 'Failed to create reservation',
-					});
+					throw fastify.httpErrors.internalServerError(
+						'Failed to create reservation',
+					);
 				}
 
 				fastify.log.info(
@@ -107,40 +105,24 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					message: 'Reservation created successfully',
 				});
 			} catch (error: unknown) {
-				const errorMessage =
-					error instanceof Error ? error.message : 'Unknown error';
-				const errorName = error instanceof Error ? error.name : 'UnknownError';
-
-				fastify.log.error(
-					{
-						error: errorMessage,
-						name: errorName,
-					},
-					'Failed to create reservation',
-				);
+				fastify.log.error({ error }, 'Failed to create reservation');
 
 				// Handle validation errors
 				if (error instanceof Error && error.name === 'ZodError') {
-					return reply.status(400).send({
-						error: 'Validation error',
-						message: 'Invalid reservation data provided',
-						details: error.message.split('\n'),
-					});
+					throw fastify.httpErrors.badRequest(
+						'Invalid reservation data provided',
+					);
 				}
 
 				// Handle database constraint errors
 				if (error instanceof Error && error.message.includes('constraint')) {
-					return reply.status(400).send({
-						error: 'Database constraint error',
-						message: 'Invalid data provided',
-					});
+					throw fastify.httpErrors.badRequest('Invalid data provided');
 				}
 
 				// Generic error response
-				return reply.status(500).send({
-					error: 'Internal server error',
-					message: 'Failed to create reservation',
-				});
+				throw fastify.httpErrors.internalServerError(
+					'Failed to create reservation',
+				);
 			}
 		},
 	);
@@ -177,11 +159,7 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					.limit(1);
 
 				if (!existingReservation) {
-					fastify.log.warn({ id }, 'Reservation not found');
-					return reply.status(404).send({
-						error: 'Not found',
-						message: 'Reservation not found',
-					});
+					throw fastify.httpErrors.notFound('Reservation not found');
 				}
 
 				// Prepare update data with proper date conversions
@@ -215,11 +193,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					.returning();
 
 				if (!updatedReservation) {
-					fastify.log.error('Database update failed - no data returned');
-					return reply.status(500).send({
-						error: 'Database error',
-						message: 'Failed to update reservation',
-					});
+					throw fastify.httpErrors.internalServerError(
+						'Failed to update reservation',
+					);
 				}
 
 				fastify.log.info(
@@ -234,40 +210,24 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					message: 'Reservation updated successfully',
 				});
 			} catch (error: unknown) {
-				const errorMessage =
-					error instanceof Error ? error.message : 'Unknown error';
-				const errorName = error instanceof Error ? error.name : 'UnknownError';
-
-				fastify.log.error(
-					{
-						error: errorMessage,
-						name: errorName,
-					},
-					'Failed to update reservation',
-				);
+				fastify.log.error({ error }, 'Failed to update reservation');
 
 				// Handle validation errors
 				if (error instanceof Error && error.name === 'ZodError') {
-					return reply.status(400).send({
-						error: 'Validation error',
-						message: 'Invalid reservation data provided',
-						details: error.message.split('\n'),
-					});
+					throw fastify.httpErrors.badRequest(
+						'Invalid reservation data provided',
+					);
 				}
 
 				// Handle database constraint errors
 				if (error instanceof Error && error.message.includes('constraint')) {
-					return reply.status(400).send({
-						error: 'Database constraint error',
-						message: 'Invalid data provided',
-					});
+					throw fastify.httpErrors.badRequest('Invalid data provided');
 				}
 
 				// Generic error response
-				return reply.status(500).send({
-					error: 'Internal server error',
-					message: 'Failed to update reservation',
-				});
+				throw fastify.httpErrors.internalServerError(
+					'Failed to update reservation',
+				);
 			}
 		},
 	);
@@ -298,11 +258,7 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					.limit(1);
 
 				if (!existingReservation) {
-					fastify.log.warn({ id }, 'Reservation not found');
-					return reply.status(404).send({
-						error: 'Not found',
-						message: 'Reservation not found',
-					});
+					throw fastify.httpErrors.notFound('Reservation not found');
 				}
 
 				// Delete reservation from database
@@ -312,11 +268,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					.returning();
 
 				if (!deletedReservation) {
-					fastify.log.error('Database deletion failed - no data returned');
-					return reply.status(500).send({
-						error: 'Database error',
-						message: 'Failed to delete reservation',
-					});
+					throw fastify.httpErrors.internalServerError(
+						'Failed to delete reservation',
+					);
 				}
 
 				fastify.log.info(
@@ -331,23 +285,10 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					reservation: deletedReservation,
 				});
 			} catch (error: unknown) {
-				const errorMessage =
-					error instanceof Error ? error.message : 'Unknown error';
-				const errorName = error instanceof Error ? error.name : 'UnknownError';
-
-				fastify.log.error(
-					{
-						error: errorMessage,
-						name: errorName,
-					},
+				fastify.log.error({ error }, 'Failed to delete reservation');
+				throw fastify.httpErrors.internalServerError(
 					'Failed to delete reservation',
 				);
-
-				// Generic error response
-				return reply.status(500).send({
-					error: 'Internal server error',
-					message: 'Failed to delete reservation',
-				});
 			}
 		},
 	);

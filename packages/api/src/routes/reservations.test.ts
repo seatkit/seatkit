@@ -277,7 +277,7 @@ describe('Reservations API', () => {
 			expect(response.statusCode).toBe(404);
 
 			const body = response.json<ErrorResponse>();
-			expect(body.error).toBe('Not found');
+			expect(body.error).toBe('Not Found');
 			expect(body.message).toBe('Reservation not found');
 		});
 
@@ -378,7 +378,7 @@ describe('Reservations API', () => {
 			expect(response.statusCode).toBe(404);
 
 			const body = response.json<ErrorResponse>();
-			expect(body.error).toBe('Not found');
+			expect(body.error).toBe('Not Found');
 			expect(body.message).toBe('Reservation not found');
 		});
 

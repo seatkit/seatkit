@@ -7,7 +7,7 @@
 // Common utilities
 export * from './common.js';
 
-// Domain schemas
+// Domain schemas (SSOT for entities)
 export * from './reservation.js';
 export * from './table.js';
 export * from './room.js';

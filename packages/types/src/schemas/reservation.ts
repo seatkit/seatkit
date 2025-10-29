@@ -107,7 +107,10 @@ export const CreateReservationSchema = ReservationSchema.omit({
 	tableIds: z.array(z.string()).nullable().optional(), // Optional during creation
 	notes: z.string().nullable().optional(), // Optional during creation
 	tags: z.array(z.string()).nullable().optional(), // Optional during creation
-	source: z.enum(['phone', 'web', 'walk_in', 'email', 'other']).nullable().optional(), // Optional during creation
+	source: z
+		.enum(['phone', 'web', 'walk_in', 'email', 'other'])
+		.nullable()
+		.optional(), // Optional during creation
 });
 
 export type CreateReservation = z.infer<typeof CreateReservationSchema>;

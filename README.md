@@ -258,23 +258,57 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete technical details.
 
 ### Running Tests
 
+#### Quick Start (All Packages)
+
 ```bash
 # Run all tests
 pnpm test
 
 # Run tests for specific package
 pnpm --filter @seatkit/types test
+pnpm --filter @seatkit/utils test
+```
 
-# Run tests in watch mode
-pnpm --filter @seatkit/api test:watch
+#### API Tests (Requires Database)
 
-# Run with coverage
-pnpm test -- --coverage
+API tests require a PostgreSQL test database and use GCP Secret Manager for credentials:
+
+```bash
+cd packages/api
+
+# Authenticate with Google Cloud (required)
+gcloud auth application-default login
+export GOOGLE_CLOUD_PROJECT=seatkit-dev
+
+# Run API tests with automatic database setup
+pnpm test:local
+```
+
+**What `test:local` does:**
+1. Fetches test database credentials from Secret Manager
+2. Runs migrations on the test database
+3. Executes all tests with Vitest
+
+**Alternative**: Run tests manually:
+
+```bash
+# Set up test database first
+pnpm db:migrate:test
+
+# Then run tests
+TEST_DATABASE_URL="postgresql://localhost:5432/seatkit_test" pnpm test
+
+# Or in watch mode
+TEST_DATABASE_URL="postgresql://localhost:5432/seatkit_test" pnpm test:watch
 ```
 
 ### Test Database
 
-Tests use a separate PostgreSQL database (`seatkit_test`) to avoid affecting development data. Migrations run automatically before tests in CI.
+Tests use a separate PostgreSQL database (`seatkit_test`) to avoid affecting development data:
+
+- **Local Development**: Create with `createdb seatkit_test`
+- **CI/CD**: PostgreSQL service container runs automatically
+- **Migrations**: Run automatically via `test:local` or manually with `pnpm db:migrate:test`
 
 ---
 
@@ -353,9 +387,10 @@ See [DEVELOPMENT.md](./DEVELOPMENT.md) for coding standards.
 - [x] Database migrations
 - [x] GET /api/reservations
 - [x] POST /api/reservations
-- [ ] PUT /api/reservations/:id
-- [ ] DELETE /api/reservations/:id
+- [x] PUT /api/reservations/:id
+- [x] DELETE /api/reservations/:id
 - [ ] WebSocket real-time updates
+- [ ] Authentication & authorization
 
 ### 📝 Phase 3: Frontend (Planned)
 

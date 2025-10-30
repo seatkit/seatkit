@@ -45,5 +45,8 @@ export default defineConfig({
 		command: 'pnpm dev',
 		port: 3000,
 		reuseExistingServer: !process.env.CI,
+		timeout: 120 * 1000,
 	},
+	// Note: API server (port 3001) is started separately in CI if needed
+	// Tests that require API server will be skipped if API_SERVER_AVAILABLE=false
 });

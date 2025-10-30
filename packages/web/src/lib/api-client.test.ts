@@ -21,7 +21,7 @@ import {
 
 // Mock fetch
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 // Mock API_BASE_URL
 vi.mock('./api-config.js', () => ({
@@ -286,16 +286,16 @@ describe('helper functions', () => {
 		['apiPut', apiPut, { name: 'Test' }, 'PUT'],
 		['apiDelete', apiDelete, undefined, 'DELETE'],
 	])('%s should make a %s request', async (_name, fn, body, method) => {
-		const mockData = { id: 1, ...(body || {}) };
+		const mockData = body ? { id: 1, ...body } : { id: 1 };
 		mockFetch.mockResolvedValueOnce(createMockResponse(mockData));
 
 		const result =
-			body !== undefined
-				? await (fn as (endpoint: string, body: unknown) => Promise<unknown>)(
+			body === undefined
+				? await (fn as (endpoint: string) => Promise<unknown>)('/test')
+				: await (fn as (endpoint: string, body: unknown) => Promise<unknown>)(
 						'/test',
 						body,
-					)
-				: await (fn as (endpoint: string) => Promise<unknown>)('/test');
+					);
 
 		expect(mockFetch).toHaveBeenCalledWith(
 			'http://localhost:3001/test',

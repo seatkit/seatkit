@@ -33,7 +33,7 @@ Build a complete web-based reservation management system with:
 
 ## 📦 PR Breakdown
 
-### PR #17: Documentation & Foundation ✅ **[IN PROGRESS]**
+### PR #17: Documentation & Foundation ✅ **[COMPLETE]**
 
 **Target LoC**: ~500 lines (config + docs, not counting dependencies)
 
@@ -41,34 +41,34 @@ Build a complete web-based reservation management system with:
 
 **Documentation**:
 - [x] PR_PLAN.md - This working document
-- [ ] ADR-002: Next.js 15 App Router Architecture
-- [ ] ADR-003: State Management (TanStack Query + Zustand)
-- [ ] ADR-004: E2E Testing with Playwright
-- [ ] Update ARCHITECTURE.md (reflect state management change)
+- [x] ADR-002: Next.js 15 App Router Architecture
+- [x] ADR-003: State Management (TanStack Query + Zustand)
+- [x] ADR-004: E2E Testing with Playwright
+- [x] Update ARCHITECTURE.md (reflect state management change)
 
 **Package Setup**:
-- [ ] Create `packages/web/` directory structure
-- [ ] `package.json` - Next.js 15, React 19, TanStack Query, Zustand
-- [ ] `tsconfig.json` - Frontend-specific TypeScript config
-- [ ] `next.config.mjs` - Next.js configuration
-- [ ] `eslint.config.js` - Linting for React/Next.js
-- [ ] `playwright.config.ts` - E2E test configuration
-- [ ] `.env.example` - Environment variable template
+- [x] Create `packages/web/` directory structure
+- [x] `package.json` - Next.js 15, React 19, TanStack Query, Zustand
+- [x] `tsconfig.json` - Frontend-specific TypeScript config
+- [x] `next.config.mjs` - Next.js configuration
+- [x] `eslint.config.js` - Linting for React/Next.js
+- [x] `playwright.config.ts` - E2E test configuration
+- [x] `.env.example` - Environment variable template (optional, can be added later)
 
 **Next.js App**:
-- [ ] `src/app/layout.tsx` - Root layout
-- [ ] `src/app/page.tsx` - Health check / landing page
-- [ ] `src/app/globals.css` - Basic styling setup
-- [ ] Basic Tailwind CSS configuration
+- [x] `src/app/layout.tsx` - Root layout
+- [x] `src/app/page.tsx` - Health check / landing page
+- [x] `src/app/globals.css` - Basic styling setup
+- [x] Basic Tailwind CSS configuration
 
 **CI/CD**:
-- [ ] Update `.github/workflows/ci.yml` for web package
-- [ ] Add Playwright browser installation step
-- [ ] Add web package to Turborepo pipeline
+- [x] Update `.github/workflows/ci.yml` for web package
+- [x] Add Playwright browser installation step
+- [x] Add web package to Turborepo pipeline
 
 **Testing**:
-- [ ] Basic E2E test: Home page loads
-- [ ] Verify full build pipeline works
+- [x] Basic E2E test: Home page loads
+- [x] Verify full build pipeline works
 
 **Acceptance Criteria**:
 - ✅ All ADRs created and documented

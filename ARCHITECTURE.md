@@ -619,11 +619,28 @@ How do we manage application state, especially with real-time data?
    - [ ] Atomic/distributed state (Jotai/Recoil)
    - [ ] Feature-based (each feature owns its state)
 
-### Recommendation Needed
+### ✅ Decision Made
 
-**Decision**: _[To be filled in]_
+**Decision**: **TanStack Query + Zustand** (Override: Previously planned Redux Toolkit + RTK Query)
 
-**Rationale**: _[Why this choice?]_
+**Rationale**:
+
+1. **Separation of Concerns**: TanStack Query handles server state (API data, caching, refetching), Zustand handles UI state (modals, filters, form drafts)
+2. **Code Volume**: ~63% less boilerplate (~420 LoC vs ~1,120 LoC with Redux Toolkit across 7 entities)
+3. **Developer Experience**: Simpler learning curve, better TypeScript support, modern patterns
+4. **Real-time Ready**: Easy integration with Supabase Realtime via query invalidation
+5. **Next.js Compatible**: Works seamlessly with React Server Components
+6. **Modern Standard**: Industry momentum toward TanStack Query for React server state
+
+**Implementation Details**:
+
+- **Server State**: TanStack Query v5 for all API data fetching, caching, and synchronization
+- **UI State**: Zustand v4 for lightweight local state (modals, filters, notifications)
+- **Cache Strategy**: Stale-while-revalidate with 5-minute cache time
+- **Optimistic Updates**: Built-in support via `onMutate` + `onError` rollback
+- **Real-time**: Phase 1 polling → Phase 2 Supabase Realtime + invalidation
+
+**See ADR-003** for complete decision rationale and implementation patterns.
 
 ---
 
@@ -1318,7 +1335,7 @@ Quick reference for all architectural decisions:
 | 5   | API Style          | REST + Supabase Realtime                                    | ✅ Decided |
 | 6   | Backend Framework  | Fastify + Zod validation                                    | ✅ Decided |
 | 7   | Frontend Framework | Next.js 15 + React 19 + shadcn/ui                           | ✅ Decided |
-| 8   | State Management   | TanStack Query + Zustand (override: was Redux Toolkit)     | ✅ Decided |
+| 8   | State Management   | TanStack Query + Zustand (override: was Redux Toolkit)      | ✅ Decided |
 | 9   | Authentication     | Supabase Auth                                               | ✅ Decided |
 | 10  | Real-Time          | Supabase Realtime (Postgres Changes + Broadcast + Presence) | ✅ Decided |
 | 11  | File Storage       | Supabase Storage                                            | ✅ Decided |

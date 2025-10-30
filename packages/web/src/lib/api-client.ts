@@ -7,6 +7,7 @@
 import { API_BASE_URL } from './api-config.js';
 
 import type { ApiErrorResponse, ApiRequestOptions } from './api-types.js';
+import type { ZodSchema } from 'zod';
 
 /**
  * Custom error class for API errors
@@ -40,11 +41,12 @@ async function parseErrorResponse(
 }
 
 /**
- * Make a type-safe API request
+ * Make a type-safe API request with optional Zod validation
  */
 export async function apiRequest<T>(
 	endpoint: string,
 	options: ApiRequestOptions = {},
+	schema?: ZodSchema<T>,
 ): Promise<T> {
 	const { method = 'GET', headers = {}, body, signal } = options;
 
@@ -80,33 +82,65 @@ export async function apiRequest<T>(
 		return undefined as T;
 	}
 
-	return (await response.json()) as T;
+	const data = (await response.json()) as unknown;
+
+	// Validate response with schema if provided
+	if (schema) {
+		const result = schema.safeParse(data);
+		if (!result.success) {
+			throw new ApiError(500, 'Invalid Response', {
+				error: 'Validation Error',
+				message: 'API response does not match expected schema',
+				details: result.error.errors.map(e => {
+					const path = e.path.length > 0 ? e.path.join('.') : 'root';
+					return `${path}: ${e.message}`;
+				}),
+			});
+		}
+		return result.data;
+	}
+
+	return data as T;
 }
 
 /**
  * GET request helper
  */
-export async function apiGet<T>(endpoint: string): Promise<T> {
-	return apiRequest<T>(endpoint, { method: 'GET' });
+export async function apiGet<T>(
+	endpoint: string,
+	schema?: ZodSchema<T>,
+): Promise<T> {
+	return apiRequest<T>(endpoint, { method: 'GET' }, schema);
 }
 
 /**
  * POST request helper
  */
-export async function apiPost<T>(endpoint: string, body: unknown): Promise<T> {
-	return apiRequest<T>(endpoint, { method: 'POST', body });
+export async function apiPost<T>(
+	endpoint: string,
+	body: unknown,
+	schema?: ZodSchema<T>,
+): Promise<T> {
+	return apiRequest<T>(endpoint, { method: 'POST', body }, schema);
 }
 
 /**
  * PUT request helper
  */
-export async function apiPut<T>(endpoint: string, body: unknown): Promise<T> {
-	return apiRequest<T>(endpoint, { method: 'PUT', body });
+export async function apiPut<T>(
+	endpoint: string,
+	body: unknown,
+	schema?: ZodSchema<T>,
+): Promise<T> {
+	return apiRequest<T>(endpoint, { method: 'PUT', body }, schema);
 }
 
 /**
  * DELETE request helper
  */
-export async function apiDelete<T>(endpoint: string): Promise<T> {
-	return apiRequest<T>(endpoint, { method: 'DELETE' });
+export async function apiDelete<T>(
+	endpoint: string,
+	schema?: ZodSchema<T>,
+): Promise<T> {
+	return apiRequest<T>(endpoint, { method: 'DELETE' }, schema);
 }

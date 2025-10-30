@@ -12,6 +12,10 @@ export default [
 			'test-results/**',
 			'e2e/**',
 			'playwright.config.ts',
+			'**/*.test.ts',
+			'**/*.test.tsx',
+			'**/*.spec.ts',
+			'**/*.spec.tsx',
 		],
 	},
 	{

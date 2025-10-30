@@ -167,6 +167,7 @@ jobs:
         run: pnpm test:e2e --project=chromium
         env:
           BASE_URL: http://localhost:3000
+          API_SERVER_AVAILABLE: false  # Skip API-dependent tests until API server is set up in CI
 
       - name: Upload test artifacts
         if: failure()

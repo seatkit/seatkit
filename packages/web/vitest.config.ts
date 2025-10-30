@@ -10,8 +10,9 @@ export default defineConfig({
 			'**/playwright-report/**',
 			'**/test-results/**',
 		],
-		environment: 'node',
+		environment: 'jsdom',
 		globals: true,
 		passWithNoTests: true,
+		setupFiles: ['./src/test/setup.ts'],
 	},
 });

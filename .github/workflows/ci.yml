@@ -159,10 +159,12 @@ jobs:
         run: pnpm build --force
 
       - name: Install Playwright browsers
-        run: pnpm --filter @seatkit/web playwright install --with-deps chromium
+        working-directory: packages/web
+        run: pnpm exec playwright install chromium --with-deps
 
       - name: Run E2E tests
-        run: pnpm --filter @seatkit/web test:e2e --project=chromium
+        working-directory: packages/web
+        run: pnpm test:e2e --project=chromium
         env:
           BASE_URL: http://localhost:3000
 

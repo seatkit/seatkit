@@ -4,7 +4,15 @@ import seatkitConfig from '@seatkit/eslint-config';
 export default [
 	...seatkitConfig,
 	{
-		ignores: ['.next/**', 'node_modules/**', 'dist/**', 'playwright-report/**', 'test-results/**'],
+		ignores: [
+			'.next/**',
+			'node_modules/**',
+			'dist/**',
+			'playwright-report/**',
+			'test-results/**',
+			'e2e/**',
+			'playwright.config.ts',
+		],
 	},
 	{
 		files: ['**/*.tsx', '**/*.ts'],

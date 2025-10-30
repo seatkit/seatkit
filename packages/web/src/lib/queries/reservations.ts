@@ -12,12 +12,7 @@ import {
 	type UseMutationOptions,
 } from '@tanstack/react-query';
 
-import {
-	apiGet,
-	apiPost,
-	apiPut,
-	apiDelete,
-} from '../api-client.js';
+import { apiGet, apiPost, apiPut, apiDelete } from '../api-client.js';
 import { API_ENDPOINTS } from '../api-config.js';
 
 import type {
@@ -26,10 +21,7 @@ import type {
 	UpdateReservationResponse,
 	DeleteReservationResponse,
 } from '../api-types.js';
-import type {
-	CreateReservation,
-	UpdateReservation,
-} from '@seatkit/types';
+import type { CreateReservation, UpdateReservation } from '@seatkit/types';
 
 /**
  * Query key factory for reservations
@@ -93,7 +85,11 @@ export function useCreateReservation(
 		mutationFn: createReservation,
 		onSuccess: () => {
 			// Invalidate and refetch reservations list
-			void queryClient.invalidateQueries({ queryKey: reservationKeys.lists() });
+			queryClient
+				.invalidateQueries({ queryKey: reservationKeys.lists() })
+				.catch(() => {
+					// Ignore errors from cache invalidation
+				});
 		},
 		...options,
 	});
@@ -128,10 +124,18 @@ export function useUpdateReservation(
 		mutationFn: updateReservation,
 		onSuccess: (data, variables) => {
 			// Invalidate both list and detail queries
-			void queryClient.invalidateQueries({ queryKey: reservationKeys.lists() });
-			void queryClient.invalidateQueries({
-				queryKey: reservationKeys.detail(variables.id),
-			});
+			queryClient
+				.invalidateQueries({ queryKey: reservationKeys.lists() })
+				.catch(() => {
+					// Ignore errors from cache invalidation
+				});
+			queryClient
+				.invalidateQueries({
+					queryKey: reservationKeys.detail(variables.id),
+				})
+				.catch(() => {
+					// Ignore errors from cache invalidation
+				});
 		},
 		...options,
 	});
@@ -160,9 +164,12 @@ export function useDeleteReservation(
 		mutationFn: deleteReservation,
 		onSuccess: () => {
 			// Invalidate reservations list
-			void queryClient.invalidateQueries({ queryKey: reservationKeys.lists() });
+			queryClient
+				.invalidateQueries({ queryKey: reservationKeys.lists() })
+				.catch(() => {
+					// Ignore errors from cache invalidation
+				});
 		},
 		...options,
 	});
 }
-

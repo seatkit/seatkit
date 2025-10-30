@@ -11,7 +11,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, type ReactNode } from 'react';
 
 type QueryProviderProps = {
-	children: ReactNode;
+	readonly children: ReactNode;
 };
 
 /**

@@ -9,7 +9,7 @@
  * In production, this should be set via NEXT_PUBLIC_API_URL
  */
 export function getApiBaseUrl(): string {
-	if (typeof window === 'undefined') {
+	if (typeof globalThis.window === 'undefined') {
 		// Server-side: use environment variable or default
 		return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 	}
@@ -35,4 +35,3 @@ export const API_ENDPOINTS = {
 		delete: (id: string) => `/api/reservations/${id}`,
 	},
 } as const;
-

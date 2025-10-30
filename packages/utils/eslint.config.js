@@ -14,4 +14,11 @@ export default [
 			},
 		},
 	},
+	{
+		files: ['src/test-utils.ts'],
+		rules: {
+			// TypeScript handles Response type checking, so disable no-undef for DOM types
+			'no-undef': 'off',
+		},
+	},
 ];

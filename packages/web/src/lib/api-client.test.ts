@@ -8,6 +8,7 @@ import {
 	createMockErrorResponse,
 	createMockErrorResponseWithoutJson,
 } from '@seatkit/utils/test-utils';
+import { z } from 'zod';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import {
@@ -273,6 +274,102 @@ describe('apiRequest', () => {
 			expect(requestInit?.body).toBeUndefined();
 		});
 	});
+
+	describe('Zod validation', () => {
+		const TestSchema = z.object({
+			id: z.number(),
+			name: z.string(),
+		});
+
+		it('should validate response with schema when provided', async () => {
+			const mockData = { id: 1, name: 'Test' };
+			mockFetch.mockResolvedValueOnce(createMockResponse(mockData));
+
+			const result = await apiRequest('/test', {}, TestSchema);
+
+			expect(result).toEqual(mockData);
+		});
+
+		it('should throw ApiError when response does not match schema', async () => {
+			const invalidData = { id: 'not-a-number', name: 'Test' };
+			mockFetch.mockResolvedValueOnce(createMockResponse(invalidData));
+
+			await expectApiError(() => apiRequest('/test', {}, TestSchema), {
+				status: 500,
+				statusText: 'Invalid Response',
+				error: {
+					error: 'Validation Error',
+					message: 'API response does not match expected schema',
+					details: expect.arrayContaining([
+						expect.stringContaining('id'),
+					]),
+				},
+			});
+		});
+
+		it('should throw ApiError with detailed validation errors', async () => {
+			const invalidData = { id: 'not-a-number' };
+			mockFetch.mockResolvedValueOnce(createMockResponse(invalidData));
+
+			try {
+				await apiRequest('/test', {}, TestSchema);
+				expect.fail('Should have thrown ApiError');
+			} catch (error) {
+				expect(error).toBeInstanceOf(ApiError);
+				if (error instanceof ApiError) {
+					expect(error.error.details).toBeDefined();
+					expect(error.error.details?.length).toBeGreaterThan(0);
+					// Should include error for missing 'name' field
+					expect(error.error.details).toEqual(
+						expect.arrayContaining([
+							expect.stringContaining('name'),
+						]),
+					);
+				}
+			}
+		});
+
+		it('should work without schema (backward compatible)', async () => {
+			const mockData = { id: 1, name: 'Test' };
+			mockFetch.mockResolvedValueOnce(createMockResponse(mockData));
+
+			const result = await apiRequest<typeof mockData>('/test');
+
+			expect(result).toEqual(mockData);
+		});
+
+		it('should validate nested objects correctly', async () => {
+			const NestedSchema = z.object({
+				user: z.object({
+					id: z.number(),
+					name: z.string(),
+				}),
+			});
+
+			const validData = { user: { id: 1, name: 'Test' } };
+			mockFetch.mockResolvedValueOnce(createMockResponse(validData));
+
+			const result = await apiRequest('/test', {}, NestedSchema);
+
+			expect(result).toEqual(validData);
+		});
+
+		it('should handle date coercion in schema', async () => {
+			const DateSchema = z.object({
+				date: z.coerce.date(),
+				name: z.string(),
+			});
+
+			const mockData = { date: '2025-01-15T10:00:00Z', name: 'Test' };
+			mockFetch.mockResolvedValueOnce(createMockResponse(mockData));
+
+			const result = await apiRequest('/test', {}, DateSchema);
+
+			expect(result).toHaveProperty('date');
+			expect(result.date).toBeInstanceOf(Date);
+			expect(result.name).toBe('Test');
+		});
+	});
 });
 
 describe('helper functions', () => {
@@ -304,6 +401,20 @@ describe('helper functions', () => {
 				...(body !== undefined && { body: JSON.stringify(body) }),
 			}),
 		);
+		expect(result).toEqual(mockData);
+	});
+
+	it('should support schema parameter in helper functions', async () => {
+		const TestSchema = z.object({
+			id: z.number(),
+			name: z.string(),
+		});
+
+		const mockData = { id: 1, name: 'Test' };
+		mockFetch.mockResolvedValueOnce(createMockResponse(mockData));
+
+		const result = await apiGet('/test', TestSchema);
+
 		expect(result).toEqual(mockData);
 	});
 });

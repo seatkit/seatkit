@@ -14,13 +14,17 @@ import {
 
 import { apiGet, apiPost, apiPut, apiDelete } from '../api-client.js';
 import { API_ENDPOINTS } from '../api-config.js';
-
-import type {
-	ListReservationsResponse,
-	CreateReservationResponse,
-	UpdateReservationResponse,
-	DeleteReservationResponse,
+import {
+	ListReservationsResponseSchema,
+	CreateReservationResponseSchema,
+	UpdateReservationResponseSchema,
+	DeleteReservationResponseSchema,
+	type ListReservationsResponse,
+	type CreateReservationResponse,
+	type UpdateReservationResponse,
+	type DeleteReservationResponse,
 } from '../api-types.js';
+
 import type { CreateReservation, UpdateReservation } from '@seatkit/types';
 
 /**
@@ -38,7 +42,10 @@ export const reservationKeys = {
  * Fetch all reservations
  */
 async function fetchReservations(): Promise<ListReservationsResponse> {
-	return apiGet<ListReservationsResponse>(API_ENDPOINTS.reservations.list);
+	return apiGet<ListReservationsResponse>(
+		API_ENDPOINTS.reservations.list,
+		ListReservationsResponseSchema,
+	);
 }
 
 /**
@@ -66,6 +73,7 @@ async function createReservation(
 	return apiPost<CreateReservationResponse>(
 		API_ENDPOINTS.reservations.create,
 		data,
+		CreateReservationResponseSchema,
 	);
 }
 
@@ -105,6 +113,7 @@ async function updateReservation(
 	return apiPut<UpdateReservationResponse>(
 		API_ENDPOINTS.reservations.update(id),
 		updateData,
+		UpdateReservationResponseSchema,
 	);
 }
 
@@ -149,6 +158,7 @@ async function deleteReservation(
 ): Promise<DeleteReservationResponse> {
 	return apiDelete<DeleteReservationResponse>(
 		API_ENDPOINTS.reservations.delete(id),
+		DeleteReservationResponseSchema,
 	);
 }
 

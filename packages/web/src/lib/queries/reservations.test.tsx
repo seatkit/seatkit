@@ -12,6 +12,12 @@ import React, { type ReactNode } from 'react';
 import * as apiClient from '../api-client.js';
 import { API_ENDPOINTS } from '../api-config.js';
 import {
+	ListReservationsResponseSchema,
+	CreateReservationResponseSchema,
+	UpdateReservationResponseSchema,
+	DeleteReservationResponseSchema,
+} from '../api-types.js';
+import {
 	reservationKeys,
 	useReservations,
 	useCreateReservation,
@@ -104,8 +110,9 @@ describe('useReservations', () => {
 			expect(result.current.isSuccess).toBe(true);
 		});
 
-		expect(apiClient.apiGet).toHaveBeenCalledWith<ListReservationsResponse>(
+		expect(apiClient.apiGet).toHaveBeenCalledWith(
 			API_ENDPOINTS.reservations.list,
+			ListReservationsResponseSchema,
 		);
 		expect(result.current.data).toEqual(mockResponse);
 	});
@@ -193,9 +200,10 @@ describe('useCreateReservation', () => {
 			expect(result.current.isSuccess).toBe(true);
 		});
 
-		expect(apiClient.apiPost).toHaveBeenCalledWith<CreateReservationResponse>(
+		expect(apiClient.apiPost).toHaveBeenCalledWith(
 			API_ENDPOINTS.reservations.create,
 			mockCreateData,
+			CreateReservationResponseSchema,
 		);
 		expect(result.current.data).toEqual(mockResponse);
 	});
@@ -289,7 +297,7 @@ describe('useUpdateReservation', () => {
 			expect(result.current.isSuccess).toBe(true);
 		});
 
-		expect(apiClient.apiPut).toHaveBeenCalledWith<UpdateReservationResponse>(
+		expect(apiClient.apiPut).toHaveBeenCalledWith(
 			API_ENDPOINTS.reservations.update(reservationId),
 			{
 				updatedAt: mockUpdateData.updatedAt,
@@ -299,6 +307,7 @@ describe('useUpdateReservation', () => {
 					phone: '+1234567890',
 				},
 			},
+			UpdateReservationResponseSchema,
 		);
 		expect(result.current.data).toEqual(mockResponse);
 	});
@@ -375,8 +384,9 @@ describe('useDeleteReservation', () => {
 			expect(result.current.isSuccess).toBe(true);
 		});
 
-		expect(apiClient.apiDelete).toHaveBeenCalledWith<DeleteReservationResponse>(
+		expect(apiClient.apiDelete).toHaveBeenCalledWith(
 			API_ENDPOINTS.reservations.delete(reservationId),
+			DeleteReservationResponseSchema,
 		);
 		expect(result.current.data).toEqual(mockResponse);
 	});

@@ -20,6 +20,10 @@
 		"./database": {
 			"types": "./dist/database.d.ts",
 			"import": "./dist/database.js"
+		},
+		"./test-utils": {
+			"types": "./dist/test-utils.d.ts",
+			"import": "./dist/test-utils.js"
 		}
 	},
 	"main": "./dist/index.js",

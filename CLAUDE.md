@@ -162,6 +162,12 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete details:
 - **Framework Handling**: Fastify automatically catches thrown HTTP errors and converts to proper responses
 - **No Try-Catch**: HTTP error throws don't need try-catch wrapping - framework handles them
 
+**State Management (Updated):**
+- **Server State**: TanStack Query for data fetching, caching, and synchronization
+- **UI State**: Zustand for lightweight local state management
+- **Change**: Originally planned Redux Toolkit + RTK Query, switched to TanStack Query + Zustand for simpler, more composable approach
+- **Rationale**: Better TypeScript support, smaller bundle size, easier to learn and maintain (see ADR-003 when documented)
+
 ---
 
 ## 📊 Project Architecture
@@ -229,9 +235,14 @@ Current implementation progress across packages:
   - shadcn/ui-based design system
   - Reusable React components
 
-- 🚧 **@seatkit/web** - Not Started
-  - Next.js 15 + React 19 frontend
-  - Redux Toolkit + RTK Query state management
+- ✅ **@seatkit/web** - Initial Setup Complete
+  - Next.js 15 + React 19 frontend with TypeScript
+  - TanStack Query + Zustand for state management
+  - Playwright E2E testing with multi-browser support
+  - Tailwind CSS for styling (shadcn/ui compatible)
+  - Vitest for unit testing
+  - Basic routing structure (home, reservations)
+  - ESLint integration with strict TypeScript checking
 
 ### Domain Model Overview
 

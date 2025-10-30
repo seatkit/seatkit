@@ -1318,7 +1318,7 @@ Quick reference for all architectural decisions:
 | 5   | API Style          | REST + Supabase Realtime                                    | ✅ Decided |
 | 6   | Backend Framework  | Fastify + Zod validation                                    | ✅ Decided |
 | 7   | Frontend Framework | Next.js 15 + React 19 + shadcn/ui                           | ✅ Decided |
-| 8   | State Management   | Redux Toolkit + RTK Query                                   | ✅ Decided |
+| 8   | State Management   | TanStack Query + Zustand (override: was Redux Toolkit)     | ✅ Decided |
 | 9   | Authentication     | Supabase Auth                                               | ✅ Decided |
 | 10  | Real-Time          | Supabase Realtime (Postgres Changes + Broadcast + Presence) | ✅ Decided |
 | 11  | File Storage       | Supabase Storage                                            | ✅ Decided |
@@ -1353,7 +1353,7 @@ Core architecture decisions locked in:
 Application & operations decisions locked in:
 
 - **Frontend**: Next.js 15 + React 19 + shadcn/ui design system
-- **State Management**: Redux Toolkit + RTK Query (server state)
+- **State Management**: TanStack Query + Zustand (server/UI state) - _Changed from Redux Toolkit + RTK Query (see ADR-003)_
 - **Testing**: Vitest (unit) + Playwright (E2E) + React Testing Library
 - **Deployment**: Docker Compose + Tilt (dev) → k3s Kubernetes (prod)
 - **i18n**: next-intl for Italian/English/Japanese support

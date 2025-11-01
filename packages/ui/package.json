@@ -1,0 +1,57 @@
+{
+	"name": "@seatkit/ui",
+	"version": "0.1.0",
+	"description": "UI component library and design system for SeatKit",
+	"license": "Apache-2.0",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./lib/utils": {
+			"types": "./dist/lib/utils.d.ts",
+			"import": "./dist/lib/utils.js"
+		},
+		"./styles": "./dist/styles.css"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsup && tailwindcss -i ./src/styles.css -o ./dist/styles.css --minify",
+		"dev": "tsup --watch",
+		"clean": "rm -rf dist",
+		"typecheck": "tsc --noEmit",
+		"typecheck:watch": "tsc --noEmit --watch",
+		"lint": "eslint . --max-warnings 0",
+		"lint:fix": "eslint . --fix",
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"dependencies": {
+		"@seatkit/types": "workspace:*",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
+		"tailwind-merge": "^2.5.5"
+	},
+	"devDependencies": {
+		"@seatkit/eslint-config": "workspace:*",
+		"@types/react": "^19.0.1",
+		"@types/react-dom": "^19.0.2",
+		"autoprefixer": "^10.4.20",
+		"postcss": "^8.4.49",
+		"tailwindcss": "^3.4.15",
+		"tsup": "^8.3.5",
+		"typescript": "^5.6.3"
+	},
+	"peerDependencies": {
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

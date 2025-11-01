@@ -8,7 +8,10 @@
 // Export utilities
 export { cn, formatStatus, getStatusColor, type PolymorphicComponentProps } from './lib/utils.js';
 
-// Note: Component exports will be added as we build them in future PRs
+// Export components
+export { GlassContainer, type GlassContainerProps } from './components/glass-container.js';
+
+// Note: Additional component exports will be added in future PRs
 // export { Button } from './components/button.js';
 // export { Card } from './components/card.js';
 // etc.

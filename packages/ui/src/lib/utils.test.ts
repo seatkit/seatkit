@@ -30,59 +30,44 @@ describe('cn', () => {
 });
 
 describe('formatStatus', () => {
-	it('should format confirmed status', () => {
-		expect(formatStatus('confirmed')).toBe('Confirmed');
-	});
-
-	it('should format pending status', () => {
-		expect(formatStatus('pending')).toBe('Pending');
-	});
-
-	it('should format seated status', () => {
-		expect(formatStatus('seated')).toBe('Seated');
-	});
-
-	it('should format completed status', () => {
-		expect(formatStatus('completed')).toBe('Completed');
-	});
-
-	it('should format cancelled status', () => {
-		expect(formatStatus('cancelled')).toBe('Cancelled');
-	});
-
-	it('should format no-show status', () => {
-		expect(formatStatus('no-show')).toBe('No Show');
+	it.each([
+		['confirmed', 'Confirmed'],
+		['pending', 'Pending'],
+		['seated', 'Seated'],
+		['completed', 'Completed'],
+		['cancelled', 'Cancelled'],
+		['no-show', 'No Show'],
+	])('should format %s status', (status, expected) => {
+		expect(formatStatus(status as Parameters<typeof formatStatus>[0])).toBe(
+			expected,
+		);
 	});
 });
 
 describe('getStatusColor', () => {
-	it('should return color class for confirmed status', () => {
-		expect(getStatusColor('confirmed')).toContain('bg-status-confirmed');
-	});
-
-	it('should return color class for pending status', () => {
-		expect(getStatusColor('pending')).toContain('bg-status-pending');
-	});
-
-	it('should return color class for seated status', () => {
-		expect(getStatusColor('seated')).toContain('bg-status-seated');
-	});
-
-	it('should return color class for completed status', () => {
-		expect(getStatusColor('completed')).toContain('bg-status-completed');
-	});
-
-	it('should return color class for cancelled status', () => {
-		expect(getStatusColor('cancelled')).toContain('bg-status-cancelled');
-	});
-
-	it('should return color class for no-show status', () => {
-		expect(getStatusColor('no-show')).toContain('bg-status-no-show');
+	it.each([
+		['confirmed', 'bg-status-confirmed'],
+		['pending', 'bg-status-pending'],
+		['seated', 'bg-status-seated'],
+		['completed', 'bg-status-completed'],
+		['cancelled', 'bg-status-cancelled'],
+		['no-show', 'bg-status-no-show'],
+	])('should return color class for %s status', (status, expectedClass) => {
+		expect(
+			getStatusColor(status as Parameters<typeof getStatusColor>[0]),
+		).toContain(expectedClass);
 	});
 
 	it('should include text color for all statuses', () => {
-		const statuses = ['confirmed', 'pending', 'seated', 'completed', 'cancelled', 'no-show'] as const;
-		statuses.forEach((status) => {
+		const statuses = [
+			'confirmed',
+			'pending',
+			'seated',
+			'completed',
+			'cancelled',
+			'no-show',
+		] as const;
+		statuses.forEach(status => {
 			expect(getStatusColor(status)).toContain('text-white');
 		});
 	});

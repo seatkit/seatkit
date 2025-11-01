@@ -8,21 +8,21 @@ import { cn } from '../lib/utils.js';
 // Type assertion to work around React 19 compatibility
 const LiquidGlass = LiquidGlassComponent as unknown as FC<{
 	children: ReactNode;
-	className?: string | undefined;
-	style?: CSSProperties | undefined;
-	displacementScale?: number | undefined;
-	blurAmount?: number | undefined;
-	saturation?: number | undefined;
-	aberrationIntensity?: number | undefined;
-	elasticity?: number | undefined;
-	cornerRadius?: number | undefined;
-	padding?: string | undefined;
-	overLight?: boolean | undefined;
-	onClick?: (() => void) | undefined;
-	mouseContainer?: RefObject<HTMLElement> | undefined;
-	mode?: 'standard' | 'polar' | 'prominent' | 'shader' | undefined;
-	globalMousePos?: { x: number; y: number } | undefined;
-	mouseOffset?: { x: number; y: number } | undefined;
+	className?: string;
+	style?: CSSProperties;
+	displacementScale?: number;
+	blurAmount?: number;
+	saturation?: number;
+	aberrationIntensity?: number;
+	elasticity?: number;
+	cornerRadius?: number;
+	padding?: string;
+	overLight?: boolean;
+	onClick?: () => void;
+	mouseContainer?: RefObject<HTMLElement>;
+	mode?: 'standard' | 'polar' | 'prominent' | 'shader';
+	globalMousePos?: { x: number; y: number };
+	mouseOffset?: { x: number; y: number };
 }>;
 
 const glassVariants = cva('', {
@@ -146,7 +146,19 @@ export const GlassContainer = forwardRef<HTMLDivElement, GlassContainerProps>(
 		// If glass is disabled, render children in a regular div
 		if (!glass) {
 			return (
-				<div className={cn(glassVariants({ variant }), className)} style={style} onClick={onClick}>
+				<div
+					className={cn(glassVariants({ variant }), className)}
+					style={style}
+					onClick={onClick}
+					onKeyDown={(e) => {
+						if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+							e.preventDefault();
+							onClick();
+						}
+					}}
+					role={onClick ? 'button' : undefined}
+					tabIndex={onClick ? 0 : undefined}
+				>
 					{children}
 				</div>
 			);
@@ -155,20 +167,20 @@ export const GlassContainer = forwardRef<HTMLDivElement, GlassContainerProps>(
 		return (
 			<LiquidGlass
 				className={cn(glassVariants({ variant }), className)}
-				style={style}
+				{...(style !== undefined && { style })}
 				displacementScale={displacementScale}
 				blurAmount={blurAmount}
 				saturation={saturation}
 				aberrationIntensity={aberrationIntensity}
 				elasticity={elasticity}
 				cornerRadius={cornerRadius}
-				padding={padding}
+				{...(padding !== undefined && { padding })}
 				overLight={overLight}
-				onClick={onClick}
-				mouseContainer={mouseContainer}
+				{...(onClick !== undefined && { onClick })}
+				{...(mouseContainer !== undefined && { mouseContainer })}
 				mode={mode}
-				globalMousePos={globalMousePos}
-				mouseOffset={mouseOffset}
+				{...(globalMousePos !== undefined && { globalMousePos })}
+				{...(mouseOffset !== undefined && { mouseOffset })}
 			>
 				{children}
 			</LiquidGlass>

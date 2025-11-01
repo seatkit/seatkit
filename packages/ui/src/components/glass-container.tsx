@@ -1,12 +1,11 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 // eslint-disable-next-line @typescript-eslint/naming-convention
 import LiquidGlassComponent from 'liquid-glass-react';
-import { type CSSProperties, type FC, forwardRef, type ReactNode, type RefObject } from 'react';
+import { type CSSProperties, type FC, forwardRef, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 
 import { cn } from '../lib/utils.js';
 
-// Type assertion to work around React 19 compatibility
-const LiquidGlass = LiquidGlassComponent as unknown as FC<{
+type LiquidGlassPropsBase = {
 	children: ReactNode;
 	className?: string;
 	style?: CSSProperties;
@@ -23,7 +22,10 @@ const LiquidGlass = LiquidGlassComponent as unknown as FC<{
 	mode?: 'standard' | 'polar' | 'prominent' | 'shader';
 	globalMousePos?: { x: number; y: number };
 	mouseOffset?: { x: number; y: number };
-}>;
+};
+
+// Type assertion to work around React 19 compatibility
+const LiquidGlass = LiquidGlassComponent as unknown as FC<LiquidGlassPropsBase>;
 
 const glassVariants = cva('', {
 	variants: {
@@ -39,58 +41,29 @@ const glassVariants = cva('', {
 	},
 });
 
-export type GlassContainerProps = {
+export type GlassContainerProps = Omit<LiquidGlassPropsBase, 'children'> & {
 	/** Content to be rendered inside the glass container */
 	children: ReactNode;
-
-	/** Additional CSS classes */
-	className?: string;
-
-	/** Inline styles */
-	style?: CSSProperties;
-
-	/** Intensity of displacement effect (default: 100) */
-	displacementScale?: number;
-
-	/** Frosting level (default: 0.5) */
-	blurAmount?: number;
-
-	/** Color saturation intensity (default: 140) */
-	saturation?: number;
-
-	/** Chromatic aberration strength (default: 2) */
-	aberrationIntensity?: number;
-
-	/** Liquid elasticity feel - 0 is rigid, higher is more elastic (default: 0.2) */
-	elasticity?: number;
-
-	/** Border radius in pixels (default: 32) */
-	cornerRadius?: number;
-
-	/** CSS padding value */
-	padding?: string;
-
-	/** For light backgrounds (default: false) */
-	overLight?: boolean;
-
-	/** Click handler */
-	onClick?: () => void;
-
-	/** Track mouse in larger area */
-	mouseContainer?: RefObject<HTMLElement>;
-
-	/** Refraction mode: standard, polar, prominent, shader (default: standard) */
-	mode?: 'standard' | 'polar' | 'prominent' | 'shader';
-
-	/** Manual mouse position control */
-	globalMousePos?: { x: number; y: number };
-
-	/** Position offset tuning */
-	mouseOffset?: { x: number; y: number };
 
 	/** Disable glass effect (renders children without glass) */
 	glass?: boolean;
 } & VariantProps<typeof glassVariants>;
+
+/**
+ * Helper to conditionally include props when value is defined
+ */
+const conditionalProp = <T,>(value: T | undefined, propName: string): Record<string, T> | Record<string, never> =>
+	value !== undefined ? { [propName]: value } : {};
+
+/**
+ * Keyboard handler for interactive elements
+ */
+const handleKeyboardInteraction = (onClick: (() => void) | undefined) => (e: KeyboardEvent<HTMLDivElement>) => {
+	if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+		e.preventDefault();
+		onClick();
+	}
+};
 
 /**
  * GlassContainer - A wrapper component that applies Apple's liquid glass effect
@@ -143,22 +116,20 @@ export const GlassContainer = forwardRef<HTMLDivElement, GlassContainerProps>(
 		mouseOffset,
 		glass = true,
 	}) => {
+		const baseClassName = cn(glassVariants({ variant }), className);
+		const interactiveProps = onClick
+			? {
+					onClick,
+					onKeyDown: handleKeyboardInteraction(onClick),
+					role: 'button' as const,
+					tabIndex: 0,
+				}
+			: {};
+
 		// If glass is disabled, render children in a regular div
 		if (!glass) {
 			return (
-				<div
-					className={cn(glassVariants({ variant }), className)}
-					style={style}
-					onClick={onClick}
-					onKeyDown={(e) => {
-						if (onClick && (e.key === 'Enter' || e.key === ' ')) {
-							e.preventDefault();
-							onClick();
-						}
-					}}
-					role={onClick ? 'button' : undefined}
-					tabIndex={onClick ? 0 : undefined}
-				>
+				<div className={baseClassName} style={style} {...interactiveProps}>
 					{children}
 				</div>
 			);
@@ -166,21 +137,21 @@ export const GlassContainer = forwardRef<HTMLDivElement, GlassContainerProps>(
 
 		return (
 			<LiquidGlass
-				className={cn(glassVariants({ variant }), className)}
-				{...(style !== undefined && { style })}
+				className={baseClassName}
+				{...conditionalProp(style, 'style')}
 				displacementScale={displacementScale}
 				blurAmount={blurAmount}
 				saturation={saturation}
 				aberrationIntensity={aberrationIntensity}
 				elasticity={elasticity}
 				cornerRadius={cornerRadius}
-				{...(padding !== undefined && { padding })}
+				{...conditionalProp(padding, 'padding')}
 				overLight={overLight}
-				{...(onClick !== undefined && { onClick })}
-				{...(mouseContainer !== undefined && { mouseContainer })}
+				{...conditionalProp(onClick, 'onClick')}
+				{...conditionalProp(mouseContainer, 'mouseContainer')}
 				mode={mode}
-				{...(globalMousePos !== undefined && { globalMousePos })}
-				{...(mouseOffset !== undefined && { mouseOffset })}
+				{...conditionalProp(globalMousePos, 'globalMousePos')}
+				{...conditionalProp(mouseOffset, 'mouseOffset')}
 			>
 				{children}
 			</LiquidGlass>

@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-	entry: ['src/index.ts', 'src/lib/utils.ts'],
+	entry: ['src/index.ts', 'src/lib/utils.ts', 'src/components/glass-container.tsx'],
 	format: ['esm'],
 	dts: true,
 	sourcemap: true,

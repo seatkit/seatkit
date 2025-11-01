@@ -7,6 +7,7 @@ UI component library and design system for SeatKit, built on [shadcn/ui](https:/
 This package provides a comprehensive set of React components with:
 
 - **Design Tokens**: Consistent colors, spacing, typography via Tailwind CSS
+- **Liquid Glass Effect**: Apple-inspired glass morphism with interactive animations
 - **Accessibility**: WCAG 2.1 AA compliant components
 - **Type Safety**: Full TypeScript support with strict types
 - **Dark Mode**: Built-in dark mode support
@@ -47,13 +48,59 @@ const colorClasses = getStatusColor('confirmed'); // => 'bg-status-confirmed tex
 
 ### Using Components
 
-Components will be added in subsequent PRs:
+#### GlassContainer - Liquid Glass Effect
+
+Apply Apple's liquid glass effect to any component:
 
 ```tsx
-// Coming soon in PR 2: Core UI Primitives
+import { GlassContainer } from '@seatkit/ui';
+
+// Basic usage with default card variant
+<GlassContainer>
+  <h2>Reservation Details</h2>
+  <p>Party of 4 at 7:00 PM</p>
+</GlassContainer>
+
+// Button variant
+<GlassContainer variant="button" onClick={handleClick}>
+  Confirm Reservation
+</GlassContainer>
+
+// Disable glass effect when needed
+<GlassContainer glass={false}>
+  <p>Regular container without effect</p>
+</GlassContainer>
+
+// Custom glass properties
+<GlassContainer
+  displacementScale={150}
+  blurAmount={0.8}
+  elasticity={0.3}
+  cornerRadius={16}
+>
+  <div>Highly customized glass effect</div>
+</GlassContainer>
+```
+
+**Variants:**
+- `card` (default): General purpose container
+- `button`: Inline flex for button-like elements
+- `modal`: Positioned container for modals
+- `sidebar`: Full height for sidebars
+
+**Browser Compatibility:**
+- Full effect: Chrome/Edge
+- Partial effect: Safari/Firefox (no edge refraction)
+
+The effect gracefully degrades on unsupported browsers while maintaining full functionality.
+
+#### Coming Soon
+
+```tsx
+// PR 3: Core UI Primitives
 import { Button, Card } from '@seatkit/ui';
 
-// Coming soon in PR 5: Domain-specific components
+// PR 5: Domain-specific components
 import { ReservationCard, StatusBadge } from '@seatkit/ui';
 ```
 
@@ -169,13 +216,18 @@ packages/ui/
 
 ## Roadmap
 
-### ✅ PR 1: Foundation (Current)
+### ✅ PR 1: Foundation
 - Package structure
 - Tailwind configuration with design tokens
 - Utility functions
 - Build tooling
 
-### 🔄 PR 2: Core UI Primitives
+### ✅ PR 2: Glass Effect (Current)
+- **GlassContainer** component with liquid glass effect
+- React testing setup (jsdom, testing-library)
+- Comprehensive component tests
+
+### 🔄 PR 3: Core UI Primitives
 - Button component
 - Card component
 - Typography components

@@ -85,6 +85,9 @@ async function createServer() {
 
 	await fastify.register(fastifyApiReference, {
 		routePrefix: '/documentation',
+		configuration: {
+			spec: { url: '/documentation/json' },
+		},
 	});
 
 	fastify.get('/health', () => {

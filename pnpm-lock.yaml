@@ -106,7 +106,21 @@ importers:
         specifier: ^2.1.4
         version: 2.1.9(@types/node@22.18.12)(jsdom@27.0.1)
 
-  packages/engine: {}
+  packages/engine:
+    dependencies:
+      '@seatkit/types':
+        specifier: workspace:*
+        version: link:../types
+      '@seatkit/utils':
+        specifier: workspace:*
+        version: link:../utils
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.4
+        version: 2.1.9(@types/node@22.18.12)(jsdom@27.0.1)
 
   packages/eslint-config:
     dependencies:

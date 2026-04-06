@@ -1,11 +1,32 @@
 {
 	"name": "@seatkit/engine",
-	"version": "0.0.1",
-	"description": "SeatKit engine placeholder (reserving name & testing publish).",
+	"version": "0.1.0",
+	"description": "SeatKit business logic engine — pure functions for table assignment, availability, and reservation classification",
+	"type": "module",
 	"license": "Apache-2.0",
-	"main": "index.js",
-	"types": "index.d.ts",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
 	"publishConfig": {
 		"access": "public"
+	},
+	"scripts": {
+		"build": "tsc",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"dependencies": {
+		"@seatkit/types": "workspace:*",
+		"@seatkit/utils": "workspace:*"
+	},
+	"devDependencies": {
+		"typescript": "^5.6.3",
+		"vitest": "^2.1.4"
 	}
 }

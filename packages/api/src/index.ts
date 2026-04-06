@@ -13,6 +13,7 @@ import fastifyApiReference from '@scalar/fastify-api-reference';
 import Fastify from 'fastify';
 import {
 	createSerializerCompiler,
+	jsonSchemaTransform,
 	validatorCompiler,
 	type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
@@ -64,7 +65,7 @@ async function createServer() {
 				scriptSrc: ["'self'", "'unsafe-inline'"],
 				styleSrc: ["'self'", "'unsafe-inline'"],
 				imgSrc: ["'self'", 'data:', 'https:'],
-				connectSrc: ["'self'"],
+				connectSrc: ["'self'", 'https://api.scalar.com'],
 			},
 		},
 	});
@@ -82,6 +83,7 @@ async function createServer() {
 
 	// Register OpenAPI documentation — MUST be before route registrations (Pitfall 2)
 	await fastify.register(swagger, {
+		transform: jsonSchemaTransform,
 		openapi: {
 			openapi: '3.1.0',
 			info: {

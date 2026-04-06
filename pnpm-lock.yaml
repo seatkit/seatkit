@@ -62,6 +62,9 @@ importers:
       '@google-cloud/secret-manager':
         specifier: ^5.0.1
         version: 5.6.0
+      '@seatkit/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@seatkit/types':
         specifier: workspace:*
         version: link:../types

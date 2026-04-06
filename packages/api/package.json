@@ -24,7 +24,6 @@
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "tsx src/scripts/migrate.ts",
 		"db:migrate:test": "tsx src/scripts/migrate-test.ts",
-		"db:seed": "tsx src/scripts/seed.ts",
 		"db:studio": "drizzle-kit studio",
 		"secrets:setup": "tsx src/scripts/setup-simple-secrets.ts"
 	},
@@ -36,6 +35,7 @@
 		"@fastify/sensible": "^6.0.3",
 		"@fastify/websocket": "^11.0.1",
 		"@google-cloud/secret-manager": "^5.0.1",
+		"@seatkit/engine": "workspace:*",
 		"@seatkit/types": "workspace:*",
 		"@seatkit/utils": "workspace:*",
 		"@supabase/supabase-js": "^2.48.0",

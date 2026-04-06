@@ -1,25 +1,33 @@
 {
 	"name": "@seatkit/engine",
-	"version": "0.1.0",
-	"description": "SeatKit business logic engine — pure functions for table assignment, availability, and reservation classification",
-	"type": "module",
+	"version": "0.0.1",
+	"description": "SeatKit business logic engine — pure functions for reservation management.",
 	"license": "Apache-2.0",
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
+	"type": "module",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
 		}
 	},
-	"publishConfig": {
-		"access": "public"
-	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"build": "tsc",
+		"dev": "tsc --watch",
+		"clean": "rm -rf dist",
 		"typecheck": "tsc --noEmit",
+		"typecheck:watch": "tsc --noEmit --watch",
+		"lint": "eslint . --max-warnings 0",
+		"lint:fix": "eslint . --fix",
 		"test": "vitest run",
 		"test:watch": "vitest"
+	},
+	"publishConfig": {
+		"access": "public"
 	},
 	"dependencies": {
 		"@seatkit/types": "workspace:*",

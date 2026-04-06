@@ -8,6 +8,8 @@ import env from '@fastify/env';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
+import swagger from '@fastify/swagger';
+import fastifyApiReference from '@scalar/fastify-api-reference';
 import Fastify from 'fastify';
 import {
 	createSerializerCompiler,
@@ -66,6 +68,23 @@ async function createServer() {
 	await fastify.register(rateLimit, {
 		max: 100,
 		timeWindow: '1 minute',
+	});
+
+	// Register OpenAPI documentation — MUST be before route registrations (Pitfall 2)
+	await fastify.register(swagger, {
+		openapi: {
+			openapi: '3.1.0',
+			info: {
+				title: 'SeatKit API',
+				description: 'Restaurant reservation management API',
+				version: '1.0.0',
+			},
+			servers: [{ url: '/api/v1' }],
+		},
+	});
+
+	await fastify.register(fastifyApiReference, {
+		routePrefix: '/documentation',
 	});
 
 	fastify.get('/health', () => {

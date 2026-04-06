@@ -14,6 +14,7 @@ import {
 	text,
 	boolean,
 } from 'drizzle-orm/pg-core';
+
 import type { CustomerInfo } from '@seatkit/types';
 
 // Enum definitions that match our Zod schemas
@@ -52,7 +53,7 @@ export const reservations = pgTable('reservations', {
 	// When & Where
 	date: timestamp('date').notNull(), // Reservation date and time
 	duration: integer('duration').notNull(), // Expected duration in minutes
-	tableIds: jsonb('table_ids').$type<string[] | undefined>(), // Assigned table IDs (optional)
+	tableIds: jsonb('table_ids').$type<string[] | null>(), // Assigned table IDs (optional)
 
 	// Who
 	customer: jsonb('customer').$type<CustomerInfo>().notNull(), // Customer contact info
@@ -63,18 +64,18 @@ export const reservations = pgTable('reservations', {
 	status: reservationStatusEnum('status').default('pending').notNull(),
 
 	// Additional Info
-	notes: text('notes').$type<string | undefined>(), // Internal staff notes (optional)
-	tags: jsonb('tags').$type<string[] | undefined>(), // Flexible tagging (optional)
+	notes: text('notes').$type<string | null>(), // Internal staff notes (optional)
+	tags: jsonb('tags').$type<string[] | null>(), // Flexible tagging (optional)
 
 	// Metadata
 	createdBy: varchar('created_by', { length: 255 }).notNull(), // User ID who created
-	source: reservationSourceEnum('source').$type<'phone' | 'web' | 'walk_in' | 'email' | 'other' | undefined>(),
-	confirmedAt: timestamp('confirmed_at').$type<Date | undefined>(),
-	seatedAt: timestamp('seated_at').$type<Date | undefined>(),
-	completedAt: timestamp('completed_at').$type<Date | undefined>(),
-	cancelledAt: timestamp('cancelled_at').$type<Date | undefined>(),
-	cancelledBy: varchar('cancelled_by', { length: 255 }).$type<string | undefined>(), // User ID who cancelled
-	cancellationReason: text('cancellation_reason').$type<string | undefined>(),
+	source: reservationSourceEnum('source').$type<'phone' | 'web' | 'walk_in' | 'email' | 'other' | null>(),
+	confirmedAt: timestamp('confirmed_at').$type<Date | null>(),
+	seatedAt: timestamp('seated_at').$type<Date | null>(),
+	completedAt: timestamp('completed_at').$type<Date | null>(),
+	cancelledAt: timestamp('cancelled_at').$type<Date | null>(),
+	cancelledBy: varchar('cancelled_by', { length: 255 }).$type<string | null>(), // User ID who cancelled
+	cancellationReason: text('cancellation_reason').$type<string | null>(),
 });
 
 export type Reservation = typeof reservations.$inferSelect;

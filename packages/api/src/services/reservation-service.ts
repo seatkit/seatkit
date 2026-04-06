@@ -123,14 +123,21 @@ export async function createReservation(
 	}
 
 	// 5. Insert reservation with assigned tables and classified category
+	// Explicit field mapping avoids spreading undefined values — required by exactOptionalPropertyTypes.
 	const [created] = await db
 		.insert(reservations)
 		.values({
-			...input,
 			date: reservationDate,
+			duration: input.duration,
+			customer: input.customer,
+			partySize: input.partySize,
+			createdBy: input.createdBy,
 			status: input.status ?? 'pending',
 			category: resolvedCategory,
 			tableIds: assignedTableIds,
+			...(input.notes !== undefined && { notes: input.notes }),
+			...(input.tags !== undefined && { tags: input.tags }),
+			...(input.source !== undefined && { source: input.source }),
 		})
 		.returning();
 

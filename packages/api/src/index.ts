@@ -57,7 +57,17 @@ async function createServer() {
 	});
 
 	await fastify.register(sensible);
-	await fastify.register(helmet);
+	await fastify.register(helmet, {
+		contentSecurityPolicy: {
+			directives: {
+				defaultSrc: ["'self'"],
+				scriptSrc: ["'self'", "'unsafe-inline'"],
+				styleSrc: ["'self'", "'unsafe-inline'"],
+				imgSrc: ["'self'", 'data:', 'https:'],
+				connectSrc: ["'self'"],
+			},
+		},
+	});
 	await fastify.register(cors, {
 		origin:
 			process.env.NODE_ENV === 'production'

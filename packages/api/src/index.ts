@@ -95,9 +95,7 @@ async function createServer() {
 
 	await fastify.register(fastifyApiReference, {
 		routePrefix: '/documentation',
-		configuration: {
-			spec: { url: '/documentation/json' },
-		},
+		// @fastify/swagger is auto-detected — no spec.url needed
 	});
 
 	fastify.get('/health', () => {

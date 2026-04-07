@@ -23,7 +23,13 @@ export default function LoginPage() {
 
 	function validateEmail(value: string): string {
 		if (!value) return 'Email is required.';
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address.';
+		// Use string methods instead of a regex to avoid super-linear backtracking (S5852).
+		// The <input type="email"> already enforces full RFC validation on submit;
+		// this guard provides immediate inline feedback only.
+		const at = value.indexOf('@');
+		const hasValidStructure =
+			at > 0 && at === value.lastIndexOf('@') && value.slice(at + 1).includes('.');
+		if (!hasValidStructure) return 'Please enter a valid email address.';
 		return '';
 	}
 

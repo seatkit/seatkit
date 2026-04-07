@@ -37,8 +37,10 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
 
 	return (
 		<div
+			role="presentation"
 			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
 			onClick={onCancel}
+			onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
 		>
 			<div
 				role="dialog"
@@ -46,6 +48,7 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
 				aria-labelledby="confirm-dialog-heading"
 				className="relative w-full max-w-sm rounded-lg bg-background p-6 shadow-lg mx-4"
 				onClick={e => { e.stopPropagation(); }}
+				onKeyDown={e => { e.stopPropagation(); }}
 			>
 				<h2
 					id="confirm-dialog-heading"

@@ -13,6 +13,8 @@ import fastifyApiReference from '@scalar/fastify-api-reference';
 import Fastify from 'fastify';
 import {
 	createSerializerCompiler,
+	hasZodFastifySchemaValidationErrors,
+	isResponseSerializationError,
 	jsonSchemaTransform,
 	validatorCompiler,
 	type ZodTypeProvider,
@@ -55,6 +57,26 @@ async function createServer() {
 
 	fastify.setValidatorCompiler(validatorCompiler);
 	fastify.setSerializerCompiler(createSerializerCompiler({ replacer }));
+
+	fastify.setErrorHandler((error, _request, reply) => {
+		if (hasZodFastifySchemaValidationErrors(error)) {
+			return reply.status(400).send({
+				statusCode: 400,
+				error: 'Bad Request',
+				message: 'Request validation failed',
+				issues: error.validation,
+			});
+		}
+		if (isResponseSerializationError(error)) {
+			return reply.status(500).send({
+				statusCode: 500,
+				error: 'Internal Server Error',
+				message: `Response serialization error: ${error.message}`,
+			});
+		}
+		// Re-throw other errors for Fastify's default handler
+		return reply.send(error);
+	});
 
 	await fastify.register(env, {
 		schema: envSchema,

@@ -4,11 +4,12 @@
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 
-import { auth } from '../auth.js';
 import { db } from '../db/index.js';
 import { reservations, tables, restaurantSettings } from '../db/schema/index.js';
 import { TABLE_DATA, DEFAULT_PRIORITY_ORDER } from '../db/seed-data.js';
 import { createServer } from '../index.js';
+
+import { createUserIdempotent, signIn } from './test-helpers.js';
 
 import type {
 	CreateReservationResponse,
@@ -19,22 +20,10 @@ import type {
 } from '../schemas/index.js';
 import type { FastifyInstance, InjectOptions } from 'fastify';
 
-// Dedicated test admin — created idempotently so the test is self-contained
-// and does not depend on the global seedAdminIfEmpty seed or test execution order.
+// Dedicated test admin — self-contained credentials so this file does not
+// depend on global seedAdminIfEmpty or test execution order.
 const TEST_ADMIN_EMAIL = 'reservations-admin@test.com';
 const TEST_ADMIN_PASSWORD = 'reservations-test-pass123!';
-
-async function ensureTestAdmin(): Promise<void> {
-	try {
-		await auth.api.createUser({
-			body: { email: TEST_ADMIN_EMAIL, password: TEST_ADMIN_PASSWORD, name: 'Reservations Test Admin', role: 'admin' },
-		});
-	} catch (err: unknown) {
-		const apiErr = err as { body?: { code?: string } };
-		if (apiErr?.body?.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL') return;
-		throw err;
-	}
-}
 
 describe('Reservations API', () => {
 	let app: FastifyInstance;
@@ -50,24 +39,13 @@ describe('Reservations API', () => {
 			.values({ priorityOrder: [...DEFAULT_PRIORITY_ORDER] })
 			.onConflictDoNothing();
 
-		// Ensure a known admin exists regardless of global seed state or test execution order
-		await ensureTestAdmin();
-
-		// Sign in with the test admin to get a session cookie for authenticated requests
-		const signIn = await inject({
-			method: 'POST',
-			url: '/api/auth/sign-in/email',
-			payload: { email: TEST_ADMIN_EMAIL, password: TEST_ADMIN_PASSWORD },
-		});
-		const setCookie = signIn.headers['set-cookie'];
-		const rawCookie = Array.isArray(setCookie) ? setCookie[0] : setCookie;
-		sessionCookie = rawCookie ?? '';
+		await createUserIdempotent(TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD, 'Reservations Test Admin', 'admin');
+		sessionCookie = await signIn(app, TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD);
 	});
 
-	// Authenticated inject helper — automatically includes the session cookie.
-	// InjectOptions is used directly (instead of Parameters<typeof app.inject>[0])
-	// because Fastify v5 has a no-arg overload that causes Parameters<> to resolve
-	// to an empty tuple, making the inferred type 'undefined'.
+	// Authenticated inject helper — includes session cookie on every request.
+	// InjectOptions is used directly (not Parameters<typeof app.inject>[0]) because
+	// Fastify v5 has a no-arg overload that makes Parameters<> resolve to [].
 	const inject = (options: InjectOptions | string) =>
 		app.inject({
 			...(typeof options === 'string' ? { url: options } : options),

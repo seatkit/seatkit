@@ -6,46 +6,15 @@
 import { eq } from 'drizzle-orm';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
-import { auth } from '../auth.js';
 import { db } from '../db/index.js';
 import { user as userTable } from '../db/schema/auth.js';
 import { tables, restaurantSettings } from '../db/schema/index.js';
 import { TABLE_DATA, DEFAULT_PRIORITY_ORDER } from '../db/seed-data.js';
 import { createServer } from '../index.js';
 
+import { createUserIdempotent, signIn } from './test-helpers.js';
+
 import type { FastifyInstance } from 'fastify';
-
-// ── helpers ──────────────────────────────────────────────────────────────────
-
-async function createUserIdempotent(
-	email: string,
-	password: string,
-	name: string,
-	role?: 'admin',
-): Promise<void> {
-	try {
-		await auth.api.createUser({
-			body: { email, password, name, ...(role ? { role } : {}) },
-		});
-	} catch (err: unknown) {
-		const apiErr = err as { body?: { code?: string } };
-		if (apiErr?.body?.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL') return;
-		throw err;
-	}
-}
-
-async function signIn(app: FastifyInstance, email: string, password: string): Promise<string> {
-	const res = await app.inject({
-		method: 'POST',
-		url: '/api/auth/sign-in/email',
-		payload: { email, password },
-	});
-	const raw = res.headers['set-cookie'];
-	if (!raw) throw new Error(`Sign-in failed for ${email}: ${res.statusCode} ${res.body}`);
-	const first = Array.isArray(raw) ? raw[0] : raw;
-	if (!first) throw new Error(`No cookie value returned for ${email}`);
-	return first;
-}
 
 // ── test suite ────────────────────────────────────────────────────────────────
 

@@ -91,7 +91,7 @@ export async function apiRequest<T>(
 			throw new ApiError(500, 'Invalid Response', {
 				error: 'Validation Error',
 				message: 'API response does not match expected schema',
-				details: result.error.errors.map(e => {
+				details: result.error.issues.map(e => {
 					const path = e.path.length > 0 ? e.path.join('.') : 'root';
 					return `${path}: ${e.message}`;
 				}),

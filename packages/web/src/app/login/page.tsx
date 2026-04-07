@@ -82,7 +82,7 @@ export default function LoginPage() {
 				{/* Subheading */}
 				<p className="text-base font-normal text-muted-foreground mb-8">Sign in to continue</p>
 
-				<form onSubmit={handleSubmit} noValidate className="space-y-6">
+				<form onSubmit={e => { void handleSubmit(e); }} noValidate className="space-y-6">
 					{/* Email field */}
 					<div className="space-y-1.5">
 						<label htmlFor="email" className="text-sm font-semibold text-foreground">

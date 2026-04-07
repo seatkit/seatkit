@@ -1,13 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-
 import {
-	SettingsPage,
-	ForbiddenBanner,
-	DestructiveButton,
 	ConfirmDialog,
+	DestructiveButton,
+	ForbiddenBanner,
+	SettingsPage,
 } from '@seatkit/ui';
+import { useState } from 'react';
 
 import { useSession } from '../../../lib/auth-client.js';
 import { useStaff, useInviteStaff, useRemoveStaff, useSetStaffRole } from '../../../lib/queries/staff.js';

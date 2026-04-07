@@ -6,29 +6,32 @@
 
 import { Trash2 } from 'lucide-react';
 
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, FC } from 'react';
 
-type DestructiveButtonProps = {
+// aria-label is required on this component for accessibility (screen readers + tooltip)
+type DestructiveButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	'aria-label': string;
-} & ButtonHTMLAttributes<HTMLButtonElement>
+};
 
-export function DestructiveButton({ 'aria-label': ariaLabel, ...props }: DestructiveButtonProps) {
-	return (
-		<button
-			type="button"
-			aria-label={ariaLabel}
-			title={ariaLabel}
-			{...props}
-			className={[
-				'inline-flex items-center justify-center rounded-md',
-				'text-destructive hover:bg-destructive/10',
-				'min-h-[44px] min-w-[44px]',
-				'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-				'disabled:opacity-50 disabled:cursor-not-allowed transition-colors',
-				props.className ?? '',
-			].join(' ')}
-		>
-			<Trash2 className="h-4 w-4" aria-hidden="true" />
-		</button>
-	);
-}
+export const DestructiveButton: FC<DestructiveButtonProps> = ({
+	'aria-label': ariaLabel,
+	...props
+}) => (
+	<button
+		type="button"
+		aria-label={ariaLabel}
+		title={ariaLabel}
+		{...props}
+		className={[
+			'inline-flex items-center justify-center rounded-md',
+			'text-destructive hover:bg-destructive/10',
+			'min-h-[44px] min-w-[44px]',
+			'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+			'disabled:opacity-50 disabled:cursor-not-allowed transition-colors',
+			props.className ?? '',
+		].join(' ')}
+	>
+		<Trash2 className="h-4 w-4" aria-hidden="true" />
+	</button>
+);

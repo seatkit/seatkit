@@ -6,6 +6,8 @@
 
 import { useEffect, useRef } from 'react';
 
+import type { FC } from 'react';
+
 type ConfirmDialogProps = {
 	open: boolean;
 	heading: string;
@@ -13,21 +15,20 @@ type ConfirmDialogProps = {
 	confirmLabel: string;
 	onConfirm: () => void;
 	onCancel: () => void;
-}
+};
 
-export function ConfirmDialog({
+export const ConfirmDialog: FC<ConfirmDialogProps> = ({
 	open,
 	heading,
 	body,
 	confirmLabel,
 	onConfirm,
 	onCancel,
-}: ConfirmDialogProps) {
+}) => {
 	const cancelRef = useRef<HTMLButtonElement>(null);
 
 	useEffect(() => {
 		if (open) {
-			// Focus the cancel button when dialog opens (safer default for destructive dialogs)
 			cancelRef.current?.focus();
 		}
 	}, [open]);
@@ -35,18 +36,16 @@ export function ConfirmDialog({
 	if (!open) return null;
 
 	return (
-		// Backdrop
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
 			onClick={onCancel}
 		>
-			{/* Dialog */}
 			<div
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="confirm-dialog-heading"
 				className="relative w-full max-w-sm rounded-lg bg-background p-6 shadow-lg mx-4"
-				onClick={e => e.stopPropagation()}
+				onClick={e => { e.stopPropagation(); }}
 			>
 				<h2
 					id="confirm-dialog-heading"
@@ -83,4 +82,4 @@ export function ConfirmDialog({
 			</div>
 		</div>
 	);
-}
+};

@@ -28,10 +28,17 @@ export const API_BASE_URL = getApiBaseUrl();
  */
 export const API_ENDPOINTS = {
 	reservations: {
-		list: '/api/reservations',
-		get: (id: string) => `/api/reservations/${id}`,
-		create: '/api/reservations',
-		update: (id: string) => `/api/reservations/${id}`,
-		delete: (id: string) => `/api/reservations/${id}`,
+		list: '/api/v1/reservations',
+		get: (id: string) => `/api/v1/reservations/${id}`,
+		create: '/api/v1/reservations',
+		update: (id: string) => `/api/v1/reservations/${id}`,
+		delete: (id: string) => `/api/v1/reservations/${id}`,
+	},
+	tables: {
+		list: '/api/v1/tables',
+	},
+	restaurantSettings: {
+		get: '/api/v1/restaurant-settings',
+		update: '/api/v1/restaurant-settings',
 	},
 } as const;

@@ -8,9 +8,12 @@ import env from '@fastify/env';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
+import swagger from '@fastify/swagger';
+import fastifyApiReference from '@scalar/fastify-api-reference';
 import Fastify from 'fastify';
 import {
 	createSerializerCompiler,
+	jsonSchemaTransform,
 	validatorCompiler,
 	type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
@@ -41,8 +44,11 @@ async function createServer() {
 		key: string,
 		value: unknown,
 	) {
+		// JSON.stringify calls Date.prototype.toJSON() before invoking the replacer,
+		// so `value` is already a string by this point. Use `this[key]` to access
+		// the original Date object for the instanceof check and conversion.
 		if (this[key] instanceof Date) {
-			return (value as Date).toISOString();
+			return this[key].toISOString();
 		}
 		return value;
 	};
@@ -55,7 +61,17 @@ async function createServer() {
 	});
 
 	await fastify.register(sensible);
-	await fastify.register(helmet);
+	await fastify.register(helmet, {
+		contentSecurityPolicy: {
+			directives: {
+				defaultSrc: ["'self'"],
+				scriptSrc: ["'self'", "'unsafe-inline'"],
+				styleSrc: ["'self'", "'unsafe-inline'"],
+				imgSrc: ["'self'", 'data:', 'https:'],
+				connectSrc: ["'self'", 'https://api.scalar.com'],
+			},
+		},
+	});
 	await fastify.register(cors, {
 		origin:
 			process.env.NODE_ENV === 'production'
@@ -66,6 +82,25 @@ async function createServer() {
 	await fastify.register(rateLimit, {
 		max: 100,
 		timeWindow: '1 minute',
+	});
+
+	// Register OpenAPI documentation — MUST be before route registrations (Pitfall 2)
+	await fastify.register(swagger, {
+		transform: jsonSchemaTransform,
+		openapi: {
+			openapi: '3.1.0',
+			info: {
+				title: 'SeatKit API',
+				description: 'Restaurant reservation management API',
+				version: '1.0.0',
+			},
+			servers: [{ url: '/api/v1' }],
+		},
+	});
+
+	await fastify.register(fastifyApiReference, {
+		routePrefix: '/documentation',
+		// @fastify/swagger is auto-detected — no spec.url needed
 	});
 
 	fastify.get('/health', () => {
@@ -82,9 +117,9 @@ async function createServer() {
 	});
 
 	// API routes
-	await fastify.register(import('./routes/reservations.js'), {
-		prefix: '/api',
-	});
+	await fastify.register(import('./routes/reservations.js'), { prefix: '/api/v1' });
+	await fastify.register(import('./routes/tables.js'), { prefix: '/api/v1' });
+	await fastify.register(import('./routes/restaurant-settings.js'), { prefix: '/api/v1' });
 
 	return fastify;
 }

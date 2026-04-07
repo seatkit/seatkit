@@ -4,6 +4,9 @@
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 
+import { db } from '../db/index.js';
+import { reservations, tables, restaurantSettings } from '../db/schema/index.js';
+import { TABLE_DATA, DEFAULT_PRIORITY_ORDER } from '../db/seed-data.js';
 import { createServer } from '../index.js';
 
 import type {
@@ -20,13 +23,25 @@ describe('Reservations API', () => {
 
 	beforeAll(async () => {
 		app = await createServer();
+
+		// Seed tables and restaurant settings required by the engine's table assignment logic
+		await db.insert(tables).values([...TABLE_DATA]).onConflictDoNothing({ target: tables.name });
+		await db
+			.insert(restaurantSettings)
+			.values({ priorityOrder: [...DEFAULT_PRIORITY_ORDER] })
+			.onConflictDoNothing();
+	});
+
+	// Clean up all reservations before each test so table availability is never exhausted
+	beforeEach(async () => {
+		await db.delete(reservations);
 	});
 
 	afterAll(async () => {
 		await app.close();
 	});
 
-	describe('POST /api/reservations', () => {
+	describe('POST /api/v1/reservations', () => {
 		it('should create a new reservation with valid data', async () => {
 			const validReservation = {
 				date: new Date().toISOString(),
@@ -44,7 +59,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'POST',
-				url: '/api/reservations',
+				url: '/api/v1/reservations',
 				payload: validReservation,
 			});
 
@@ -73,7 +88,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'POST',
-				url: '/api/reservations',
+				url: '/api/v1/reservations',
 				payload: invalidReservation,
 			});
 
@@ -91,7 +106,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'POST',
-				url: '/api/reservations',
+				url: '/api/v1/reservations',
 				payload: incompleteReservation,
 			});
 
@@ -113,7 +128,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'POST',
-				url: '/api/reservations',
+				url: '/api/v1/reservations',
 				payload: reservation,
 			});
 
@@ -128,7 +143,7 @@ describe('Reservations API', () => {
 		it('should return list of reservations', async () => {
 			const response = await app.inject({
 				method: 'GET',
-				url: '/api/reservations',
+				url: '/api/v1/reservations',
 			});
 
 			expect(response.statusCode).toBe(200);
@@ -159,7 +174,7 @@ describe('Reservations API', () => {
 
 			const createResponse = await app.inject({
 				method: 'POST',
-				url: '/api/reservations',
+				url: '/api/v1/reservations',
 				payload: reservation,
 			});
 
@@ -180,7 +195,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'PUT',
-				url: `/api/reservations/${createdReservationId}`,
+				url: `/api/v1/reservations/${createdReservationId}`,
 				payload: updateData,
 			});
 
@@ -205,7 +220,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'PUT',
-				url: `/api/reservations/${createdReservationId}`,
+				url: `/api/v1/reservations/${createdReservationId}`,
 				payload: updateData,
 			});
 
@@ -227,7 +242,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'PUT',
-				url: `/api/reservations/${createdReservationId}`,
+				url: `/api/v1/reservations/${createdReservationId}`,
 				payload: updateData,
 			});
 
@@ -249,7 +264,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'PUT',
-				url: `/api/reservations/${createdReservationId}`,
+				url: `/api/v1/reservations/${createdReservationId}`,
 				payload: updateData,
 			});
 
@@ -270,7 +285,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'PUT',
-				url: `/api/reservations/${nonExistentId}`,
+				url: `/api/v1/reservations/${nonExistentId}`,
 				payload: updateData,
 			});
 
@@ -288,7 +303,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'PUT',
-				url: '/api/reservations/invalid-uuid',
+				url: '/api/v1/reservations/invalid-uuid',
 				payload: updateData,
 			});
 
@@ -302,7 +317,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'PUT',
-				url: `/api/reservations/${createdReservationId}`,
+				url: `/api/v1/reservations/${createdReservationId}`,
 				payload: updateData,
 			});
 
@@ -314,9 +329,12 @@ describe('Reservations API', () => {
 		let createdReservationId: string;
 
 		beforeEach(async () => {
-			// Create a reservation to delete
+			// Create a reservation to delete — use a future date so it is classified
+			// as 'inAdvance' and the 'lunch' category is preserved (not overridden to walk_in)
+			const futureDate = new Date();
+			futureDate.setDate(futureDate.getDate() + 7);
 			const reservation = {
-				date: new Date().toISOString(),
+				date: futureDate.toISOString(),
 				duration: 90,
 				customer: {
 					name: 'Delete Test User',
@@ -329,7 +347,7 @@ describe('Reservations API', () => {
 
 			const createResponse = await app.inject({
 				method: 'POST',
-				url: '/api/reservations',
+				url: '/api/v1/reservations',
 				payload: reservation,
 			});
 
@@ -340,7 +358,7 @@ describe('Reservations API', () => {
 		it('should delete an existing reservation', async () => {
 			const response = await app.inject({
 				method: 'DELETE',
-				url: `/api/reservations/${createdReservationId}`,
+				url: `/api/v1/reservations/${createdReservationId}`,
 			});
 
 			expect(response.statusCode).toBe(200);
@@ -355,13 +373,13 @@ describe('Reservations API', () => {
 			// Delete the reservation
 			await app.inject({
 				method: 'DELETE',
-				url: `/api/reservations/${createdReservationId}`,
+				url: `/api/v1/reservations/${createdReservationId}`,
 			});
 
 			// Try to delete again - should return 404
 			const response = await app.inject({
 				method: 'DELETE',
-				url: `/api/reservations/${createdReservationId}`,
+				url: `/api/v1/reservations/${createdReservationId}`,
 			});
 
 			expect(response.statusCode).toBe(404);
@@ -372,7 +390,7 @@ describe('Reservations API', () => {
 
 			const response = await app.inject({
 				method: 'DELETE',
-				url: `/api/reservations/${nonExistentId}`,
+				url: `/api/v1/reservations/${nonExistentId}`,
 			});
 
 			expect(response.statusCode).toBe(404);
@@ -385,7 +403,7 @@ describe('Reservations API', () => {
 		it('should return 400 for invalid UUID format', async () => {
 			const response = await app.inject({
 				method: 'DELETE',
-				url: '/api/reservations/invalid-uuid',
+				url: '/api/v1/reservations/invalid-uuid',
 			});
 
 			expect(response.statusCode).toBe(400);
@@ -394,7 +412,7 @@ describe('Reservations API', () => {
 		it('should return deleted reservation data in response', async () => {
 			const response = await app.inject({
 				method: 'DELETE',
-				url: `/api/reservations/${createdReservationId}`,
+				url: `/api/v1/reservations/${createdReservationId}`,
 			});
 
 			expect(response.statusCode).toBe(200);

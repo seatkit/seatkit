@@ -1,245 +1,109 @@
 /**
- * Reservation API routes
- * CRUD endpoints for reservation management
+ * Reservation API routes — /api/v1/reservations
+ * Thin route handlers: validate → delegate to reservation-service → return
  */
 
-import {
-	CreateReservationSchema,
-	UpdateReservationSchema,
-} from '@seatkit/types';
-import { eq } from 'drizzle-orm';
+import { CreateReservationSchema, ReservationSchema, UpdateReservationSchema } from '@seatkit/types';
 import { z } from 'zod';
 
 import { db } from '../db/index.js';
 import { reservations } from '../db/schema/index.js';
+import {
+	createReservation,
+	updateReservation,
+	deleteReservation,
+} from '../services/reservation-service.js';
 
-import type {
-	CreateReservationResponse,
-	UpdateReservationResponse,
-	DeleteReservationResponse,
-	ListReservationsResponse,
-	ErrorResponse,
-} from '../schemas/index.js';
-import type { CreateReservation, UpdateReservation } from '@seatkit/types';
 import type { FastifyPluginAsync } from 'fastify';
 
-// Params schema for routes with ID parameter
 const IdParamsSchema = z.object({
 	id: z.string().uuid('Invalid UUID format'),
 });
 
+const ReservationResponseSchema = z.object({
+	reservation: ReservationSchema,
+	message: z.string(),
+});
+
+const ListReservationsResponseSchema = z.object({
+	reservations: z.array(ReservationSchema),
+	count: z.number().int().nonnegative(),
+});
+
 const reservationsRoutes: FastifyPluginAsync = async fastify => {
-	// GET /api/reservations - List all restaurant reservations
-	fastify.get<{
-		// eslint-disable-next-line @typescript-eslint/naming-convention
-		Reply: ListReservationsResponse | ErrorResponse;
-	}>('/reservations', async (_request, reply) => {
-		try {
-			fastify.log.info('Fetching reservations from database');
-
-			// Query all reservations from database
-			const allReservations = await db.select().from(reservations);
-
-			fastify.log.info(`Found ${allReservations.length} reservations`);
-
-			return {
-				reservations: allReservations,
-				count: allReservations.length,
-			};
-		} catch (error) {
-			fastify.log.error({ error }, 'Failed to fetch reservations');
-
-			return reply.status(500).send({
-				error: 'Internal server error',
-				message: 'Failed to fetch reservations',
-			});
-		}
-	});
-
-	// POST /api/reservations - Create a new reservation
-	fastify.post<{
-		// eslint-disable-next-line @typescript-eslint/naming-convention
-		Body: CreateReservation;
-		// eslint-disable-next-line @typescript-eslint/naming-convention
-		Reply: CreateReservationResponse | ErrorResponse;
-	}>(
+	// GET /api/v1/reservations
+	fastify.get(
 		'/reservations',
 		{
 			schema: {
-				body: CreateReservationSchema.describe(
-					'Create a new restaurant reservation',
-				),
+				response: { 200: ListReservationsResponseSchema },
+			},
+		},
+		async (_request, _reply) => {
+			const allReservations = await db.select().from(reservations);
+			return { reservations: allReservations, count: allReservations.length };
+		},
+	);
+
+	// POST /api/v1/reservations
+	fastify.post(
+		'/reservations',
+		{
+			schema: {
+				body: CreateReservationSchema.describe('Create a new restaurant reservation'),
+				response: { 201: ReservationResponseSchema },
 			},
 		},
 		async (request, reply) => {
-			fastify.log.info('Creating new reservation');
-
-			// Convert ISO string to Date object for database insertion
-			const reservationData = {
-				...request.body,
-				date: new Date(request.body.date),
-				status: request.body.status || 'pending',
-			};
-
-			const [createdReservation] = await db
-				.insert(reservations)
-				.values(reservationData)
-				.returning();
-
-			if (!createdReservation) {
-				throw fastify.httpErrors.internalServerError(
-					'Failed to create reservation',
-				);
-			}
-
-			fastify.log.info(
-				{
-					id: createdReservation.id,
-				},
-				'Reservation created successfully',
+			const reservation = await createReservation(
+				request.body as z.infer<typeof CreateReservationSchema>,
+				fastify,
 			);
-
 			return reply.status(201).send({
-				reservation: createdReservation,
+				reservation,
 				message: 'Reservation created successfully',
 			});
 		},
 	);
 
-	// PUT /api/reservations/:id - Update an existing reservation
-	fastify.put<{
-		// eslint-disable-next-line @typescript-eslint/naming-convention
-		Params: { id: string };
-		// eslint-disable-next-line @typescript-eslint/naming-convention
-		Body: Omit<UpdateReservation, 'id' | 'updatedAt'>;
-		// eslint-disable-next-line @typescript-eslint/naming-convention
-		Reply: UpdateReservationResponse | ErrorResponse;
-	}>(
+	// PUT /api/v1/reservations/:id
+	fastify.put(
 		'/reservations/:id',
 		{
 			schema: {
-				body: UpdateReservationSchema.omit({
-					id: true,
-					updatedAt: true,
-				}).describe('Update an existing reservation'),
+				body: UpdateReservationSchema.omit({ id: true, updatedAt: true }).describe(
+					'Update an existing reservation',
+				),
 				params: IdParamsSchema,
+				response: { 200: ReservationResponseSchema },
 			},
 		},
 		async (request, reply) => {
-			const { id } = request.params;
-			fastify.log.info({ id }, 'Updating reservation');
-
-			// Check if reservation exists
-			const [existingReservation] = await db
-				.select()
-				.from(reservations)
-				.where(eq(reservations.id, id))
-				.limit(1);
-
-			if (!existingReservation) {
-				throw fastify.httpErrors.notFound('Reservation not found');
-			}
-
-			// Prepare update data with proper date conversions
-			const updateData: Record<string, unknown> = {
-				...request.body,
-				updatedAt: new Date(),
-			};
-
-			// Convert date string fields to Date objects if present
-			if (request.body.date) {
-				updateData.date = new Date(request.body.date);
-			}
-			if (request.body.confirmedAt) {
-				updateData.confirmedAt = new Date(request.body.confirmedAt);
-			}
-			if (request.body.seatedAt) {
-				updateData.seatedAt = new Date(request.body.seatedAt);
-			}
-			if (request.body.completedAt) {
-				updateData.completedAt = new Date(request.body.completedAt);
-			}
-			if (request.body.cancelledAt) {
-				updateData.cancelledAt = new Date(request.body.cancelledAt);
-			}
-
-			// Update reservation in database
-			const [updatedReservation] = await db
-				.update(reservations)
-				.set(updateData)
-				.where(eq(reservations.id, id))
-				.returning();
-
-			if (!updatedReservation) {
-				throw fastify.httpErrors.internalServerError(
-					'Failed to update reservation',
-				);
-			}
-
-			fastify.log.info(
-				{
-					id: updatedReservation.id,
-				},
-				'Reservation updated successfully',
-			);
-
+			const { id } = request.params as { id: string };
+			const body = request.body as z.infer<typeof UpdateReservationSchema>;
+			const updated = await updateReservation(id, body, fastify);
 			return reply.status(200).send({
-				reservation: updatedReservation,
+				reservation: updated,
 				message: 'Reservation updated successfully',
 			});
 		},
 	);
 
-	// DELETE /api/reservations/:id - Delete a reservation
-	fastify.delete<{
-		// eslint-disable-next-line @typescript-eslint/naming-convention
-		Params: { id: string };
-		// eslint-disable-next-line @typescript-eslint/naming-convention
-		Reply: DeleteReservationResponse | ErrorResponse;
-	}>(
+	// DELETE /api/v1/reservations/:id
+	fastify.delete(
 		'/reservations/:id',
 		{
 			schema: {
 				params: IdParamsSchema,
+				response: { 200: ReservationResponseSchema },
 			},
 		},
 		async (request, reply) => {
-			const { id } = request.params;
-			fastify.log.info({ id }, 'Deleting reservation');
-
-			// Check if reservation exists
-			const [existingReservation] = await db
-				.select()
-				.from(reservations)
-				.where(eq(reservations.id, id))
-				.limit(1);
-
-			if (!existingReservation) {
-				throw fastify.httpErrors.notFound('Reservation not found');
-			}
-
-			// Delete reservation from database
-			const [deletedReservation] = await db
-				.delete(reservations)
-				.where(eq(reservations.id, id))
-				.returning();
-
-			if (!deletedReservation) {
-				throw fastify.httpErrors.internalServerError(
-					'Failed to delete reservation',
-				);
-			}
-
-			fastify.log.info(
-				{
-					id: deletedReservation.id,
-				},
-				'Reservation deleted successfully',
-			);
-
+			const { id } = request.params as { id: string };
+			const deleted = await deleteReservation(id, fastify);
 			return reply.status(200).send({
+				reservation: deleted,
 				message: 'Reservation deleted successfully',
-				reservation: deletedReservation,
 			});
 		},
 	);

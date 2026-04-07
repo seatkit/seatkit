@@ -6,6 +6,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 
 import { db } from '../db/index.js';
 import { reservations, tables, restaurantSettings } from '../db/schema/index.js';
+import { TABLE_DATA, DEFAULT_PRIORITY_ORDER } from '../db/seed-data.js';
 import { createServer } from '../index.js';
 
 import type {
@@ -24,22 +25,10 @@ describe('Reservations API', () => {
 		app = await createServer();
 
 		// Seed tables and restaurant settings required by the engine's table assignment logic
-		await db
-			.insert(tables)
-			.values([
-				{ name: 'T1', maxCapacity: 2, minCapacity: 1, positionX: 14, positionY: 1 },
-				{ name: 'T2', maxCapacity: 2, minCapacity: 1, positionX: 10, positionY: 1 },
-				{ name: 'T3', maxCapacity: 2, minCapacity: 1, positionX: 6, positionY: 1 },
-				{ name: 'T4', maxCapacity: 2, minCapacity: 1, positionX: 1, positionY: 1 },
-				{ name: 'T5', maxCapacity: 2, minCapacity: 1, positionX: 7, positionY: 8 },
-				{ name: 'T6', maxCapacity: 2, minCapacity: 1, positionX: 1, positionY: 6 },
-				{ name: 'T7', maxCapacity: 2, minCapacity: 1, positionX: 1, positionY: 11 },
-			])
-			.onConflictDoNothing({ target: tables.name });
-
+		await db.insert(tables).values([...TABLE_DATA]).onConflictDoNothing({ target: tables.name });
 		await db
 			.insert(restaurantSettings)
-			.values({ priorityOrder: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'] })
+			.values({ priorityOrder: [...DEFAULT_PRIORITY_ORDER] })
 			.onConflictDoNothing();
 	});
 

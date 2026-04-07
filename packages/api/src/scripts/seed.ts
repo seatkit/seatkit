@@ -64,7 +64,9 @@ async function seed(): Promise<void> {
 	await connection.end();
 }
 
-seed().catch(error => {
+try {
+	await seed();
+} catch (error) {
 	console.error('Seed failed:', error);
 	process.exit(1);
-});
+}

@@ -16,8 +16,114 @@ import { db } from '../db/index.js';
 import { reservations, tables, restaurantSettings } from '../db/schema/index.js';
 
 import type { Reservation } from '../db/schema/reservations.js';
+import type { TableRecord } from '../db/schema/tables.js';
 import type { CreateReservation, UpdateReservation } from '@seatkit/types';
 import type { FastifyInstance } from 'fastify';
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function coerceDate(value: Date | string): Date {
+	return value instanceof Date ? value : new Date(value);
+}
+
+function toDayRange(date: Date): { dayStart: Date; dayEnd: Date } {
+	const dayStart = new Date(date);
+	dayStart.setUTCHours(0, 0, 0, 0);
+	const dayEnd = new Date(date);
+	dayEnd.setUTCHours(23, 59, 59, 999);
+	return { dayStart, dayEnd };
+}
+
+function toEngineReservation(r: Reservation) {
+	return {
+		id: r.id,
+		date: r.date,
+		duration: r.duration,
+		tableIds: r.tableIds ?? null,
+		status: r.status,
+	};
+}
+
+function toEngineTable(t: TableRecord) {
+	return {
+		id: t.id,
+		name: t.name,
+		maxCapacity: t.maxCapacity,
+		minCapacity: t.minCapacity,
+		isActive: t.isActive,
+	};
+}
+
+/**
+ * Runs automatic or manual table assignment, throwing HTTP errors on failure.
+ * Pass `startingTableId` to trigger manual assignment (TABLE-02); omit for automatic (TABLE-01).
+ */
+async function resolveAssignment(
+	reservationInput: { date: Date; duration: number; partySize: number },
+	existingReservations: Reservation[],
+	allTables: TableRecord[],
+	priorityOrder: string[],
+	startingTableId: string | undefined,
+	fastify: FastifyInstance,
+): Promise<string[]> {
+	const existingForEngine = existingReservations.map(toEngineReservation);
+	const allTablesForEngine = allTables.map(toEngineTable);
+
+	if (startingTableId !== undefined) {
+		const result = assignTablesManual(
+			reservationInput,
+			existingForEngine,
+			allTablesForEngine,
+			priorityOrder,
+			startingTableId,
+		);
+		if (isErr(result)) {
+			throw fastify.httpErrors.conflict(result.error.message);
+		}
+		return result.value;
+	}
+
+	const result = assignTables(
+		reservationInput,
+		existingForEngine,
+		allTablesForEngine,
+		priorityOrder,
+	);
+	if (isErr(result)) {
+		throw fastify.httpErrors.conflict(result.error.message);
+	}
+	return result.value;
+}
+
+function buildUpdatePayload(
+	input: Omit<UpdateReservation, 'id' | 'updatedAt'>,
+	resolvedTableIds: string[] | null,
+): Record<string, unknown> {
+	const data: Record<string, unknown> = {
+		updatedAt: new Date(),
+		tableIds: resolvedTableIds,
+	};
+
+	if (input.date !== undefined) data['date'] = coerceDate(input.date);
+	if (input.partySize !== undefined) data['partySize'] = input.partySize;
+	if (input.duration !== undefined) data['duration'] = input.duration;
+	if (input.category !== undefined) data['category'] = input.category;
+	if (input.status !== undefined) data['status'] = input.status;
+	if (input.notes !== undefined) data['notes'] = input.notes;
+	if (input.tags !== undefined) data['tags'] = input.tags;
+	if (input.customer !== undefined) data['customer'] = input.customer;
+	if (input.confirmedAt !== undefined) {
+		if (input.confirmedAt instanceof Date) {
+			data['confirmedAt'] = input.confirmedAt;
+		} else if (input.confirmedAt === null) {
+			data['confirmedAt'] = null;
+		} else {
+			data['confirmedAt'] = new Date(input.confirmedAt);
+		}
+	}
+
+	return data;
+}
 
 // ── createReservation ────────────────────────────────────────────────────────
 
@@ -25,10 +131,16 @@ export async function createReservation(
 	input: CreateReservation,
 	fastify: FastifyInstance,
 ): Promise<Reservation> {
-	// 1. Fetch all active tables and priority order from DB
-	const [allTables, settings] = await Promise.all([
+	const reservationDate = coerceDate(input.date);
+	const { dayStart, dayEnd } = toDayRange(reservationDate);
+
+	const [allTables, settings, existingReservations] = await Promise.all([
 		db.select().from(tables).where(eq(tables.isActive, true)),
 		db.select().from(restaurantSettings).limit(1),
+		db
+			.select()
+			.from(reservations)
+			.where(and(gte(reservations.date, dayStart), lte(reservations.date, dayEnd))),
 	]);
 
 	if (!settings[0]) {
@@ -37,93 +149,26 @@ export async function createReservation(
 		);
 	}
 
-	// 2. Fetch existing reservations that overlap with the new reservation's date
-	//    (query all reservations for that calendar day — engine does the exact overlap check)
-	const reservationDate = input.date instanceof Date ? input.date : new Date(input.date);
-	const dayStart = new Date(reservationDate);
-	dayStart.setUTCHours(0, 0, 0, 0);
-	const dayEnd = new Date(reservationDate);
-	dayEnd.setUTCHours(23, 59, 59, 999);
-
-	const existingReservations = await db
-		.select()
-		.from(reservations)
-		.where(and(gte(reservations.date, dayStart), lte(reservations.date, dayEnd)));
-
-	// 3. Classify reservation type (walk_in vs inAdvance) — RES-05
-	const creationTime = new Date();
+	// Classify reservation type (walk_in vs inAdvance) — RES-05
 	const classifiedType = classifyReservationType(
-		creationTime,
+		new Date(),
 		reservationDate,
-		reservationDate, // reservationDate IS the start time (date+time combined)
-		// Map DB category to classification type for existing value preservation
+		reservationDate,
 		input.category === 'walk_in' ? 'walk_in' : undefined,
 	);
+	// Only override to walk_in if the engine classifies as such; keep caller's category otherwise
+	const resolvedCategory = classifiedType === 'walk_in' ? 'walk_in' : input.category;
 
-	// Map classification back to reservation category:
-	// Only override to 'walk_in' if the engine classifies as walk_in.
-	// 'inAdvance' and 'waitingList' keep the caller's original category.
-	const resolvedCategory =
-		classifiedType === 'walk_in' ? 'walk_in' : input.category;
+	const assignedTableIds = await resolveAssignment(
+		{ date: reservationDate, duration: input.duration, partySize: input.partySize },
+		existingReservations,
+		allTables,
+		settings[0].priorityOrder,
+		input.tableIds?.[0],
+		fastify,
+	);
 
-	// 4. Assign tables — automatic or manual
-	const reservationInput = {
-		date: reservationDate,
-		duration: input.duration,
-		partySize: input.partySize,
-	};
-
-	const existingForEngine = existingReservations.map(r => ({
-		id: r.id,
-		date: r.date,
-		duration: r.duration,
-		tableIds: r.tableIds ?? null,
-		status: r.status,
-	}));
-
-	const allTablesForEngine = allTables.map(t => ({
-		id: t.id,
-		name: t.name,
-		maxCapacity: t.maxCapacity,
-		minCapacity: t.minCapacity,
-		isActive: t.isActive,
-	}));
-
-	let assignedTableIds: string[];
-
-	if (input.tableIds && input.tableIds.length > 0) {
-		// Manual override: first tableId is the starting table (TABLE-02)
-		const startingTableId = input.tableIds[0];
-		if (!startingTableId) {
-			throw fastify.httpErrors.badRequest('tableIds array is empty');
-		}
-		const result = assignTablesManual(
-			reservationInput,
-			existingForEngine,
-			allTablesForEngine,
-			settings[0].priorityOrder,
-			startingTableId,
-		);
-		if (isErr(result)) {
-			throw fastify.httpErrors.conflict(result.error.message);
-		}
-		assignedTableIds = result.value;
-	} else {
-		// Automatic assignment (TABLE-01)
-		const result = assignTables(
-			reservationInput,
-			existingForEngine,
-			allTablesForEngine,
-			settings[0].priorityOrder,
-		);
-		if (isErr(result)) {
-			throw fastify.httpErrors.conflict(result.error.message);
-		}
-		assignedTableIds = result.value;
-	}
-
-	// 5. Insert reservation with assigned tables and classified category
-	// Explicit field mapping avoids spreading undefined values — required by exactOptionalPropertyTypes.
+	// Explicit field mapping avoids spreading undefined values — required by exactOptionalPropertyTypes
 	const [created] = await db
 		.insert(reservations)
 		.values({
@@ -155,7 +200,6 @@ export async function updateReservation(
 	input: Omit<UpdateReservation, 'id' | 'updatedAt'>,
 	fastify: FastifyInstance,
 ): Promise<Reservation> {
-	// 1. Check existing reservation
 	const [existing] = await db
 		.select()
 		.from(reservations)
@@ -166,7 +210,6 @@ export async function updateReservation(
 		throw fastify.httpErrors.notFound('Reservation not found');
 	}
 
-	// 2. If partySize, date, duration, or tableIds changed — re-run table assignment
 	const needsReassignment =
 		(input.partySize !== undefined && input.partySize !== existing.partySize) ||
 		input.date !== undefined ||
@@ -185,17 +228,11 @@ export async function updateReservation(
 			throw fastify.httpErrors.internalServerError('Restaurant settings not configured');
 		}
 
-		const updatedDate = input.date
-			? (input.date instanceof Date ? input.date : new Date(input.date))
-			: existing.date;
+		const updatedDate = input.date !== undefined ? coerceDate(input.date) : existing.date;
 		const updatedDuration = input.duration ?? existing.duration;
 		const updatedPartySize = input.partySize ?? existing.partySize;
 
-		const dayStart = new Date(updatedDate);
-		dayStart.setUTCHours(0, 0, 0, 0);
-		const dayEnd = new Date(updatedDate);
-		dayEnd.setUTCHours(23, 59, 59, 999);
-
+		const { dayStart, dayEnd } = toDayRange(updatedDate);
 		const existingReservations = await db
 			.select()
 			.from(reservations)
@@ -203,90 +240,23 @@ export async function updateReservation(
 				and(
 					gte(reservations.date, dayStart),
 					lte(reservations.date, dayEnd),
-					ne(reservations.id, id), // exclude the reservation being updated
+					ne(reservations.id, id),
 				),
 			);
 
-		const existingForEngine = existingReservations.map(r => ({
-			id: r.id,
-			date: r.date,
-			duration: r.duration,
-			tableIds: r.tableIds ?? null,
-			status: r.status,
-		}));
-
-		const allTablesForEngine = allTables.map(t => ({
-			id: t.id,
-			name: t.name,
-			maxCapacity: t.maxCapacity,
-			minCapacity: t.minCapacity,
-			isActive: t.isActive,
-		}));
-
-		const reservationInput = {
-			date: updatedDate,
-			duration: updatedDuration,
-			partySize: updatedPartySize,
-		};
-
-		if (input.tableIds && input.tableIds.length > 0) {
-			const startingTableId = input.tableIds[0];
-			if (!startingTableId) {
-				throw fastify.httpErrors.badRequest('tableIds array is empty');
-			}
-			const result = assignTablesManual(
-				reservationInput,
-				existingForEngine,
-				allTablesForEngine,
-				settings[0].priorityOrder,
-				startingTableId,
-			);
-			if (isErr(result)) {
-				throw fastify.httpErrors.conflict(result.error.message);
-			}
-			resolvedTableIds = result.value;
-		} else {
-			const result = assignTables(
-				reservationInput,
-				existingForEngine,
-				allTablesForEngine,
-				settings[0].priorityOrder,
-			);
-			if (isErr(result)) {
-				throw fastify.httpErrors.conflict(result.error.message);
-			}
-			resolvedTableIds = result.value;
-		}
-	}
-
-	// 3. Build update payload — only include explicitly provided fields
-	const updateData: Record<string, unknown> = {
-		updatedAt: new Date(),
-		tableIds: resolvedTableIds,
-	};
-
-	if (input.date !== undefined) {
-		updateData['date'] = input.date instanceof Date ? input.date : new Date(input.date as string);
-	}
-	if (input.partySize !== undefined) updateData['partySize'] = input.partySize;
-	if (input.duration !== undefined) updateData['duration'] = input.duration;
-	if (input.category !== undefined) updateData['category'] = input.category;
-	if (input.status !== undefined) updateData['status'] = input.status;
-	if (input.notes !== undefined) updateData['notes'] = input.notes;
-	if (input.tags !== undefined) updateData['tags'] = input.tags;
-	if (input.customer !== undefined) updateData['customer'] = input.customer;
-	if (input.confirmedAt !== undefined) {
-		updateData['confirmedAt'] =
-			input.confirmedAt instanceof Date
-				? input.confirmedAt
-				: input.confirmedAt !== null
-					? new Date(input.confirmedAt as string)
-					: null;
+		resolvedTableIds = await resolveAssignment(
+			{ date: updatedDate, duration: updatedDuration, partySize: updatedPartySize },
+			existingReservations,
+			allTables,
+			settings[0].priorityOrder,
+			input.tableIds?.[0],
+			fastify,
+		);
 	}
 
 	const [updated] = await db
 		.update(reservations)
-		.set(updateData)
+		.set(buildUpdatePayload(input, resolvedTableIds))
 		.where(eq(reservations.id, id))
 		.returning();
 

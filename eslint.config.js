@@ -13,6 +13,9 @@ export default [
       '**/build/**',
       '**/.turbo/**',
       '**/coverage/**',
+      // vitest.config.ts is outside rootDir: src in the engine package tsconfig,
+      // so the TypeScript project service can't resolve it during linting.
+      'packages/engine/vitest.config.ts',
     ],
   },
 ];

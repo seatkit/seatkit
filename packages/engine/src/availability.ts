@@ -29,7 +29,7 @@ export function isTableOccupied(
 ): boolean {
 	return reservations.some(r => {
 		if (r.status === 'cancelled' || r.status === 'no_show' || r.status === 'completed') return false;
-		if (!r.tableIds || !r.tableIds.includes(tableId)) return false;
+		if (!r.tableIds?.includes(tableId)) return false;
 		const rEnd = addMinutes(r.date, r.duration);
 		return overlaps(r.date, rEnd, start, end);
 	});

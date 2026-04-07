@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 
 import { db } from '../db/index.js';
-import { tables, restaurantSettings } from '../db/schema/index.js';
+import { reservations, tables, restaurantSettings } from '../db/schema/index.js';
 import { createServer } from '../index.js';
 
 import type {
@@ -41,6 +41,11 @@ describe('Reservations API', () => {
 			.insert(restaurantSettings)
 			.values({ priorityOrder: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'] })
 			.onConflictDoNothing();
+	});
+
+	// Clean up all reservations before each test so table availability is never exhausted
+	beforeEach(async () => {
+		await db.delete(reservations);
 	});
 
 	afterAll(async () => {

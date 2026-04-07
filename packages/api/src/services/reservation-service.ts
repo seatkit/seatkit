@@ -228,7 +228,7 @@ export async function updateReservation(
 			throw fastify.httpErrors.internalServerError('Restaurant settings not configured');
 		}
 
-		const updatedDate = input.date !== undefined ? coerceDate(input.date) : existing.date;
+		const updatedDate = input.date === undefined ? existing.date : coerceDate(input.date);
 		const updatedDuration = input.duration ?? existing.duration;
 		const updatedPartySize = input.partySize ?? existing.partySize;
 

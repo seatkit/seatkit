@@ -340,9 +340,12 @@ describe('Reservations API', () => {
 		let createdReservationId: string;
 
 		beforeEach(async () => {
-			// Create a reservation to delete
+			// Create a reservation to delete — use a future date so it is classified
+			// as 'inAdvance' and the 'lunch' category is preserved (not overridden to walk_in)
+			const futureDate = new Date();
+			futureDate.setDate(futureDate.getDate() + 7);
 			const reservation = {
-				date: new Date().toISOString(),
+				date: futureDate.toISOString(),
 				duration: 90,
 				customer: {
 					name: 'Delete Test User',

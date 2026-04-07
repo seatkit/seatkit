@@ -112,13 +112,17 @@ function buildUpdatePayload(
 	if (input.notes !== undefined) data['notes'] = input.notes;
 	if (input.tags !== undefined) data['tags'] = input.tags;
 	if (input.customer !== undefined) data['customer'] = input.customer;
-	if (input.confirmedAt !== undefined) {
-		if (input.confirmedAt instanceof Date) {
-			data['confirmedAt'] = input.confirmedAt;
-		} else if (input.confirmedAt === null) {
-			data['confirmedAt'] = null;
+	if (input.source !== undefined) data['source'] = input.source;
+	if (input.cancelledBy !== undefined) data['cancelledBy'] = input.cancelledBy;
+	if (input.cancellationReason !== undefined) data['cancellationReason'] = input.cancellationReason;
+
+	for (const field of ['confirmedAt', 'seatedAt', 'cancelledAt', 'completedAt'] as const) {
+		const val = input[field];
+		if (val === undefined) continue;
+		if (val === null) {
+			data[field] = null;
 		} else {
-			data['confirmedAt'] = new Date(input.confirmedAt);
+			data[field] = val instanceof Date ? val : new Date(val as string);
 		}
 	}
 

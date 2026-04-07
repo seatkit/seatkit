@@ -122,8 +122,9 @@ async function createServer() {
 	await fastify.register(cors, {
 		origin:
 			process.env.NODE_ENV === 'production'
-				? ['https://your-domain.com']
-				: true,
+				? [process.env.CORS_ORIGIN ?? 'https://your-domain.com']
+				: [process.env.CORS_ORIGIN ?? 'http://localhost:3000'],
+		credentials: true,
 	});
 
 	await fastify.register(rateLimit, {

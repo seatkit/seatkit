@@ -14,6 +14,12 @@ type Secrets = {
 	supabasePublishableKey: string;
 	supabaseSecretKey: string;
 	databaseUrl: string;
+	betterAuthSecret?: string;
+	smtpHost?: string;
+	smtpPort?: string;
+	smtpUser?: string;
+	smtpPass?: string;
+	smtpFrom?: string;
 };
 
 /**
@@ -50,24 +56,56 @@ async function getSecret(secretName: string): Promise<string> {
 /**
  * Load all secrets from Google Secret Manager
  */
+async function tryGetSecret(secretName: string): Promise<string | undefined> {
+	try {
+		return await getSecret(secretName);
+	} catch {
+		return undefined;
+	}
+}
+
 async function loadFromSecretManager(): Promise<Secrets> {
 	const env = ENVIRONMENT === 'production' ? 'prod' : 'dev';
 
 	console.log(`☁️  Loading secrets from Google Secret Manager (${env})`);
 
-	const [supabaseUrl, supabasePublishableKey, supabaseSecretKey, databaseUrl] =
-		await Promise.all([
-			getSecret(`seatkit-${env}-supabase-url`),
-			getSecret(`seatkit-${env}-supabase-publishable-key`),
-			getSecret(`seatkit-${env}-supabase-secret-key`),
-			getSecret(`seatkit-${env}-database-url`),
-		]);
+	const [
+		supabaseUrl,
+		supabasePublishableKey,
+		supabaseSecretKey,
+		databaseUrl,
+		betterAuthSecret,
+		smtpHost,
+		smtpPort,
+		smtpUser,
+		smtpPass,
+		smtpFrom,
+	] = await Promise.all([
+		getSecret(`seatkit-${env}-supabase-url`),
+		getSecret(`seatkit-${env}-supabase-publishable-key`),
+		getSecret(`seatkit-${env}-supabase-secret-key`),
+		getSecret(`seatkit-${env}-database-url`),
+		// Optional secrets — do not fail if absent
+		tryGetSecret(`seatkit-${env}-better-auth-secret`),
+		tryGetSecret(`seatkit-${env}-smtp-host`),
+		tryGetSecret(`seatkit-${env}-smtp-port`),
+		tryGetSecret(`seatkit-${env}-smtp-user`),
+		tryGetSecret(`seatkit-${env}-smtp-pass`),
+		tryGetSecret(`seatkit-${env}-smtp-from`),
+	]);
 
 	return {
 		supabaseUrl,
 		supabasePublishableKey,
 		supabaseSecretKey,
 		databaseUrl,
+		// Spread optional fields only when defined — required by exactOptionalPropertyTypes
+		...(betterAuthSecret !== undefined && { betterAuthSecret }),
+		...(smtpHost !== undefined && { smtpHost }),
+		...(smtpPort !== undefined && { smtpPort }),
+		...(smtpUser !== undefined && { smtpUser }),
+		...(smtpPass !== undefined && { smtpPass }),
+		...(smtpFrom !== undefined && { smtpFrom }),
 	};
 }
 
@@ -75,14 +113,14 @@ async function loadFromSecretManager(): Promise<Secrets> {
  * Load secrets from environment variables (.env fallback)
  */
 function loadFromEnv(): Secrets {
-	const secrets = {
+	const required = {
 		supabaseUrl: process.env.SUPABASE_URL ?? '',
 		supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY ?? '',
 		supabaseSecretKey: process.env.SUPABASE_SECRET_KEY ?? '',
 		databaseUrl: process.env.DATABASE_URL ?? '',
 	};
 
-	const missing = Object.entries(secrets)
+	const missing = Object.entries(required)
 		.filter(([, value]) => !value)
 		.map(([key]) => key);
 
@@ -90,7 +128,23 @@ function loadFromEnv(): Secrets {
 		throw new Error(`Missing environment variables: ${missing.join(', ')}`);
 	}
 
-	return secrets;
+	// Spread optional env vars only when defined — required by exactOptionalPropertyTypes
+	const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
+	const smtpHost = process.env.SMTP_HOST;
+	const smtpPort = process.env.SMTP_PORT;
+	const smtpUser = process.env.SMTP_USER;
+	const smtpPass = process.env.SMTP_PASS;
+	const smtpFrom = process.env.SMTP_FROM;
+
+	return {
+		...required,
+		...(betterAuthSecret !== undefined && { betterAuthSecret }),
+		...(smtpHost !== undefined && { smtpHost }),
+		...(smtpPort !== undefined && { smtpPort }),
+		...(smtpUser !== undefined && { smtpUser }),
+		...(smtpPass !== undefined && { smtpPass }),
+		...(smtpFrom !== undefined && { smtpFrom }),
+	};
 }
 
 /**

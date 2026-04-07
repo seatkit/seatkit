@@ -4,9 +4,10 @@
  * Generated from: npx @better-auth/cli generate --config ./src/auth.ts
  *
  * The admin plugin adds a `role` column to the `user` table.
+ * The invite plugin adds `invite` and `inviteUse` tables.
  */
 
-import { pgTable, text, boolean, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, boolean, timestamp, integer } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('user', {
 	id: text('id').primaryKey(),
@@ -66,4 +67,30 @@ export const verification = pgTable('verification', {
 	expiresAt: timestamp('expires_at').notNull(),
 	createdAt: timestamp('created_at').defaultNow(),
 	updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// ── Invite plugin tables ──────────────────────────────────────────────────────
+
+export const invite = pgTable('invite', {
+	id: text('id').primaryKey(),
+	token: text('token').unique(),
+	createdAt: timestamp('created_at').notNull(),
+	expiresAt: timestamp('expires_at').notNull(),
+	maxUses: integer('max_uses').notNull(),
+	createdByUserId: text('created_by_user_id').references(() => user.id, { onDelete: 'set null' }),
+	redirectToAfterUpgrade: text('redirect_to_after_upgrade'),
+	shareInviterName: boolean('share_inviter_name').notNull(),
+	email: text('email'),
+	role: text('role').notNull(),
+	newAccount: boolean('new_account'),
+	status: text('status', { enum: ['pending', 'rejected', 'canceled', 'used'] }).notNull(),
+});
+
+export const inviteUse = pgTable('invite_use', {
+	id: text('id').primaryKey(),
+	inviteId: text('invite_id')
+		.notNull()
+		.references(() => invite.id, { onDelete: 'set null' }),
+	usedAt: timestamp('used_at').notNull(),
+	usedByUserId: text('used_by_user_id').references(() => user.id, { onDelete: 'set null' }),
 });

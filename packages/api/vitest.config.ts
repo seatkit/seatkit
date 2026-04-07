@@ -23,10 +23,13 @@ const base = createPackageConfig({
 			// We can add API-specific setup files here later if needed
 		],
 
-		// API tests might need more isolation due to database operations
+		// Run test files sequentially to prevent parallel DB writes from interfering.
+		// vitest 4 changed pool behavior — fileParallelism:false is the reliable way
+		// to serialize test file execution when sharing a single PostgreSQL database.
+		fileParallelism: false,
 		poolOptions: {
 			forks: {
-				singleFork: true, // Ensure database tests don't interfere with each other
+				singleFork: true, // Keep single fork for memory efficiency
 			},
 		},
 

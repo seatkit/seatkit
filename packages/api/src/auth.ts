@@ -21,6 +21,9 @@ export const auth = betterAuth({
 			session: authSchema.session,
 			account: authSchema.account,
 			verification: authSchema.verification,
+			// invite plugin tables
+			invite: authSchema.invite,
+			inviteUse: authSchema.inviteUse,
 		},
 	}),
 	emailAndPassword: {

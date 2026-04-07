@@ -200,6 +200,7 @@ async function createServer() {
 	await fastify.register(import('./routes/reservations.js'), { prefix: '/api/v1' });
 	await fastify.register(import('./routes/tables.js'), { prefix: '/api/v1' });
 	await fastify.register(import('./routes/restaurant-settings.js'), { prefix: '/api/v1' });
+	await fastify.register(import('./routes/staff.js'), { prefix: '/api/v1' });
 
 	return fastify;
 }

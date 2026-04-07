@@ -11,3 +11,5 @@ export { reservations } from './reservations';
 export * from './tables';
 
 export * from './restaurant_settings';
+
+export * from './auth';

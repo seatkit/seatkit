@@ -10,7 +10,10 @@ import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 import swagger from '@fastify/swagger';
 import fastifyApiReference from '@scalar/fastify-api-reference';
+import { fromNodeHeaders } from 'better-auth/node';
 import Fastify from 'fastify';
+import FastifyBetterAuth, { getAuthDecorator, type FastifyBetterAuthOptions } from 'fastify-better-auth';
+import fp from 'fastify-plugin';
 import {
 	createSerializerCompiler,
 	hasZodFastifySchemaValidationErrors,
@@ -20,7 +23,22 @@ import {
 	type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
 
+import { auth } from './auth.js';
 import { getSecrets } from './lib/simple-secrets.js';
+import { seedAdminIfEmpty } from './services/auth-service.js';
+
+// Cast auth to satisfy fastify-better-auth's generic overloads.
+// Our concrete Auth type (with admin + invite plugins) is structurally
+// incompatible with the base BetterAuthOptions placeholder in the plugin types.
+const authPluginOptions = { auth } as unknown as FastifyBetterAuthOptions;
+
+// Augment Fastify request type to carry the auth session
+declare module 'fastify' {
+	// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+	interface FastifyRequest {
+		session?: Awaited<ReturnType<typeof auth.api.getSession>>;
+	}
+}
 
 const envSchema = {
 	type: 'object',
@@ -32,6 +50,13 @@ const envSchema = {
 	},
 	required: [], // Secrets are loaded separately
 } as const;
+
+// URL prefixes that bypass the auth guard
+const PUBLIC_URL_PREFIXES = [
+	'/api/v1/health',
+	'/api/auth/',
+	'/documentation',
+] as const;
 
 async function createServer() {
 	const fastify = Fastify({
@@ -125,6 +150,39 @@ async function createServer() {
 		// @fastify/swagger is auto-detected — no spec.url needed
 	});
 
+	// Register fastify-better-auth with fp() wrapper so the decorator is
+	// visible outside plugin encapsulation (see research Pitfall 3).
+	// authPluginOptions wraps auth cast to FastifyBetterAuthOptions to satisfy
+	// the plugin's generic overloads (concrete type is structurally incompatible).
+	await fastify.register(
+		fp(async (f) => {
+			await f.register(FastifyBetterAuth, authPluginOptions);
+		}),
+	);
+
+	// Auth guard: protect all /api/v1/* routes.
+	// Public exceptions:
+	//   - GET /api/v1/health (health check, no auth required)
+	//   - /api/auth/* (Better Auth's own endpoints — sign-in, sign-out, etc.)
+	//   - /documentation (Swagger UI)
+	fastify.addHook('onRequest', async (request, reply) => {
+		if (PUBLIC_URL_PREFIXES.some((prefix) => request.url.startsWith(prefix))) {
+			return;
+		}
+		const authDecorator = getAuthDecorator(fastify);
+		const session = await authDecorator.api.getSession({
+			headers: fromNodeHeaders(request.headers),
+		});
+		if (!session?.user) {
+			return reply.unauthorized('Login required.');
+		}
+		// Attach session to request for downstream route handlers.
+		// Cast needed: getAuthDecorator returns a base Auth type whose session
+		// shape lacks the admin plugin fields (impersonatedBy etc.) that our
+		// concrete auth instance actually returns at runtime.
+		request.session = session as Awaited<ReturnType<typeof auth.api.getSession>>;
+	});
+
 	fastify.get('/health', () => {
 		const environment = process.env.NODE_ENV;
 		if (!environment) {
@@ -148,13 +206,21 @@ async function createServer() {
 
 async function start() {
 	try {
-		console.log('🔐 Loading application secrets...');
+		console.log('Loading application secrets...');
 		const secrets = await getSecrets();
 
-		process.env.SUPABASE_URL = secrets.supabaseUrl;
-		process.env.SUPABASE_PUBLISHABLE_KEY = secrets.supabasePublishableKey;
-		process.env.SUPABASE_SECRET_KEY = secrets.supabaseSecretKey;
 		process.env.DATABASE_URL = secrets.databaseUrl;
+
+		// Propagate optional secrets to environment for auth.ts and mailer.ts
+		if (secrets.betterAuthSecret) process.env.BETTER_AUTH_SECRET = secrets.betterAuthSecret;
+		if (secrets.smtpHost) process.env.SMTP_HOST = secrets.smtpHost;
+		if (secrets.smtpPort) process.env.SMTP_PORT = secrets.smtpPort;
+		if (secrets.smtpUser) process.env.SMTP_USER = secrets.smtpUser;
+		if (secrets.smtpPass) process.env.SMTP_PASS = secrets.smtpPass;
+		if (secrets.smtpFrom) process.env.SMTP_FROM = secrets.smtpFrom;
+
+		// Seed initial admin account if no users exist (D-06)
+		await seedAdminIfEmpty();
 
 		const fastify = await createServer();
 
@@ -162,7 +228,7 @@ async function start() {
 		const port = parseInt(process.env.PORT || '3001', 10);
 
 		await fastify.listen({ host, port });
-		console.log(`🚀 SeatKit API server running on http://${host}:${port}`);
+		console.log(`SeatKit API server running on http://${host}:${port}`);
 	} catch (error) {
 		console.error('Failed to start server:', error);
 		process.exit(1);

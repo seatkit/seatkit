@@ -31,6 +31,16 @@ function createTransporter() {
 	});
 }
 
+/** Escape a string for safe use inside HTML text or attribute values. */
+function escapeHtml(str: string): string {
+	return str
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#x27;');
+}
+
 export async function sendInviteEmail({ to, role, inviteUrl }: InviteEmailOptions): Promise<void> {
 	const transporter = createTransporter();
 	const from = process.env.SMTP_FROM ?? 'noreply@seatkit.app';
@@ -41,6 +51,9 @@ export async function sendInviteEmail({ to, role, inviteUrl }: InviteEmailOption
 		console.log(`[INVITE] To: ${to}, Role: ${role}, URL: ${inviteUrl}`);
 		return;
 	}
+
+	const safeRole = escapeHtml(role);
+	const safeUrl = escapeHtml(inviteUrl);
 
 	await transporter.sendMail({
 		from,
@@ -55,8 +68,8 @@ export async function sendInviteEmail({ to, role, inviteUrl }: InviteEmailOption
 			'This link expires in 48 hours.',
 		].join('\n'),
 		html: [
-			`<p>You have been invited to join SeatKit as <strong>${role}</strong>.</p>`,
-			`<p><a href="${inviteUrl}">Accept invitation and set your password</a></p>`,
+			`<p>You have been invited to join SeatKit as <strong>${safeRole}</strong>.</p>`,
+			`<p><a href="${safeUrl}">Accept invitation and set your password</a></p>`,
 			'<p>This link expires in 48 hours.</p>',
 		].join('\n'),
 	});

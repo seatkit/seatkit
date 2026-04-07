@@ -47,8 +47,12 @@ export const auth = betterAuth({
 		// Runtime behavior is unaffected — the cast is safe.
 		invite({
 			async sendUserInvitation({ email, role, url }: { email: string; role: string; url: string }): Promise<void> {
-				// NOTE: void, not await — avoid timing attacks and request delays per research anti-pattern
-				void sendInviteEmail({ to: email, role, inviteUrl: url });
+				// Fire-and-forget: do not await so the invite response returns immediately
+				// (avoids timing attacks and request delays). Errors are logged but not surfaced.
+				sendInviteEmail({ to: email, role, inviteUrl: url }).catch(err => {
+					// eslint-disable-next-line no-console
+					console.error('[invite] Failed to send invite email:', err);
+				});
 			},
 		}) as unknown as BetterAuthPlugin,
 	],

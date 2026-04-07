@@ -103,6 +103,8 @@ jobs:
           NODE_ENV: test
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/seatkit_test
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+          ADMIN_EMAIL: admin@seatkit.test
+          ADMIN_PASSWORD: test-admin-password-ci
 
   # Build verification (runs after lint and test pass)
   build:

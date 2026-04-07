@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 
+import { auth } from '../auth.js';
 import { db } from '../db/index.js';
 import { reservations, tables, restaurantSettings } from '../db/schema/index.js';
 import { TABLE_DATA, DEFAULT_PRIORITY_ORDER } from '../db/seed-data.js';
@@ -16,10 +17,28 @@ import type {
 	ListReservationsResponse,
 	ErrorResponse,
 } from '../schemas/index.js';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, InjectOptions } from 'fastify';
+
+// Dedicated test admin — created idempotently so the test is self-contained
+// and does not depend on the global seedAdminIfEmpty seed or test execution order.
+const TEST_ADMIN_EMAIL = 'reservations-admin@test.com';
+const TEST_ADMIN_PASSWORD = 'reservations-test-pass123!';
+
+async function ensureTestAdmin(): Promise<void> {
+	try {
+		await auth.api.createUser({
+			body: { email: TEST_ADMIN_EMAIL, password: TEST_ADMIN_PASSWORD, name: 'Reservations Test Admin', role: 'admin' },
+		});
+	} catch (err: unknown) {
+		const apiErr = err as { body?: { code?: string } };
+		if (apiErr?.body?.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL') return;
+		throw err;
+	}
+}
 
 describe('Reservations API', () => {
 	let app: FastifyInstance;
+	let sessionCookie: string;
 
 	beforeAll(async () => {
 		app = await createServer();
@@ -30,7 +49,33 @@ describe('Reservations API', () => {
 			.insert(restaurantSettings)
 			.values({ priorityOrder: [...DEFAULT_PRIORITY_ORDER] })
 			.onConflictDoNothing();
+
+		// Ensure a known admin exists regardless of global seed state or test execution order
+		await ensureTestAdmin();
+
+		// Sign in with the test admin to get a session cookie for authenticated requests
+		const signIn = await inject({
+			method: 'POST',
+			url: '/api/auth/sign-in/email',
+			payload: { email: TEST_ADMIN_EMAIL, password: TEST_ADMIN_PASSWORD },
+		});
+		const setCookie = signIn.headers['set-cookie'];
+		const rawCookie = Array.isArray(setCookie) ? setCookie[0] : setCookie;
+		sessionCookie = rawCookie ?? '';
 	});
+
+	// Authenticated inject helper — automatically includes the session cookie.
+	// InjectOptions is used directly (instead of Parameters<typeof app.inject>[0])
+	// because Fastify v5 has a no-arg overload that causes Parameters<> to resolve
+	// to an empty tuple, making the inferred type 'undefined'.
+	const inject = (options: InjectOptions | string) =>
+		app.inject({
+			...(typeof options === 'string' ? { url: options } : options),
+			headers: {
+				...(typeof options === 'object' ? (options.headers as Record<string, string> | undefined) : undefined),
+				...(sessionCookie ? { cookie: sessionCookie } : {}),
+			},
+		});
 
 	// Clean up all reservations before each test so table availability is never exhausted
 	beforeEach(async () => {
@@ -57,7 +102,7 @@ describe('Reservations API', () => {
 				source: 'phone',
 			};
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'POST',
 				url: '/api/v1/reservations',
 				payload: validReservation,
@@ -86,7 +131,7 @@ describe('Reservations API', () => {
 				createdBy: 'test-user-id',
 			};
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'POST',
 				url: '/api/v1/reservations',
 				payload: invalidReservation,
@@ -104,7 +149,7 @@ describe('Reservations API', () => {
 				// Missing other required fields
 			};
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'POST',
 				url: '/api/v1/reservations',
 				payload: incompleteReservation,
@@ -126,7 +171,7 @@ describe('Reservations API', () => {
 				createdBy: 'test-user-id',
 			};
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'POST',
 				url: '/api/v1/reservations',
 				payload: reservation,
@@ -141,7 +186,7 @@ describe('Reservations API', () => {
 
 	describe('GET /api/reservations', () => {
 		it('should return list of reservations', async () => {
-			const response = await app.inject({
+			const response = await inject({
 				method: 'GET',
 				url: '/api/v1/reservations',
 			});
@@ -172,7 +217,7 @@ describe('Reservations API', () => {
 				createdBy: 'test-user-id',
 			};
 
-			const createResponse = await app.inject({
+			const createResponse = await inject({
 				method: 'POST',
 				url: '/api/v1/reservations',
 				payload: reservation,
@@ -193,7 +238,7 @@ describe('Reservations API', () => {
 				},
 			};
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'PUT',
 				url: `/api/v1/reservations/${createdReservationId}`,
 				payload: updateData,
@@ -218,7 +263,7 @@ describe('Reservations API', () => {
 				seatedAt,
 			};
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'PUT',
 				url: `/api/v1/reservations/${createdReservationId}`,
 				payload: updateData,
@@ -240,7 +285,7 @@ describe('Reservations API', () => {
 				cancellationReason: 'Customer requested cancellation',
 			};
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'PUT',
 				url: `/api/v1/reservations/${createdReservationId}`,
 				payload: updateData,
@@ -262,7 +307,7 @@ describe('Reservations API', () => {
 				notes: 'Customer requested window seat',
 			};
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'PUT',
 				url: `/api/v1/reservations/${createdReservationId}`,
 				payload: updateData,
@@ -283,7 +328,7 @@ describe('Reservations API', () => {
 				partySize: 4,
 			};
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'PUT',
 				url: `/api/v1/reservations/${nonExistentId}`,
 				payload: updateData,
@@ -301,7 +346,7 @@ describe('Reservations API', () => {
 				partySize: 4,
 			};
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'PUT',
 				url: '/api/v1/reservations/invalid-uuid',
 				payload: updateData,
@@ -315,7 +360,7 @@ describe('Reservations API', () => {
 				partySize: -5, // Invalid: must be positive
 			};
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'PUT',
 				url: `/api/v1/reservations/${createdReservationId}`,
 				payload: updateData,
@@ -345,7 +390,7 @@ describe('Reservations API', () => {
 				createdBy: 'test-user-id',
 			};
 
-			const createResponse = await app.inject({
+			const createResponse = await inject({
 				method: 'POST',
 				url: '/api/v1/reservations',
 				payload: reservation,
@@ -356,7 +401,7 @@ describe('Reservations API', () => {
 		});
 
 		it('should delete an existing reservation', async () => {
-			const response = await app.inject({
+			const response = await inject({
 				method: 'DELETE',
 				url: `/api/v1/reservations/${createdReservationId}`,
 			});
@@ -371,13 +416,13 @@ describe('Reservations API', () => {
 
 		it('should verify reservation is actually deleted', async () => {
 			// Delete the reservation
-			await app.inject({
+			await inject({
 				method: 'DELETE',
 				url: `/api/v1/reservations/${createdReservationId}`,
 			});
 
 			// Try to delete again - should return 404
-			const response = await app.inject({
+			const response = await inject({
 				method: 'DELETE',
 				url: `/api/v1/reservations/${createdReservationId}`,
 			});
@@ -388,7 +433,7 @@ describe('Reservations API', () => {
 		it('should return 404 for non-existent reservation', async () => {
 			const nonExistentId = '00000000-0000-0000-0000-000000000000';
 
-			const response = await app.inject({
+			const response = await inject({
 				method: 'DELETE',
 				url: `/api/v1/reservations/${nonExistentId}`,
 			});
@@ -401,7 +446,7 @@ describe('Reservations API', () => {
 		});
 
 		it('should return 400 for invalid UUID format', async () => {
-			const response = await app.inject({
+			const response = await inject({
 				method: 'DELETE',
 				url: '/api/v1/reservations/invalid-uuid',
 			});
@@ -410,7 +455,7 @@ describe('Reservations API', () => {
 		});
 
 		it('should return deleted reservation data in response', async () => {
-			const response = await app.inject({
+			const response = await inject({
 				method: 'DELETE',
 				url: `/api/v1/reservations/${createdReservationId}`,
 			});

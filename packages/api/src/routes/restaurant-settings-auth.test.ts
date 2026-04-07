@@ -58,12 +58,15 @@ describe('Restaurant Settings — auth guard + config (CONFIG-02, CONFIG-03)', (
 	beforeAll(async () => {
 		app = await createServer();
 
-		// Seed base data
+		// Seed base data — delete any existing settings rows first to ensure a
+		// single-row state regardless of what other test files may have inserted
+		// (restaurantSettings has no unique constraint beyond the random UUID PK,
+		// so onConflictDoNothing would silently create duplicate rows otherwise).
 		await db.insert(tables).values([...TABLE_DATA]).onConflictDoNothing({ target: tables.name });
+		await db.delete(restaurantSettings);
 		const [existing] = await db
 			.insert(restaurantSettings)
 			.values({ priorityOrder: [...DEFAULT_PRIORITY_ORDER] })
-			.onConflictDoNothing()
 			.returning();
 
 		// If insert returned nothing (row already exists), fetch the existing row

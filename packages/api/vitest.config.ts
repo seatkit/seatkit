@@ -4,10 +4,9 @@
  * Extends the shared configuration with API-specific settings
  */
 
-import { defineConfig } from 'vitest/config';
 import { createPackageConfig } from '../../vitest.shared.js';
 
-const base = createPackageConfig({
+export default createPackageConfig({
 	test: {
 		// API-specific test timeout (database operations might take longer)
 		testTimeout: 15000,
@@ -19,9 +18,7 @@ const base = createPackageConfig({
 		},
 
 		// Setup files specific to API tests
-		setupFiles: [
-			// We can add API-specific setup files here later if needed
-		],
+		setupFiles: [],
 
 		// Run test files sequentially to prevent parallel DB writes from interfering.
 		// vitest 4 changed pool behavior — fileParallelism:false is the reliable way
@@ -29,26 +26,18 @@ const base = createPackageConfig({
 		fileParallelism: false,
 		poolOptions: {
 			forks: {
-				singleFork: true, // Keep single fork for memory efficiency
+				singleFork: true,
 			},
 		},
 
-		// better-auth-invite-plugin uses extensionless relative imports (./constants
-		// instead of ./constants.js) which fail in strict Node.js ESM. Inlining
-		// the package through Vite resolves the extensions.
-		// Server-side resolve conditions ensure better-auth resolves its Node.js
-		// entry (not the browser .mjs bundle) when inlined packages import it.
+		// Inline packages with ESM compatibility issues under Node.js:
+		// - better-auth-invite-plugin: extensionless relative imports
+		// - @opentelemetry/semantic-conventions: directory imports transitively
+		//   pulled in by better-auth, incompatible with strict Node.js ESM
 		server: {
 			deps: {
-				inline: ['better-auth-invite-plugin'],
+				inline: ['better-auth-invite-plugin', /^@opentelemetry\//],
 			},
 		},
-	},
-});
-
-export default defineConfig({
-	...base,
-	resolve: {
-		conditions: ['node', 'import', 'module', 'default'],
 	},
 });

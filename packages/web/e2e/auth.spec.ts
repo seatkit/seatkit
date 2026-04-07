@@ -11,6 +11,8 @@ import { test, expect } from '@playwright/test';
 const TEST_EMAIL = process.env.TEST_ADMIN_EMAIL ?? 'admin@seatkit.test';
 const TEST_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? 'changeme123';
 
+const API_SERVER_AVAILABLE = process.env.API_SERVER_AVAILABLE !== 'false';
+
 test.describe('Authentication flows', () => {
 	test.beforeEach(async ({ page }) => {
 		// Clear cookies before each test to ensure unauthenticated state
@@ -18,6 +20,7 @@ test.describe('Authentication flows', () => {
 	});
 
 	test('login form submits; redirects to / on success (2-e2e-01)', async ({ page }) => {
+		test.skip(!API_SERVER_AVAILABLE, 'API server required for login');
 		await page.goto('/login');
 
 		// Fill and submit login form
@@ -31,6 +34,7 @@ test.describe('Authentication flows', () => {
 	});
 
 	test('sign out button redirects to /login (2-e2e-02)', async ({ page }) => {
+		test.skip(!API_SERVER_AVAILABLE, 'API server required for login');
 		// Log in first
 		await page.goto('/login');
 		await page.fill('#email', TEST_EMAIL);

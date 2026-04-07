@@ -9,8 +9,11 @@ import { test, expect } from '@playwright/test';
 const TEST_EMAIL = process.env.TEST_ADMIN_EMAIL ?? 'admin@seatkit.test';
 const TEST_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? 'changeme123';
 
+const API_SERVER_AVAILABLE = process.env.API_SERVER_AVAILABLE !== 'false';
+
 test.describe('Settings pages', () => {
 	test.beforeEach(async ({ page }) => {
+		test.skip(!API_SERVER_AVAILABLE, 'API server required for login');
 		// Log in as admin
 		await page.context().clearCookies();
 		await page.goto('/login');

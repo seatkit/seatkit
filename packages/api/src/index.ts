@@ -48,7 +48,7 @@ async function createServer() {
 		// so `value` is already a string by this point. Use `this[key]` to access
 		// the original Date object for the instanceof check and conversion.
 		if (this[key] instanceof Date) {
-			return (this[key] as Date).toISOString();
+			return this[key].toISOString();
 		}
 		return value;
 	};

@@ -26,6 +26,11 @@ function coerceDate(value: Date | string): Date {
 	return value instanceof Date ? value : new Date(value);
 }
 
+function coerceDateOrNull(value: Date | string | null): Date | null {
+	if (value === null) return null;
+	return value instanceof Date ? value : new Date(value);
+}
+
 function toDayRange(date: Date): { dayStart: Date; dayEnd: Date } {
 	const dayStart = new Date(date);
 	dayStart.setUTCHours(0, 0, 0, 0);
@@ -118,12 +123,7 @@ function buildUpdatePayload(
 
 	for (const field of ['confirmedAt', 'seatedAt', 'cancelledAt', 'completedAt'] as const) {
 		const val = input[field];
-		if (val === undefined) continue;
-		if (val === null) {
-			data[field] = null;
-		} else {
-			data[field] = val instanceof Date ? val : new Date(val as string);
-		}
+		if (val !== undefined) data[field] = coerceDateOrNull(val);
 	}
 
 	return data;

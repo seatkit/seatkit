@@ -60,6 +60,7 @@ export async function apiRequest<T>(
 	const requestOptions: RequestInit = {
 		method,
 		headers: requestHeaders,
+		credentials: 'include',
 	};
 
 	if (signal) {

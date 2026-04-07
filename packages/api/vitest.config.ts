@@ -18,14 +18,25 @@ export default createPackageConfig({
 		},
 
 		// Setup files specific to API tests
-		setupFiles: [
-			// We can add API-specific setup files here later if needed
-		],
+		setupFiles: [],
 
-		// API tests might need more isolation due to database operations
+		// Run test files sequentially to prevent parallel DB writes from interfering.
+		// vitest 4 changed pool behavior — fileParallelism:false is the reliable way
+		// to serialize test file execution when sharing a single PostgreSQL database.
+		fileParallelism: false,
 		poolOptions: {
 			forks: {
-				singleFork: true, // Ensure database tests don't interfere with each other
+				singleFork: true,
+			},
+		},
+
+		// Inline packages with ESM compatibility issues under Node.js:
+		// - better-auth-invite-plugin: extensionless relative imports
+		// - @opentelemetry/semantic-conventions: directory imports transitively
+		//   pulled in by better-auth, incompatible with strict Node.js ESM
+		server: {
+			deps: {
+				inline: ['better-auth-invite-plugin', /^@opentelemetry\//],
 			},
 		},
 	},

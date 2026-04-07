@@ -82,8 +82,11 @@ export async function validateAsync<T>(
 export function validatePartial<T extends z.ZodRawShape>(
 	schema: z.ZodObject<T>,
 	data: unknown,
-): Result<Partial<z.infer<z.ZodObject<T>>>, ValidationError> {
-	return validate(schema.partial(), data);
+): Result<z.infer<ReturnType<z.ZodObject<T>['partial']>>, ValidationError> {
+	return validate(schema.partial(), data) as Result<
+		z.infer<ReturnType<z.ZodObject<T>['partial']>>,
+		ValidationError
+	>;
 }
 
 /**

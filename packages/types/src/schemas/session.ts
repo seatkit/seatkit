@@ -37,7 +37,7 @@ export const SessionContextSchema = z.object({
 	view: z.enum(['timeline', 'list', 'table_layout', 'sales', 'settings']),
 	focusedReservationId: z.string().optional(), // Reservation they're viewing/editing
 	focusedTableId: z.string().optional(), // Table they're viewing/editing
-	filters: z.record(z.any()).optional(), // Active filters in their view
+	filters: z.record(z.string(), z.any()).optional(), // Active filters in their view
 });
 
 export type SessionContext = z.infer<typeof SessionContextSchema>;

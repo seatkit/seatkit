@@ -15,6 +15,20 @@
       "when": 1775505322854,
       "tag": "0001_tense_leopardon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775578124900,
+      "tag": "0002_flimsy_arachne",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775580037502,
+      "tag": "0003_burly_lockheed",
+      "breakpoints": true
     }
   ]
 }

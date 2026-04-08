@@ -33,7 +33,7 @@ Build a complete web-based reservation management system with:
 
 ## 📦 PR Breakdown
 
-### PR #17: Documentation & Foundation ✅ **[COMPLETE]**
+### PR #17: Documentation & Foundation ✅ **[IN PROGRESS]**
 
 **Target LoC**: ~500 lines (config + docs, not counting dependencies)
 
@@ -41,34 +41,34 @@ Build a complete web-based reservation management system with:
 
 **Documentation**:
 - [x] PR_PLAN.md - This working document
-- [x] ADR-002: Next.js 15 App Router Architecture
-- [x] ADR-003: State Management (TanStack Query + Zustand)
-- [x] ADR-004: E2E Testing with Playwright
-- [x] Update ARCHITECTURE.md (reflect state management change)
+- [ ] ADR-002: Next.js 15 App Router Architecture
+- [ ] ADR-003: State Management (TanStack Query + Zustand)
+- [ ] ADR-004: E2E Testing with Playwright
+- [ ] Update ARCHITECTURE.md (reflect state management change)
 
 **Package Setup**:
-- [x] Create `packages/web/` directory structure
-- [x] `package.json` - Next.js 15, React 19, TanStack Query, Zustand
-- [x] `tsconfig.json` - Frontend-specific TypeScript config
-- [x] `next.config.mjs` - Next.js configuration
-- [x] `eslint.config.js` - Linting for React/Next.js
-- [x] `playwright.config.ts` - E2E test configuration
-- [x] `.env.example` - Environment variable template (optional, can be added later)
+- [ ] Create `packages/web/` directory structure
+- [ ] `package.json` - Next.js 15, React 19, TanStack Query, Zustand
+- [ ] `tsconfig.json` - Frontend-specific TypeScript config
+- [ ] `next.config.mjs` - Next.js configuration
+- [ ] `eslint.config.js` - Linting for React/Next.js
+- [ ] `playwright.config.ts` - E2E test configuration
+- [ ] `.env.example` - Environment variable template
 
 **Next.js App**:
-- [x] `src/app/layout.tsx` - Root layout
-- [x] `src/app/page.tsx` - Health check / landing page
-- [x] `src/app/globals.css` - Basic styling setup
-- [x] Basic Tailwind CSS configuration
+- [ ] `src/app/layout.tsx` - Root layout
+- [ ] `src/app/page.tsx` - Health check / landing page
+- [ ] `src/app/globals.css` - Basic styling setup
+- [ ] Basic Tailwind CSS configuration
 
 **CI/CD**:
-- [x] Update `.github/workflows/ci.yml` for web package
-- [x] Add Playwright browser installation step
-- [x] Add web package to Turborepo pipeline
+- [ ] Update `.github/workflows/ci.yml` for web package
+- [ ] Add Playwright browser installation step
+- [ ] Add web package to Turborepo pipeline
 
 **Testing**:
-- [x] Basic E2E test: Home page loads
-- [x] Verify full build pipeline works
+- [ ] Basic E2E test: Home page loads
+- [ ] Verify full build pipeline works
 
 **Acceptance Criteria**:
 - ✅ All ADRs created and documented
@@ -79,39 +79,38 @@ Build a complete web-based reservation management system with:
 
 ---
 
-### PR #18: API Client Layer & Type-Safe Integration 🚧 **[IN PROGRESS]**
+### PR #18: API Client Layer & Type-Safe Integration
 
 **Target LoC**: ~480 lines
 
 **Deliverables**:
 
 **API Client**:
-- [x] `src/lib/api-client.ts` - Fetch wrapper with error handling
-- [x] `src/lib/api-config.ts` - Base URL configuration
-- [x] `src/lib/api-types.ts` - API request/response types
+- [ ] `src/lib/api-client.ts` - Fetch wrapper with error handling
+- [ ] `src/lib/api-config.ts` - Base URL configuration
+- [ ] `src/lib/api-types.ts` - API request/response types
 
 **TanStack Query Setup**:
-- [x] `src/providers/query-provider.tsx` - QueryClient provider
-- [x] `src/lib/queries/reservations.ts` - Query hooks:
+- [ ] `src/providers/query-provider.tsx` - QueryClient provider
+- [ ] `src/lib/queries/reservations.ts` - Query hooks:
   - `useReservations()` - GET /api/reservations
   - `useCreateReservation()` - POST /api/reservations
   - `useUpdateReservation()` - PUT /api/reservations/:id
   - `useDeleteReservation()` - DELETE /api/reservations/:id
 
 **Error Handling**:
-- [x] `src/components/error-boundary.tsx` - React error boundary
-- [x] `src/lib/errors.ts` - Error parsing utilities
+- [ ] `src/components/error-boundary.tsx` - React error boundary
+- [ ] `src/lib/errors.ts` - Error parsing utilities
 
 **Testing**:
-- [x] Unit tests for API client utilities
-- [x] Mock integration tests for query hooks
-- [x] E2E test: API client connection health check
+- [ ] Unit tests for API client utilities
+- [ ] Mock integration tests for query hooks
+- [ ] E2E test: API client connection health check
 
 **Acceptance Criteria**:
 - ✅ Type-safe API calls with Zod validation
 - ✅ All query hooks working with mock data
 - ✅ Error handling tested and working
-- ✅ Zod validation implemented and tested
 - ✅ 90%+ test coverage for API layer
 
 ---
@@ -313,13 +312,13 @@ After PR #22, you'll have:
 
 | PR | Status | LoC Target | LoC Actual | Dates |
 |----|--------|------------|------------|-------|
-| #17 | ✅ Complete | ~500 | TBD | Started: 2025-10-30 |
-| #18 | 🚧 In Progress | ~480 | ~400+ | Started: 2025-10-30 |
+| #17 | 🚧 In Progress | ~500 | TBD | Started: 2025-10-30 |
+| #18 | ⏳ Not Started | ~480 | - | - |
 | #19 | ⏳ Not Started | ~550 | - | - |
 | #20 | ⏳ Not Started | ~590 | - | - |
 | #21 | ⏳ Not Started | ~580 | - | - |
 | #22 | ⏳ Not Started | ~520 | - | - |
-| **Total** | **33%** | **~3,220** | **~900** | **ETA: ~2-3 weeks** |
+| **Total** | **17%** | **~3,220** | **TBD** | **ETA: ~2-3 weeks** |
 
 ---
 

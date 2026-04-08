@@ -1,9 +1,11 @@
 'use client';
 
+import React from 'react';
+
 type FilterChipProps = Readonly<{
 	label: string;
 	active: boolean;
-	onClick: () => void;
+	onToggle: () => void;
 	/** Optional count badge to display alongside the label */
 	count?: number;
 }>;
@@ -12,13 +14,15 @@ type FilterChipProps = Readonly<{
  * FilterChip — reusable filter chip for list view filters.
  * Active state: bg-foreground text-background (inverted).
  * Inactive state: border border-border text-foreground.
+ * Uses role="checkbox" + aria-checked for toggle semantics.
  */
-export function FilterChip({ label, active, onClick, count }: FilterChipProps) {
+export function FilterChip({ label, active, onToggle, count }: FilterChipProps) {
 	return (
 		<button
 			type="button"
-			onClick={onClick}
-			aria-pressed={active}
+			role="checkbox"
+			aria-checked={active}
+			onClick={onToggle}
 			className={[
 				'inline-flex items-center gap-1.5 border rounded-full px-3 py-1 text-sm font-medium',
 				'transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',

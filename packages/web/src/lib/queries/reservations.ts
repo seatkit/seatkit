@@ -293,6 +293,32 @@ async function uploadReservationPhoto(params: {
 }
 
 /**
+ * Fetch reservations with optional includeDeleted flag.
+ * Used by the list view's Deleted filter state.
+ */
+async function fetchAllReservations(includeDeleted: boolean): Promise<ListReservationsResponse> {
+	const url = includeDeleted
+		? `${API_ENDPOINTS.reservations.list}?includeDeleted=true`
+		: API_ENDPOINTS.reservations.list;
+	return apiGet<ListReservationsResponse>(url, ListReservationsResponseSchema);
+}
+
+/**
+ * Hook to fetch all reservations with optional includeDeleted flag.
+ * Used by the list view's Deleted filter state.
+ */
+export function useAllReservations(
+	includeDeleted: boolean,
+	options?: Omit<UseQueryOptions<ListReservationsResponse, Error>, 'queryKey' | 'queryFn'>,
+) {
+	return useQuery({
+		queryKey: [...reservationKeys.lists(), { includeDeleted }],
+		queryFn: () => fetchAllReservations(includeDeleted),
+		...options,
+	});
+}
+
+/**
  * Hook to upload a photo to a reservation
  */
 export function useUploadReservationPhoto(

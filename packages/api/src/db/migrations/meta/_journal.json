@@ -36,6 +36,13 @@
       "when": 1775644299329,
       "tag": "0004_silly_wendell_vaughn",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775646514984,
+      "tag": "0005_naive_kingpin",
+      "breakpoints": true
     }
   ]
 }

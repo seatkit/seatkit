@@ -10,12 +10,17 @@ async function runMigrations() {
 	console.log('🔄 Running database migrations...');
 
 	try {
-		// Load secrets first (just like main server)
-		console.log('🔐 Loading database secrets...');
-		const secrets = await getSecrets();
-
-		// Set DATABASE_URL for the db connection
-		process.env.DATABASE_URL = secrets.databaseUrl;
+		// If DATABASE_URL or TEST_DATABASE_URL is already set, use it directly —
+		// no need to hit Secret Manager (supports CI and direct local runs).
+		const directUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+		if (directUrl) {
+			process.env.DATABASE_URL = directUrl;
+			console.log('🔧 Using DATABASE_URL from environment (skipping Secret Manager)');
+		} else {
+			console.log('🔐 Loading database secrets...');
+			const secrets = await getSecrets();
+			process.env.DATABASE_URL = secrets.databaseUrl;
+		}
 
 		// Now we can import db connection (after DATABASE_URL is set)
 		const { db, connection } = await import('../db/index.js');

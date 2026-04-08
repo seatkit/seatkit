@@ -16,6 +16,13 @@ import {
 } from './common.js';
 
 /**
+ * Acceptance state — whether a reservation has been confirmed by the restaurant (RES-06)
+ */
+export const AcceptanceStateSchema = z.enum(['toConfirm', 'confirmed']);
+
+export type AcceptanceState = z.infer<typeof AcceptanceStateSchema>;
+
+/**
  * Reservation status lifecycle
  */
 export const ReservationStatusSchema = z.enum([
@@ -86,6 +93,22 @@ export const ReservationSchema = BaseEntitySchema.extend({
 
 	// Optimistic locking — clients must echo this back on PUT requests (COLLAB-03)
 	version: z.number().int().positive(),
+
+	// Soft-delete — RES-03, RES-04
+	isDeleted: z.boolean().default(false),
+	deletedAt: DateTimeSchema.nullable().optional(),
+
+	// Acceptance state — RES-06
+	acceptanceState: AcceptanceStateSchema.default('toConfirm'),
+
+	// Large group flag — RES-08
+	isLargeGroup: z.boolean().default(false),
+
+	// Preferred language — RES-09 (e.g., 'en', 'ja', 'it', 'fr')
+	preferredLanguage: z.string().max(50).nullable().optional(),
+
+	// Emoji tag — RES-12
+	emoji: z.string().max(10).nullable().optional(),
 });
 
 export type Reservation = z.infer<typeof ReservationSchema>;
@@ -115,6 +138,12 @@ export const CreateReservationSchema = ReservationSchema.omit({
 		.enum(['phone', 'web', 'walk_in', 'email', 'other'])
 		.nullable()
 		.optional(), // Optional during creation
+	isDeleted: z.boolean().default(false).optional(),
+	deletedAt: DateTimeSchema.nullable().optional(),
+	acceptanceState: AcceptanceStateSchema.default('toConfirm').optional(),
+	isLargeGroup: z.boolean().default(false).optional(),
+	preferredLanguage: z.string().max(50).nullable().optional(),
+	emoji: z.string().max(10).nullable().optional(),
 });
 
 export type CreateReservation = z.infer<typeof CreateReservationSchema>;

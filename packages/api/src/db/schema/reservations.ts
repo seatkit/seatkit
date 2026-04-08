@@ -42,6 +42,7 @@ export const reservationSourceEnum = pgEnum('reservation_source', [
 	'other',
 ]);
 
+export const acceptanceStateEnum = pgEnum('acceptance_state', ['toConfirm', 'confirmed']);
 
 // Reservations table (plural table name as agreed)
 export const reservations = pgTable('reservations', {
@@ -81,6 +82,22 @@ export const reservations = pgTable('reservations', {
 	// Incremented atomically on each successful update.
 	// Clients must include the current version in PUT requests; a mismatch returns 409.
 	version: integer('version').notNull().default(1),
+
+	// Soft-delete — RES-03, RES-04
+	isDeleted: boolean('is_deleted').notNull().default(false),
+	deletedAt: timestamp('deleted_at').$type<Date | null>(),
+
+	// Acceptance state — RES-06
+	acceptanceState: acceptanceStateEnum('acceptance_state').notNull().default('toConfirm'),
+
+	// Large group flag — RES-08
+	isLargeGroup: boolean('is_large_group').notNull().default(false),
+
+	// Preferred language — RES-09
+	preferredLanguage: varchar('preferred_language', { length: 50 }).$type<string | null>(),
+
+	// Emoji tag — RES-12
+	emoji: varchar('emoji', { length: 10 }).$type<string | null>(),
 });
 
 export type Reservation = typeof reservations.$inferSelect;

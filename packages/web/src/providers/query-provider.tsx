@@ -9,6 +9,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, useEffect, useRef, type ReactNode } from 'react';
+
 import { connectWebSocket, setPresenceUpdateCallback } from '../lib/ws-client.js';
 import { usePresenceStore } from '../stores/presence-store.js';
 

@@ -7,8 +7,9 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { UpdateReservation } from '@seatkit/types';
+
 import type { Reservation } from '../lib/api-types.js';
+import type { UpdateReservation } from '@seatkit/types';
 
 type ConflictModalProps = Readonly<{
 	open: boolean;

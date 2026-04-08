@@ -33,7 +33,7 @@ async function parseErrorResponse(
 	response: Response,
 ): Promise<{ normalized: ApiErrorResponse; raw: unknown }> {
 	try {
-		const data = await response.json();
+		const data: unknown = await response.json();
 		const apiData = data as ApiErrorResponse;
 		// Normalize to ApiErrorResponse shape
 		const normalized: ApiErrorResponse =

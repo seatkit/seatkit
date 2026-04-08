@@ -3,6 +3,7 @@
  * Tracks connected staff and their current reservation/state.
  */
 import { create } from 'zustand';
+
 import type { PresenceEntry } from '../lib/api-types.js';
 
 type PresenceStore = {

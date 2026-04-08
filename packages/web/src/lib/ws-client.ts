@@ -3,9 +3,10 @@
  * Connects to /api/v1/ws, handles reservation change broadcasts,
  * presence messages, and reconnects with exponential backoff.
  */
-import type { QueryClient } from '@tanstack/react-query';
 import { reservationKeys } from './queries/reservations.js';
+
 import type { PresenceEntry } from './api-types.js';
+import type { QueryClient } from '@tanstack/react-query';
 
 // --- Types ---
 
@@ -96,7 +97,9 @@ export function connectWebSocket(queryClient: QueryClient): () => void {
 		ws.onclose = (): void => {
 			stopHeartbeat();
 			if (isIntentionallyClosed) return;
-			const jitter = (crypto.getRandomValues(new Uint32Array(1))[0]! / 0xffffffff) * 1_000;
+			const buf = new Uint32Array(1);
+			crypto.getRandomValues(buf);
+			const jitter = ((buf[0] ?? 0) / 0xffffffff) * 1_000;
 			const delay = Math.min(BASE_DELAY_MS * 2 ** reconnectAttempt, MAX_DELAY_MS) + jitter;
 			reconnectAttempt++;
 			reconnectTimeout = setTimeout(connect, delay);

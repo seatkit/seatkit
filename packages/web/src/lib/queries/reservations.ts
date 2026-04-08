@@ -186,7 +186,8 @@ export function useUpdateReservation(
 			if (error instanceof ApiError && error.status === 409 && onConflict) {
 				const body = error.body as ConflictResponseBody | null | undefined;
 				if (body?.conflict === true && body.current) {
-					const { versionId: _v, ...draft } = variables;
+					// eslint-disable-next-line no-unused-vars
+					const { versionId: _versionId, ...draft } = variables;
 					onConflict({ draft, current: body.current });
 					return; // Do not propagate to onError
 				}

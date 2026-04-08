@@ -1,21 +1,41 @@
 /**
  * Database connection and configuration
+ *
+ * Exports lazy `db` and `connection` proxies. The real postgres.js connection
+ * is only established on the first property access, which happens after the
+ * server's start() function has set DATABASE_URL from secrets or .env.
+ *
+ * This allows db/index.ts to be statically imported by auth.ts and route
+ * modules without requiring DATABASE_URL to be present at module-load time.
  */
 
 import { createDatabaseInstance, gracefulShutdown } from '@seatkit/utils';
 import * as schema from './schema/index.js';
 
-// Create database instance using shared utilities
-// This automatically handles environment detection (test vs development)
-const { db, connection } = createDatabaseInstance(schema);
+type DbInstance = ReturnType<typeof createDatabaseInstance<typeof schema>>;
 
-// Export database instance and connection
-export { db, connection };
+let _instance: DbInstance | undefined;
 
-// Export schema and types for convenience
+function getInstance(): DbInstance {
+	if (!_instance) {
+		_instance = createDatabaseInstance(schema);
+		process.on('SIGINT', () => gracefulShutdown(_instance!.connection));
+		process.on('SIGTERM', () => gracefulShutdown(_instance!.connection));
+	}
+	return _instance;
+}
+
+export const db = new Proxy({} as DbInstance['db'], {
+	get(_target, prop, receiver) {
+		return Reflect.get(getInstance().db, prop, receiver);
+	},
+});
+
+export const connection = new Proxy({} as DbInstance['connection'], {
+	get(_target, prop, receiver) {
+		return Reflect.get(getInstance().connection, prop, receiver);
+	},
+});
+
 export { schema };
-export type Database = typeof db;
-
-// Handle process termination with shared graceful shutdown
-process.on('SIGINT', () => gracefulShutdown(connection));
-process.on('SIGTERM', () => gracefulShutdown(connection));
+export type Database = DbInstance['db'];

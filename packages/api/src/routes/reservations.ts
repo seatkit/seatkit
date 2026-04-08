@@ -60,10 +60,17 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 				request.body as z.infer<typeof CreateReservationSchema>,
 				fastify,
 			);
-			return reply.status(201).send({
+			const response = await reply.status(201).send({
 				reservation,
 				message: 'Reservation created successfully',
 			});
+			// Fire-and-forget: notify WebSocket clients of the new reservation.
+			// Must not block the HTTP response (T-03-02-03: payload contains only id, no PII).
+			fastify.notifyReservationChange({
+				type: 'reservation_changed',
+				reservationId: reservation.id,
+			}).catch(() => {});
+			return response;
 		},
 	);
 
@@ -93,10 +100,16 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 			const { versionId, ...body } = request.body as z.infer<typeof UpdateReservationBodySchema>;
 			try {
 				const updated = await updateReservation(id, versionId, body, fastify);
-				return reply.status(200).send({
+				const response = await reply.status(200).send({
 					reservation: updated,
 					message: 'Reservation updated successfully',
 				});
+				// Fire-and-forget: notify WebSocket clients of the update (success path only — not 409).
+				fastify.notifyReservationChange({
+					type: 'reservation_changed',
+					reservationId: updated.id,
+				}).catch(() => {});
+				return response;
 			} catch (err: unknown) {
 				if (err instanceof VersionConflictError) {
 					// D-05: 409 body contains current server state so the client can retry.
@@ -124,10 +137,16 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 		async (request, reply) => {
 			const { id } = request.params as { id: string };
 			const deleted = await deleteReservation(id, fastify);
-			return reply.status(200).send({
+			const response = await reply.status(200).send({
 				reservation: deleted,
 				message: 'Reservation deleted successfully',
 			});
+			// Fire-and-forget: notify WebSocket clients of the deletion.
+			fastify.notifyReservationChange({
+				type: 'reservation_deleted',
+				reservationId: deleted.id,
+			}).catch(() => {});
+			return response;
 		},
 	);
 };

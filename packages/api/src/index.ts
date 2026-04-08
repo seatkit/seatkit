@@ -9,6 +9,7 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 import swagger from '@fastify/swagger';
+import websocket from '@fastify/websocket';
 import fastifyApiReference from '@scalar/fastify-api-reference';
 import { fromNodeHeaders } from 'better-auth/node';
 import Fastify from 'fastify';
@@ -24,6 +25,7 @@ import {
 } from 'fastify-type-provider-zod';
 
 import { auth } from './auth.js';
+import type { ReservationChangePayload } from './lib/pg-subscriber.js';
 import { getSecrets } from './lib/simple-secrets.js';
 import { seedAdminIfEmpty } from './services/auth-service.js';
 
@@ -37,6 +39,11 @@ declare module 'fastify' {
 	// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 	interface FastifyRequest {
 		session?: Awaited<ReturnType<typeof auth.api.getSession>>;
+	}
+
+	// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+	interface FastifyInstance {
+		notifyReservationChange: (payload: ReservationChangePayload) => Promise<void>;
 	}
 }
 
@@ -197,11 +204,46 @@ async function createServer() {
 		};
 	});
 
+	// MUST be registered before route plugins — intercepts WebSocket upgrade requests
+	await fastify.register(websocket);
+
+	// Decorate fastify with a lazy-initialized notify function.
+	// Set to a no-op initially; replaced with the real subscriber in onReady.
+	// Using void return — fire-and-forget from route handlers must not block HTTP responses.
+	fastify.decorate('notifyReservationChange', async (_payload: ReservationChangePayload): Promise<void> => {
+		// no-op until pg-listen connects in onReady
+	});
+
+	// Start pg-listen subscriber after server is ready
+	// (DATABASE_URL is available in process.env by the time onReady fires)
+	fastify.addHook('onReady', async () => {
+		const databaseUrl = process.env.DATABASE_URL;
+		if (!databaseUrl) {
+			fastify.log.warn('DATABASE_URL not set — pg-listen subscriber not started');
+			return;
+		}
+		const { createPgSubscriber, RESERVATION_CHANNEL } = await import('./lib/pg-subscriber.js');
+		const subscriber = await createPgSubscriber(databaseUrl, fastify);
+
+		// Replace the no-op decorator with real NOTIFY calls
+		fastify.notifyReservationChange = async (payload) => {
+			await subscriber.notify(RESERVATION_CHANNEL, payload);
+		};
+
+		// Cleanup on shutdown
+		fastify.addHook('onClose', async () => {
+			await subscriber.unlistenAll();
+			await subscriber.close();
+			fastify.log.info('pg-listen subscriber closed');
+		});
+	});
+
 	// API routes
 	await fastify.register(import('./routes/reservations.js'), { prefix: '/api/v1' });
 	await fastify.register(import('./routes/tables.js'), { prefix: '/api/v1' });
 	await fastify.register(import('./routes/restaurant-settings.js'), { prefix: '/api/v1' });
 	await fastify.register(import('./routes/staff.js'), { prefix: '/api/v1' });
+	await fastify.register(import('./routes/ws.js'), { prefix: '/api/v1' });
 
 	return fastify;
 }
@@ -211,7 +253,13 @@ async function start() {
 		console.log('Loading application secrets...');
 		const secrets = await getSecrets();
 
-		process.env.DATABASE_URL = secrets.databaseUrl;
+		// GCP secrets take precedence over .env for DATABASE_URL.
+		// The dev script uses --env-file .env which pre-populates DATABASE_URL before
+		// this code runs. If we kept the .env value unconditionally (via ||), a stale
+		// .env password would silently shadow the current GCP credential and cause
+		// authentication failures. GCP is the authoritative source; .env is a last-resort
+		// fallback for offline/no-GCP scenarios only.
+		process.env.DATABASE_URL = secrets.databaseUrl || process.env.DATABASE_URL;
 
 		// Propagate optional secrets to environment for auth.ts and mailer.ts
 		if (secrets.betterAuthSecret) process.env.BETTER_AUTH_SECRET = secrets.betterAuthSecret;

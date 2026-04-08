@@ -253,7 +253,8 @@ async function start() {
 		console.log('Loading application secrets...');
 		const secrets = await getSecrets();
 
-		process.env.DATABASE_URL = secrets.databaseUrl;
+		// Local .env takes precedence — allows dev override without touching GCP
+		process.env.DATABASE_URL = process.env.DATABASE_URL || secrets.databaseUrl;
 
 		// Propagate optional secrets to environment for auth.ts and mailer.ts
 		if (secrets.betterAuthSecret) process.env.BETTER_AUTH_SECRET = secrets.betterAuthSecret;

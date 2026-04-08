@@ -56,6 +56,25 @@ export type DeleteReservationResponse = z.infer<
 >;
 
 /**
+ * Presence entry — represents a connected staff member's current state
+ * Mirrors the server PresenceEntry shape from Plan 03
+ */
+export type PresenceEntry = {
+	sessionId: string;
+	userId: string;
+	currentReservationId: string | null;
+	presenceState: 'viewing' | 'editing';
+	lastHeartbeatAt: string;
+};
+
+/**
+ * GET /api/v1/presence response shape
+ */
+export type PresenceResponse = {
+	presence: PresenceEntry[];
+};
+
+/**
  * API error response
  */
 export type ApiErrorResponse = {

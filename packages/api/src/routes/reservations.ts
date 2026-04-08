@@ -65,11 +65,11 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 				message: 'Reservation created successfully',
 			});
 			// Fire-and-forget: notify WebSocket clients of the new reservation.
-			// Must not block the HTTP response — use void (T-03-02-03: payload contains only id, no PII).
-			void fastify.notifyReservationChange({
+			// Must not block the HTTP response (T-03-02-03: payload contains only id, no PII).
+			fastify.notifyReservationChange({
 				type: 'reservation_changed',
 				reservationId: reservation.id,
-			});
+			}).catch(() => {});
 			return response;
 		},
 	);
@@ -105,10 +105,10 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					message: 'Reservation updated successfully',
 				});
 				// Fire-and-forget: notify WebSocket clients of the update (success path only — not 409).
-				void fastify.notifyReservationChange({
+				fastify.notifyReservationChange({
 					type: 'reservation_changed',
 					reservationId: updated.id,
-				});
+				}).catch(() => {});
 				return response;
 			} catch (err: unknown) {
 				if (err instanceof VersionConflictError) {
@@ -142,10 +142,10 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 				message: 'Reservation deleted successfully',
 			});
 			// Fire-and-forget: notify WebSocket clients of the deletion.
-			void fastify.notifyReservationChange({
+			fastify.notifyReservationChange({
 				type: 'reservation_deleted',
 				reservationId: deleted.id,
-			});
+			}).catch(() => {});
 			return response;
 		},
 	);

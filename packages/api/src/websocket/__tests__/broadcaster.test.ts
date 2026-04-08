@@ -10,10 +10,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import type { WebSocket as WsWebSocket } from 'ws';
-
 // Import the module under test after mocking pg-listen
-import { createPgSubscriber, RESERVATION_CHANNEL, type ReservationChangePayload } from '../../lib/pg-subscriber.js';
+import { createPgSubscriber, type ReservationChangePayload } from '../../lib/pg-subscriber.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -148,7 +146,7 @@ describe('pg-listen broadcaster', () => {
 			reservationId: '33333333-3333-3333-3333-333333333333',
 		};
 		capturedHandler!(changedPayload);
-		const sentChanged = JSON.parse((openClient.send as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string) as unknown;
+		const sentChanged = JSON.parse((openClient.send as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string);
 		expect(sentChanged).toEqual({ type: 'reservation_changed', reservationId: '33333333-3333-3333-3333-333333333333' });
 
 		// Test reservation_deleted payload
@@ -158,7 +156,7 @@ describe('pg-listen broadcaster', () => {
 			reservationId: '44444444-4444-4444-4444-444444444444',
 		};
 		capturedHandler!(deletedPayload);
-		const sentDeleted = JSON.parse((openClient.send as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string) as unknown;
+		const sentDeleted = JSON.parse((openClient.send as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string);
 		expect(sentDeleted).toEqual({ type: 'reservation_deleted', reservationId: '44444444-4444-4444-4444-444444444444' });
 	});
 

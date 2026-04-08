@@ -126,7 +126,7 @@ describe('Reservations API — Optimistic Locking', () => {
 	 */
 	it('should return 409 with conflict:true and current reservation when versionId is stale', async () => {
 		const created = await createTestReservation();
-		const staleVersion = 0; // DB has version 1, so 0 is always stale
+		const staleVersion = 9999; // DB has version 1, so any large number is stale
 
 		const res = await inject({
 			method: 'PUT',

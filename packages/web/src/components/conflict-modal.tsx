@@ -55,10 +55,10 @@ export function ConflictModal({ open, draft, serverVersion, onApply, onDiscard }
 	useEffect(() => {
 		const dialog = dialogRef.current;
 		if (!dialog) return;
-		if (open) {
-			if (!dialog.open) dialog.showModal();
-		} else {
-			if (dialog.open) dialog.close();
+		if (open && !dialog.open) {
+			dialog.showModal();
+		} else if (!open && dialog.open) {
+			dialog.close();
 		}
 	}, [open]);
 

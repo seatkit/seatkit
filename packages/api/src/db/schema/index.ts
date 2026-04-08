@@ -13,3 +13,6 @@ export * from './tables';
 export * from './restaurant_settings';
 
 export * from './auth';
+
+export * from './session-presence';
+export { sessionPresence, presenceStateEnum } from './session-presence';

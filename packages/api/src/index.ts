@@ -253,8 +253,13 @@ async function start() {
 		console.log('Loading application secrets...');
 		const secrets = await getSecrets();
 
-		// Local .env takes precedence — allows dev override without touching GCP
-		process.env.DATABASE_URL = process.env.DATABASE_URL || secrets.databaseUrl;
+		// GCP secrets take precedence over .env for DATABASE_URL.
+		// The dev script uses --env-file .env which pre-populates DATABASE_URL before
+		// this code runs. If we kept the .env value unconditionally (via ||), a stale
+		// .env password would silently shadow the current GCP credential and cause
+		// authentication failures. GCP is the authoritative source; .env is a last-resort
+		// fallback for offline/no-GCP scenarios only.
+		process.env.DATABASE_URL = secrets.databaseUrl || process.env.DATABASE_URL;
 
 		// Propagate optional secrets to environment for auth.ts and mailer.ts
 		if (secrets.betterAuthSecret) process.env.BETTER_AUTH_SECRET = secrets.betterAuthSecret;

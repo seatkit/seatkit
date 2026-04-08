@@ -12,6 +12,7 @@ import {
 	createReservation,
 	updateReservation,
 	deleteReservation,
+	VersionConflictError,
 } from '../services/reservation-service.js';
 
 import type { FastifyPluginAsync } from 'fastify';
@@ -67,25 +68,47 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// PUT /api/v1/reservations/:id
+	// Requires `versionId` (optimistic lock token) in the request body.
+	// Returns 409 with { conflict: true, current: Reservation } when versions diverge (COLLAB-03).
+	const UpdateReservationBodySchema = UpdateReservationSchema.omit({
+		id: true,
+		updatedAt: true,
+	}).extend({
+		// Clients must echo back the version they last read.
+		// Non-integer or missing value → 400 Bad Request (T-03-01-01 mitigation).
+		versionId: z.number().int().positive(),
+	});
+
 	fastify.put(
 		'/reservations/:id',
 		{
 			schema: {
-				body: UpdateReservationSchema.omit({ id: true, updatedAt: true }).describe(
-					'Update an existing reservation',
-				),
+				body: UpdateReservationBodySchema.describe('Update an existing reservation'),
 				params: IdParamsSchema,
 				response: { 200: ReservationResponseSchema },
 			},
 		},
 		async (request, reply) => {
 			const { id } = request.params as { id: string };
-			const body = request.body as z.infer<typeof UpdateReservationSchema>;
-			const updated = await updateReservation(id, body, fastify);
-			return reply.status(200).send({
-				reservation: updated,
-				message: 'Reservation updated successfully',
-			});
+			const { versionId, ...body } = request.body as z.infer<typeof UpdateReservationBodySchema>;
+			try {
+				const updated = await updateReservation(id, versionId, body, fastify);
+				return reply.status(200).send({
+					reservation: updated,
+					message: 'Reservation updated successfully',
+				});
+			} catch (err: unknown) {
+				if (err instanceof VersionConflictError) {
+					// D-05: 409 body contains current server state so the client can retry.
+					// Cast reply to bypass Fastify's response-schema narrowing (409 is not
+					// in the declared schema, but we intentionally send it outside schema
+					// serialization so the full conflict object is transmitted as-is).
+					return (reply as unknown as { status(c: number): { send(d: unknown): unknown } })
+						.status(409)
+						.send({ conflict: true, current: err.current }); // intentional out-of-schema 409
+				}
+				throw err;
+			}
 		},
 	);
 

@@ -70,6 +70,7 @@ describe('ReservationSchema', () => {
 		category: 'dinner' as const,
 		status: 'confirmed' as const,
 		createdBy: 'user-123',
+		version: 1,
 		// Nullable fields required by schema
 		tableIds: null,
 		notes: null,

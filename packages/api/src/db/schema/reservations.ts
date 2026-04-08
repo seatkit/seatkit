@@ -98,6 +98,9 @@ export const reservations = pgTable('reservations', {
 
 	// Emoji tag — RES-12
 	emoji: varchar('emoji', { length: 10 }).$type<string | null>(),
+
+	// Photo attachment URL — RES-10
+	photoUrl: text('photo_url').$type<string | null>(),
 });
 
 export type Reservation = typeof reservations.$inferSelect;

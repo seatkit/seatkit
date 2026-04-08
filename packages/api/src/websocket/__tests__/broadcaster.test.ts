@@ -146,7 +146,7 @@ describe('pg-listen broadcaster', () => {
 			reservationId: '33333333-3333-3333-3333-333333333333',
 		};
 		capturedHandler!(changedPayload);
-		const sentChanged = JSON.parse((openClient.send as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string);
+		const sentChanged = JSON.parse(openClient.send.mock.calls[0]![0] as string);
 		expect(sentChanged).toEqual({ type: 'reservation_changed', reservationId: '33333333-3333-3333-3333-333333333333' });
 
 		// Test reservation_deleted payload

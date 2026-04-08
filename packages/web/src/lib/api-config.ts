@@ -33,6 +33,8 @@ export const API_ENDPOINTS = {
 		create: '/api/v1/reservations',
 		update: (id: string) => `/api/v1/reservations/${id}`,
 		delete: (id: string) => `/api/v1/reservations/${id}`,
+		recover: (id: string) => `/api/v1/reservations/${id}/recover`,
+		photo: (id: string) => `/api/v1/reservations/${id}/photo`,
 	},
 	tables: {
 		list: '/api/v1/tables',

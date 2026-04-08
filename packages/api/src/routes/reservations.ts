@@ -5,7 +5,7 @@
 
 import { CreateReservationSchema, ReservationSchema, UpdateReservationSchema } from '@seatkit/types';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { reservations } from '../db/schema/index.js';
@@ -16,6 +16,7 @@ import {
 	recoverReservation,
 	VersionConflictError,
 } from '../services/reservation-service.js';
+import { uploadReservationPhoto } from '../services/photo-service.js';
 
 import type { FastifyPluginAsync } from 'fastify';
 
@@ -186,6 +187,70 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 				reservationId: recovered.id,
 			}).catch(() => {});
 			return response;
+		},
+	);
+	// POST /api/v1/reservations/:id/photo — attach a photo to a reservation (RES-10)
+	fastify.post(
+		'/reservations/:id/photo',
+		{
+			schema: {
+				params: IdParamsSchema,
+				response: {
+					200: z.object({
+						photoUrl: z.string().url(),
+						message: z.string(),
+					}),
+				},
+			},
+		},
+		async (request, reply) => {
+			const { id } = request.params as { id: string };
+
+			// Verify reservation exists and is not deleted
+			const [reservation] = await db
+				.select()
+				.from(reservations)
+				.where(and(eq(reservations.id, id), eq(reservations.isDeleted, false)));
+			if (!reservation) throw fastify.httpErrors.notFound('Reservation not found');
+
+			// Parse multipart upload — @fastify/multipart handles 10 MB bodyLimit per index.ts config
+			let file: Awaited<ReturnType<typeof request.file>>;
+			try {
+				file = await request.file();
+			} catch (err: unknown) {
+				// @fastify/multipart throws RequestFileTooLargeError on limit exceeded — surface as 413
+				const msg = err instanceof Error ? err.message : String(err);
+				if (msg.toLowerCase().includes('limit') || msg.toLowerCase().includes('too large')) {
+					throw fastify.httpErrors.requestEntityTooLarge('File too large. Maximum size is 10 MB.');
+				}
+				throw err;
+			}
+
+			if (!file) throw fastify.httpErrors.badRequest('No file provided');
+
+			// Read file into buffer
+			const chunks: Buffer[] = [];
+			for await (const chunk of file.file) {
+				chunks.push(chunk as Buffer);
+			}
+			const fileBuffer = Buffer.concat(chunks);
+
+			// Upload to Supabase Storage (throws 415 on invalid MIME, 500 on upload failure)
+			const photoUrl = await uploadReservationPhoto(id, fileBuffer, file.mimetype, fastify);
+
+			// Persist URL to the reservation row
+			await db
+				.update(reservations)
+				.set({ photoUrl, updatedAt: new Date() })
+				.where(eq(reservations.id, id));
+
+			// Fire-and-forget: notify WebSocket clients of the photo update
+			fastify.notifyReservationChange({ type: 'reservation_changed', reservationId: id }).catch(() => {});
+
+			return reply.status(200).send({
+				photoUrl,
+				message: 'Photo uploaded successfully',
+			});
 		},
 	);
 };

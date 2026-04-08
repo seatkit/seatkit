@@ -83,6 +83,9 @@ export const ReservationSchema = BaseEntitySchema.extend({
 	cancelledAt: DateTimeSchema.nullable(),
 	cancelledBy: z.string().nullable(), // User ID who cancelled (can be null)
 	cancellationReason: z.string().nullable(),
+
+	// Optimistic locking — clients must echo this back on PUT requests (COLLAB-03)
+	version: z.number().int().positive(),
 });
 
 export type Reservation = z.infer<typeof ReservationSchema>;
@@ -95,6 +98,7 @@ export const CreateReservationSchema = ReservationSchema.omit({
 	id: true,
 	createdAt: true,
 	updatedAt: true,
+	version: true, // Server-managed optimistic lock counter
 	status: true, // Status defaults to 'pending'
 	confirmedAt: true,
 	seatedAt: true,

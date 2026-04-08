@@ -144,9 +144,8 @@ describe('Reservations API — Optimistic Locking', () => {
 		expect(body.current).toBeDefined();
 		// current must contain the real server-side reservation
 		expect(body.current.id).toBe(created.id);
-		// current.version is what the client should use for their next attempt
-		expect(typeof body.current.version).toBe('number');
-		expect(body.current.version).toBeGreaterThan(staleVersion);
+		// current.version is the server's real version — client must use it for retry
+		expect(body.current.version).toBe(created.version);
 	});
 
 	/**

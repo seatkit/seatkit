@@ -12,7 +12,7 @@ import {
 	type UseMutationOptions,
 } from '@tanstack/react-query';
 
-import { apiGet, apiPost, apiPut, apiDelete } from '../api-client.js';
+import { apiGet, apiPost, apiPut, apiDelete, ApiError } from '../api-client.js';
 import { API_ENDPOINTS } from '../api-config.js';
 import {
 	ListReservationsResponseSchema,
@@ -23,6 +23,7 @@ import {
 	type CreateReservationResponse,
 	type UpdateReservationResponse,
 	type DeleteReservationResponse,
+	type Reservation,
 } from '../api-types.js';
 
 import type { CreateReservation, UpdateReservation } from '@seatkit/types';
@@ -104,34 +105,67 @@ export function useCreateReservation(
 }
 
 /**
- * Update an existing reservation
+ * Extended update type that includes the optimistic lock version (COLLAB-03)
+ */
+export type UpdateReservationWithVersion = UpdateReservation & {
+	/** Server version number — must match the current server version to avoid 409 */
+	versionId: number;
+};
+
+/**
+ * 409 conflict data surfaced to the caller via onConflict callback
+ */
+export type ConflictData = {
+	/** The user's unsaved edits */
+	draft: Partial<UpdateReservation>;
+	/** The current server state from the 409 response body */
+	current: Reservation;
+};
+
+/**
+ * Update an existing reservation (includes versionId for optimistic locking)
  */
 async function updateReservation(
-	data: UpdateReservation,
+	data: UpdateReservationWithVersion,
 ): Promise<UpdateReservationResponse> {
 	const { id, ...updateData } = data;
 	return apiPut<UpdateReservationResponse>(
 		API_ENDPOINTS.reservations.update(id),
-		updateData,
+		updateData, // includes versionId
 		UpdateReservationResponseSchema,
 	);
 }
 
 /**
- * Hook to update an existing reservation
+ * 409 conflict response body shape from Plan 01
+ */
+type ConflictResponseBody = {
+	conflict: true;
+	current: Reservation;
+};
+
+/**
+ * Hook to update an existing reservation.
+ * Detects 409 conflicts and surfaces them via the onConflict callback
+ * instead of onError — preserving the user's draft for resolution.
  */
 export function useUpdateReservation(
 	options?: UseMutationOptions<
 		UpdateReservationResponse,
 		Error,
-		UpdateReservation
-	>,
+		UpdateReservationWithVersion
+	> & {
+		onConflict?: (data: ConflictData) => void;
+	},
 ) {
 	const queryClient = useQueryClient();
 
+	// Separate onConflict from the rest of options before spreading
+	const { onConflict, onError, onSuccess, ...restOptions } = options ?? {};
+
 	return useMutation({
 		mutationFn: updateReservation,
-		onSuccess: (data, variables) => {
+		onSuccess: (data, variables, onMutateResult, ctx) => {
 			// Invalidate both list and detail queries
 			queryClient
 				.invalidateQueries({ queryKey: reservationKeys.lists() })
@@ -145,8 +179,22 @@ export function useUpdateReservation(
 				.catch(() => {
 					// Ignore errors from cache invalidation
 				});
+			onSuccess?.(data, variables, onMutateResult, ctx);
 		},
-		...options,
+		onError: (error: Error, variables, onMutateResult, ctx) => {
+			// Detect 409 conflict — surface via onConflict, not onError
+			if (error instanceof ApiError && error.status === 409 && onConflict) {
+				const body = error.body as ConflictResponseBody | null | undefined;
+				if (body?.conflict === true && body.current) {
+					// eslint-disable-next-line no-unused-vars
+					const { versionId: _versionId, ...draft } = variables;
+					onConflict({ draft, current: body.current });
+					return; // Do not propagate to onError
+				}
+			}
+			onError?.(error, variables, onMutateResult, ctx);
+		},
+		...restOptions,
 	});
 }
 

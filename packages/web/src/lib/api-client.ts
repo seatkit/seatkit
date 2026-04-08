@@ -17,6 +17,8 @@ export class ApiError extends Error {
 		public status: number,
 		public statusText: string,
 		public error: ApiErrorResponse,
+		/** Raw parsed response body — present for non-standard error shapes (e.g. 409 conflict) */
+		public body?: unknown,
 	) {
 		super(error.message || statusText);
 		this.name = 'ApiError';
@@ -24,19 +26,30 @@ export class ApiError extends Error {
 }
 
 /**
- * Parse error response from API
+ * Parse error response from API — returns both a normalized ApiErrorResponse
+ * and the raw parsed body (needed for non-standard shapes like 409 conflict).
  */
 async function parseErrorResponse(
 	response: Response,
-): Promise<ApiErrorResponse> {
+): Promise<{ normalized: ApiErrorResponse; raw: unknown }> {
 	try {
-		const data = (await response.json()) as ApiErrorResponse;
-		return data;
+		const data: unknown = await response.json();
+		const apiData = data as ApiErrorResponse;
+		// Normalize to ApiErrorResponse shape
+		const normalized: ApiErrorResponse =
+			typeof apiData.message === 'string'
+				? apiData
+				: {
+						error: response.statusText,
+						message: `HTTP ${response.status}: ${response.statusText}`,
+					};
+		return { normalized, raw: data };
 	} catch {
-		return {
+		const normalized: ApiErrorResponse = {
 			error: response.statusText,
 			message: `HTTP ${response.status}: ${response.statusText}`,
 		};
+		return { normalized, raw: null };
 	}
 }
 
@@ -74,8 +87,8 @@ export async function apiRequest<T>(
 	const response = await fetch(url, requestOptions);
 
 	if (!response.ok) {
-		const error = await parseErrorResponse(response);
-		throw new ApiError(response.status, response.statusText, error);
+		const { normalized, raw } = await parseErrorResponse(response);
+		throw new ApiError(response.status, response.statusText, normalized, raw);
 	}
 
 	// Handle 204 No Content

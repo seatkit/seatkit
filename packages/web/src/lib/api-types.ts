@@ -7,6 +7,9 @@
 import { ReservationSchema } from '@seatkit/types';
 import { z } from 'zod';
 
+// Re-export Reservation type for use across web package
+export type { Reservation } from '@seatkit/types';
+
 /**
  * API response wrapper for list endpoints
  */
@@ -54,6 +57,25 @@ export const DeleteReservationResponseSchema = z.object({
 export type DeleteReservationResponse = z.infer<
 	typeof DeleteReservationResponseSchema
 >;
+
+/**
+ * Presence entry — represents a connected staff member's current state
+ * Mirrors the server PresenceEntry shape from Plan 03
+ */
+export type PresenceEntry = {
+	sessionId: string;
+	userId: string;
+	currentReservationId: string | null;
+	presenceState: 'viewing' | 'editing';
+	lastHeartbeatAt: string;
+};
+
+/**
+ * GET /api/v1/presence response shape
+ */
+export type PresenceResponse = {
+	presence: PresenceEntry[];
+};
 
 /**
  * API error response

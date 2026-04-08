@@ -6,10 +6,11 @@
  */
 'use client';
 
+import { useEffect, useRef } from 'react';
 import type { UpdateReservation } from '@seatkit/types';
 import type { Reservation } from '../lib/api-types.js';
 
-type ConflictModalProps = {
+type ConflictModalProps = Readonly<{
 	open: boolean;
 	/** User's unsaved edits */
 	draft: Partial<UpdateReservation>;
@@ -19,7 +20,7 @@ type ConflictModalProps = {
 	onApply: (newVersion: number) => void;
 	/** Called when user chooses to discard their draft and accept server version */
 	onDiscard: () => void;
-};
+}>;
 
 type FieldDiff = {
 	field: string;
@@ -33,7 +34,7 @@ function computeDiff(draft: Partial<UpdateReservation>, server: Reservation): Fi
 	for (const key of Object.keys(draft) as (keyof UpdateReservation)[]) {
 		if (key === 'id' || key === 'updatedAt') continue;
 		const draftVal = draft[key];
-		const serverVal = server[key as keyof Reservation];
+		const serverVal = server[key];
 		if (JSON.stringify(draftVal) !== JSON.stringify(serverVal)) {
 			diffs.push({ field: key, draft: draftVal, server: serverVal });
 		}
@@ -45,74 +46,78 @@ function formatValue(val: unknown): string {
 	if (val === null || val === undefined) return '—';
 	if (val instanceof Date) return val.toLocaleString();
 	if (typeof val === 'object') return JSON.stringify(val);
-	return String(val);
+	return String(val as string | number | boolean);
 }
 
 export function ConflictModal({ open, draft, serverVersion, onApply, onDiscard }: ConflictModalProps) {
-	if (!open) return null;
+	const dialogRef = useRef<HTMLDialogElement>(null);
+
+	useEffect(() => {
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+		if (open) {
+			if (!dialog.open) dialog.showModal();
+		} else {
+			if (dialog.open) dialog.close();
+		}
+	}, [open]);
 
 	const diffs = computeDiff(draft, serverVersion);
 
 	return (
-		<div
-			role="dialog"
-			aria-modal="true"
+		<dialog
+			ref={dialogRef}
 			aria-labelledby="conflict-modal-title"
 			data-testid="conflict-modal"
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-			onClick={onDiscard}
+			className="rounded-lg shadow-xl max-w-md w-full mx-4 p-6 backdrop:bg-black/40"
+			onClose={onDiscard}
 		>
-			<div
-				className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
-				onClick={(e) => e.stopPropagation()}
-			>
-				<h2 id="conflict-modal-title" className="text-lg font-semibold text-gray-900 mb-2">
-					Edit conflict
-				</h2>
-				<p className="text-sm text-gray-600 mb-4">
-					Another staff member saved changes while you were editing. Review the differences below.
-				</p>
+			<h2 id="conflict-modal-title" className="text-lg font-semibold text-gray-900 mb-2">
+				Edit conflict
+			</h2>
+			<p className="text-sm text-gray-600 mb-4">
+				Another staff member saved changes while you were editing. Review the differences below.
+			</p>
 
-				{diffs.length === 0 ? (
-					<p className="text-sm text-gray-500 italic mb-4">No conflicting fields — safe to apply.</p>
-				) : (
-					<table className="w-full text-sm mb-4 border-collapse">
-						<thead>
-							<tr className="text-left text-gray-500">
-								<th className="py-1 pr-4">Field</th>
-								<th className="py-1 pr-4">Your draft</th>
-								<th className="py-1">Current saved</th>
+			{diffs.length === 0 ? (
+				<p className="text-sm text-gray-500 italic mb-4">No conflicting fields — safe to apply.</p>
+			) : (
+				<table className="w-full text-sm mb-4 border-collapse">
+					<thead>
+						<tr className="text-left text-gray-500">
+							<th className="py-1 pr-4">Field</th>
+							<th className="py-1 pr-4">Your draft</th>
+							<th className="py-1">Current saved</th>
+						</tr>
+					</thead>
+					<tbody>
+						{diffs.map(({ field, draft: d, server: s }) => (
+							<tr key={field} className="border-t border-gray-100">
+								<td className="py-1 pr-4 font-medium text-gray-700">{field}</td>
+								<td className="py-1 pr-4 text-amber-700">{formatValue(d)}</td>
+								<td className="py-1 text-gray-600">{formatValue(s)}</td>
 							</tr>
-						</thead>
-						<tbody>
-							{diffs.map(({ field, draft: d, server: s }) => (
-								<tr key={field} className="border-t border-gray-100">
-									<td className="py-1 pr-4 font-medium text-gray-700">{field}</td>
-									<td className="py-1 pr-4 text-amber-700">{formatValue(d)}</td>
-									<td className="py-1 text-gray-600">{formatValue(s)}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				)}
+						))}
+					</tbody>
+				</table>
+			)}
 
-				<div className="flex gap-3 justify-end">
-					<button
-						type="button"
-						onClick={onDiscard}
-						className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-					>
-						Discard draft
-					</button>
-					<button
-						type="button"
-						onClick={() => onApply(serverVersion.version)}
-						className="px-4 py-2 text-sm text-white bg-amber-600 rounded-md hover:bg-amber-700"
-					>
-						Apply your changes on top
-					</button>
-				</div>
+			<div className="flex gap-3 justify-end">
+				<button
+					type="button"
+					onClick={onDiscard}
+					className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+				>
+					Discard draft
+				</button>
+				<button
+					type="button"
+					onClick={() => onApply(serverVersion.version)}
+					className="px-4 py-2 text-sm text-white bg-amber-600 rounded-md hover:bg-amber-700"
+				>
+					Apply your changes on top
+				</button>
 			</div>
-		</div>
+		</dialog>
 	);
 }

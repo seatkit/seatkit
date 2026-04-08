@@ -74,7 +74,7 @@ export function connectWebSocket(queryClient: QueryClient): () => void {
 			startHeartbeat();
 		};
 
-		ws.onmessage = (event: MessageEvent<string>): void => {
+		ws.onmessage = async (event: MessageEvent<string>): Promise<void> => {
 			let payload: ServerMessage;
 			try {
 				payload = JSON.parse(event.data) as ServerMessage;
@@ -84,10 +84,10 @@ export function connectWebSocket(queryClient: QueryClient): () => void {
 
 			if (payload.type === 'reservation_changed') {
 				// D-14: invalidate + refetch — no direct cache patching
-				void queryClient.invalidateQueries({ queryKey: reservationKeys.detail(payload.reservationId) });
-				void queryClient.invalidateQueries({ queryKey: reservationKeys.lists() });
+				await queryClient.invalidateQueries({ queryKey: reservationKeys.detail(payload.reservationId) });
+				await queryClient.invalidateQueries({ queryKey: reservationKeys.lists() });
 			} else if (payload.type === 'reservation_deleted') {
-				void queryClient.invalidateQueries({ queryKey: reservationKeys.lists() });
+				await queryClient.invalidateQueries({ queryKey: reservationKeys.lists() });
 			} else if (payload.type === 'presence-update') {
 				onPresenceUpdate?.(payload.presence);
 			}
@@ -96,7 +96,8 @@ export function connectWebSocket(queryClient: QueryClient): () => void {
 		ws.onclose = (): void => {
 			stopHeartbeat();
 			if (isIntentionallyClosed) return;
-			const delay = Math.min(BASE_DELAY_MS * 2 ** reconnectAttempt, MAX_DELAY_MS) + Math.random() * 1_000;
+			const jitter = (crypto.getRandomValues(new Uint32Array(1))[0]! / 0xffffffff) * 1_000;
+			const delay = Math.min(BASE_DELAY_MS * 2 ** reconnectAttempt, MAX_DELAY_MS) + jitter;
 			reconnectAttempt++;
 			reconnectTimeout = setTimeout(connect, delay);
 		};

@@ -4,11 +4,11 @@
  * @module lib/api-types
  */
 
-import { ReservationSchema, type Reservation } from '@seatkit/types';
+import { ReservationSchema } from '@seatkit/types';
 import { z } from 'zod';
 
 // Re-export Reservation type for use across web package
-export type { Reservation };
+export type { Reservation } from '@seatkit/types';
 
 /**
  * API response wrapper for list endpoints

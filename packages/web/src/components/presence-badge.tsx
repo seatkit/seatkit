@@ -10,12 +10,11 @@
 
 import { usePresenceStore } from '../stores/presence-store.js';
 
-type PresenceBadgeProps = {
-	userId: string;
+type PresenceBadgeProps = Readonly<{
 	/** Display name or initials — caller is responsible for lookup */
 	initials: string;
 	state: 'viewing' | 'editing';
-};
+}>;
 
 export function PresenceBadge({ initials, state }: PresenceBadgeProps) {
 	const isEditing = state === 'editing';
@@ -44,7 +43,6 @@ export function AppPresenceBadgeRow() {
 			{entries.map((entry) => (
 				<PresenceBadge
 					key={entry.sessionId}
-					userId={entry.userId}
 					initials={entry.userId.slice(0, 2)} // Phase 4 will look up real names
 					state={entry.presenceState}
 				/>
@@ -57,10 +55,10 @@ export function AppPresenceBadgeRow() {
 export function ReservationPresenceBadgeRow({
 	reservationId,
 	currentUserId,
-}: {
+}: Readonly<{
 	reservationId: string;
 	currentUserId: string;
-}) {
+}>) {
 	const entries = usePresenceStore((s) =>
 		Object.values(s.entries).filter(
 			(e) => e.currentReservationId === reservationId && e.userId !== currentUserId,
@@ -74,7 +72,6 @@ export function ReservationPresenceBadgeRow({
 			{entries.map((entry) => (
 				<PresenceBadge
 					key={entry.sessionId}
-					userId={entry.userId}
 					initials={entry.userId.slice(0, 2)}
 					state={entry.presenceState}
 				/>

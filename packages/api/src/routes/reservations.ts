@@ -103,8 +103,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					// Cast reply to bypass Fastify's response-schema narrowing (409 is not
 					// in the declared schema, but we intentionally send it outside schema
 					// serialization so the full conflict object is transmitted as-is).
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					return (reply as any).status(409).send({ conflict: true, current: err.current });
+					return (reply as unknown as { status(c: number): { send(d: unknown): unknown } })
+						.status(409)
+						.send({ conflict: true, current: err.current }); // intentional out-of-schema 409
 				}
 				throw err;
 			}

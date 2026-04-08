@@ -66,7 +66,7 @@ async function runBaseline() {
 		// Strategy: stamp every migration except those whose SQL would fail on a fresh
 		// run against the current schema. The caller controls this via --up-to=N.
 		const upToArg = process.argv.find((a) => a.startsWith('--up-to='));
-		const upToIdx = upToArg ? parseInt(upToArg.replace('--up-to=', ''), 10) : Infinity;
+		const upToIdx = upToArg ? Number.parseInt(upToArg.replace('--up-to=', ''), 10) : Infinity;
 
 		let stamped = 0;
 		let skipped = 0;
@@ -99,7 +99,9 @@ async function runBaseline() {
 	}
 }
 
-runBaseline().catch((err) => {
+try {
+	await runBaseline();
+} catch (err) {
 	console.error('❌ Baseline failed:', err);
 	process.exit(1);
-});
+}

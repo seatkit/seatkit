@@ -22,6 +22,7 @@
 		"test:watch": "vitest --watch",
 		"test:local": "bash src/scripts/test-with-db.sh",
 		"db:generate": "drizzle-kit generate",
+		"db:baseline": "tsx src/scripts/baseline.ts",
 		"db:migrate": "tsx --env-file .env src/scripts/migrate.ts",
 		"db:migrate:test": "tsx src/scripts/migrate-test.ts",
 		"db:seed": "tsx src/scripts/seed.ts",

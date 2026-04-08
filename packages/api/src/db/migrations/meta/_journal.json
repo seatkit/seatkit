@@ -43,6 +43,13 @@
       "when": 1775646514984,
       "tag": "0005_naive_kingpin",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775689549070,
+      "tag": "0006_worthless_shiva",
+      "breakpoints": true
     }
   ]
 }

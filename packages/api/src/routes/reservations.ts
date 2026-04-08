@@ -5,13 +5,15 @@
 
 import { CreateReservationSchema, ReservationSchema, UpdateReservationSchema } from '@seatkit/types';
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { reservations } from '../db/schema/index.js';
 import {
 	createReservation,
 	updateReservation,
-	deleteReservation,
+	softDeleteReservation,
+	recoverReservation,
 	VersionConflictError,
 } from '../services/reservation-service.js';
 
@@ -31,17 +33,29 @@ const ListReservationsResponseSchema = z.object({
 	count: z.number().int().nonnegative(),
 });
 
+const ListQuerySchema = z.object({
+	includeDeleted: z
+		.string()
+		.optional()
+		.transform(v => v === 'true'),
+});
+
 const reservationsRoutes: FastifyPluginAsync = async fastify => {
 	// GET /api/v1/reservations
+	// Excludes soft-deleted rows by default; pass ?includeDeleted=true to include them.
 	fastify.get(
 		'/reservations',
 		{
 			schema: {
+				querystring: ListQuerySchema,
 				response: { 200: ListReservationsResponseSchema },
 			},
 		},
-		async (_request, _reply) => {
-			const allReservations = await db.select().from(reservations);
+		async (request, _reply) => {
+			const { includeDeleted } = request.query as z.infer<typeof ListQuerySchema>;
+			const allReservations = includeDeleted
+				? await db.select().from(reservations)
+				: await db.select().from(reservations).where(eq(reservations.isDeleted, false));
 			return { reservations: allReservations, count: allReservations.length };
 		},
 	);
@@ -125,7 +139,7 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 		},
 	);
 
-	// DELETE /api/v1/reservations/:id
+	// DELETE /api/v1/reservations/:id — soft-delete (sets isDeleted=true, does not purge row)
 	fastify.delete(
 		'/reservations/:id',
 		{
@@ -136,15 +150,40 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 		},
 		async (request, reply) => {
 			const { id } = request.params as { id: string };
-			const deleted = await deleteReservation(id, fastify);
+			const deleted = await softDeleteReservation(id, fastify);
 			const response = await reply.status(200).send({
 				reservation: deleted,
 				message: 'Reservation deleted successfully',
 			});
-			// Fire-and-forget: notify WebSocket clients of the deletion.
+			// Fire-and-forget: notify WebSocket clients of the soft-deletion.
 			fastify.notifyReservationChange({
 				type: 'reservation_deleted',
 				reservationId: deleted.id,
+			}).catch(() => {});
+			return response;
+		},
+	);
+
+	// POST /api/v1/reservations/:id/recover — recover a soft-deleted reservation
+	fastify.post(
+		'/reservations/:id/recover',
+		{
+			schema: {
+				params: IdParamsSchema,
+				response: { 200: ReservationResponseSchema },
+			},
+		},
+		async (request, reply) => {
+			const { id } = request.params as { id: string };
+			const recovered = await recoverReservation(id, fastify);
+			const response = await reply.status(200).send({
+				reservation: recovered,
+				message: 'Reservation recovered successfully',
+			});
+			// Fire-and-forget: notify WebSocket clients of the recovery.
+			fastify.notifyReservationChange({
+				type: 'reservation_changed',
+				reservationId: recovered.id,
 			}).catch(() => {});
 			return response;
 		},

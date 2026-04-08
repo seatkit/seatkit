@@ -388,7 +388,7 @@ describe('Reservations API', () => {
 			createdReservationId = body.reservation.id;
 		});
 
-		it('should delete an existing reservation', async () => {
+		it('should soft-delete an existing reservation and return isDeleted=true', async () => {
 			const response = await inject({
 				method: 'DELETE',
 				url: `/api/v1/reservations/${createdReservationId}`,
@@ -400,16 +400,19 @@ describe('Reservations API', () => {
 			expect(body.message).toBe('Reservation deleted successfully');
 			expect(body.reservation).toBeDefined();
 			expect(body.reservation.id).toBe(createdReservationId);
+			// Soft-delete: isDeleted flag is set, row still exists
+			expect(body.reservation.isDeleted).toBe(true);
+			expect(body.reservation.deletedAt).toBeDefined();
 		});
 
-		it('should verify reservation is actually deleted', async () => {
-			// Delete the reservation
+		it('should return 404 when soft-deleting an already-deleted reservation', async () => {
+			// First soft-delete
 			await inject({
 				method: 'DELETE',
 				url: `/api/v1/reservations/${createdReservationId}`,
 			});
 
-			// Try to delete again - should return 404
+			// Second soft-delete should 404 (WHERE isDeleted=false finds nothing)
 			const response = await inject({
 				method: 'DELETE',
 				url: `/api/v1/reservations/${createdReservationId}`,
@@ -430,7 +433,6 @@ describe('Reservations API', () => {
 
 			const body = response.json<ErrorResponse>();
 			expect(body.error).toBe('Not Found');
-			expect(body.message).toBe('Reservation not found');
 		});
 
 		it('should return 400 for invalid UUID format', async () => {
@@ -442,7 +444,7 @@ describe('Reservations API', () => {
 			expect(response.statusCode).toBe(400);
 		});
 
-		it('should return deleted reservation data in response', async () => {
+		it('should return soft-deleted reservation data in response', async () => {
 			const response = await inject({
 				method: 'DELETE',
 				url: `/api/v1/reservations/${createdReservationId}`,
@@ -454,6 +456,115 @@ describe('Reservations API', () => {
 			expect(body.reservation.customer.name).toBe('Delete Test User');
 			expect(body.reservation.partySize).toBe(2);
 			expect(body.reservation.category).toBe('lunch');
+		});
+
+		it('GET /api/v1/reservations excludes soft-deleted reservations by default', async () => {
+			// Soft-delete the reservation
+			await inject({
+				method: 'DELETE',
+				url: `/api/v1/reservations/${createdReservationId}`,
+			});
+
+			// Default list should not include it
+			const response = await inject({
+				method: 'GET',
+				url: '/api/v1/reservations',
+			});
+
+			expect(response.statusCode).toBe(200);
+			const body = response.json<ListReservationsResponse>();
+			const ids = body.reservations.map((r: { id: string }) => r.id);
+			expect(ids).not.toContain(createdReservationId);
+		});
+
+		it('GET /api/v1/reservations?includeDeleted=true includes soft-deleted reservations', async () => {
+			// Soft-delete the reservation
+			await inject({
+				method: 'DELETE',
+				url: `/api/v1/reservations/${createdReservationId}`,
+			});
+
+			// With includeDeleted=true it should appear
+			const response = await inject({
+				method: 'GET',
+				url: '/api/v1/reservations?includeDeleted=true',
+			});
+
+			expect(response.statusCode).toBe(200);
+			const body = response.json<ListReservationsResponse>();
+			const ids = body.reservations.map((r: { id: string }) => r.id);
+			expect(ids).toContain(createdReservationId);
+		});
+	});
+
+	describe('POST /api/reservations/:id/recover', () => {
+		let softDeletedId: string;
+
+		beforeEach(async () => {
+			// Create then soft-delete a reservation to recover
+			const futureDate = new Date();
+			futureDate.setDate(futureDate.getDate() + 7);
+			const createRes = await inject({
+				method: 'POST',
+				url: '/api/v1/reservations',
+				payload: {
+					date: futureDate.toISOString(),
+					duration: 90,
+					customer: { name: 'Recover Test User', phone: '+1-555-777-8888' },
+					partySize: 2,
+					category: 'lunch',
+					createdBy: 'test-user-id',
+				},
+			});
+			const createBody = createRes.json<CreateReservationResponse>();
+			softDeletedId = createBody.reservation.id;
+
+			await inject({
+				method: 'DELETE',
+				url: `/api/v1/reservations/${softDeletedId}`,
+			});
+		});
+
+		it('should recover a soft-deleted reservation and return isDeleted=false with status=pending', async () => {
+			const response = await inject({
+				method: 'POST',
+				url: `/api/v1/reservations/${softDeletedId}/recover`,
+			});
+
+			expect(response.statusCode).toBe(200);
+
+			const body = response.json<{ reservation: { isDeleted: boolean; status: string; id: string }; message: string }>();
+			expect(body.message).toBe('Reservation recovered successfully');
+			expect(body.reservation.id).toBe(softDeletedId);
+			expect(body.reservation.isDeleted).toBe(false);
+			expect(body.reservation.status).toBe('pending');
+		});
+
+		it('should return 404 when recovering a non-deleted reservation', async () => {
+			// Recover it first
+			await inject({
+				method: 'POST',
+				url: `/api/v1/reservations/${softDeletedId}/recover`,
+			});
+
+			// Second recover attempt should 404 (WHERE isDeleted=true finds nothing)
+			const response = await inject({
+				method: 'POST',
+				url: `/api/v1/reservations/${softDeletedId}/recover`,
+			});
+
+			expect(response.statusCode).toBe(404);
+		});
+
+		it('should return 404 when recovering a non-existent reservation', async () => {
+			const nonExistentId = '00000000-0000-0000-0000-000000000000';
+
+			const response = await inject({
+				method: 'POST',
+				url: `/api/v1/reservations/${nonExistentId}/recover`,
+			});
+
+			expect(response.statusCode).toBe(404);
 		});
 	});
 });

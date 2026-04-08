@@ -27,6 +27,7 @@ import {
 import { auth } from './auth.js';
 import type { ReservationChangePayload } from './lib/pg-subscriber.js';
 import { getSecrets } from './lib/simple-secrets.js';
+import { cleanupExpired } from './presence/presence-service.js';
 import { seedAdminIfEmpty } from './services/auth-service.js';
 
 // Cast auth to satisfy fastify-better-auth's generic overloads.
@@ -230,8 +231,22 @@ async function createServer() {
 			await subscriber.notify(RESERVATION_CHANNEL, payload);
 		};
 
+		// Presence TTL cleanup — runs every 30 seconds, removes rows > 90s old (D-13)
+		const CLEANUP_INTERVAL_MS = 30_000;
+		const cleanupHandle = setInterval(async () => {
+			try {
+				const deleted = await cleanupExpired();
+				if (deleted > 0) {
+					fastify.log.debug({ deleted }, 'presence cleanup: expired rows removed');
+				}
+			} catch (err) {
+				fastify.log.error({ err }, 'presence cleanup: error during cleanup');
+			}
+		}, CLEANUP_INTERVAL_MS);
+
 		// Cleanup on shutdown
 		fastify.addHook('onClose', async () => {
+			clearInterval(cleanupHandle);
 			await subscriber.unlistenAll();
 			await subscriber.close();
 			fastify.log.info('pg-listen subscriber closed');

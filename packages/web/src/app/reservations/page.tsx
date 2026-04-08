@@ -3,6 +3,8 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
+import { ReservationTimelineView } from '@/components/reservation/reservation-timeline-view';
+
 type ViewTab = 'timeline' | 'list' | 'floorplan';
 type ServiceCategory = 'lunch' | 'dinner' | 'no_booking_zone';
 
@@ -114,8 +116,9 @@ export default function ReservationsPage() {
 
 			{/* Tab content */}
 			<div className="flex-1 overflow-auto" role="tabpanel">
+				{/* onReservationClick and onSlotClick wired in Plan 05 (drawer) */}
 				{activeView === 'timeline' && (
-					<ReservationTimelineViewStub
+					<ReservationTimelineView
 						date={selectedDate}
 						category={selectedCategory}
 					/>
@@ -136,15 +139,7 @@ export default function ReservationsPage() {
 	);
 }
 
-// Temporary stubs — replaced in Tasks 2 (timeline), 05 (list), 06 (floor plan) of this phase
-function ReservationTimelineViewStub({ date, category }: { date: Date; category: ServiceCategory }) {
-	return (
-		<div className="p-6 text-muted-foreground text-sm">
-			Timeline: {date.toDateString()} — {category}
-		</div>
-	);
-}
-
+// Temporary stubs — replaced in Plans 05 (list) and 06 (floor plan)
 function ReservationListViewStub({ date }: { date: Date }) {
 	return (
 		<div className="p-6 text-muted-foreground text-sm">

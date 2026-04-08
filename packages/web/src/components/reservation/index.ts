@@ -1,3 +1,5 @@
 // Barrel exports for reservation components
 // Populated progressively as components are implemented.
-export {} from './reservation-timeline-view.js';
+export { ReservationTimelineView } from './reservation-timeline-view.js';
+export { TimelineBlock } from './timeline-block.js';
+export { TimelineHeader } from './timeline-header.js';

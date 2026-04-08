@@ -10,7 +10,7 @@ import {
 	classifyReservationType,
 } from '@seatkit/engine';
 import { isErr } from '@seatkit/types';
-import { eq, and, gte, lte, ne } from 'drizzle-orm';
+import { eq, and, gte, lte, ne, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { reservations, tables, restaurantSettings } from '../db/schema/index.js';
@@ -197,13 +197,33 @@ export async function createReservation(
 	return created;
 }
 
+// ── VersionConflictError ─────────────────────────────────────────────────────
+
+/**
+ * Sentinel error thrown by updateReservation when the client's versionId does
+ * not match the current database version (optimistic locking conflict — COLLAB-03).
+ * The route handler converts this to a 409 response with the current server state.
+ */
+export class VersionConflictError extends Error {
+	readonly current: Reservation;
+
+	constructor(current: Reservation) {
+		super('VERSION_CONFLICT');
+		this.name = 'VersionConflictError';
+		this.current = current;
+	}
+}
+
 // ── updateReservation ────────────────────────────────────────────────────────
 
 export async function updateReservation(
 	id: string,
+	clientVersion: number,
 	input: Omit<UpdateReservation, 'id' | 'updatedAt'>,
 	fastify: FastifyInstance,
 ): Promise<Reservation> {
+	// Fetch the existing reservation to determine table reassignment needs.
+	// We do this first so we have the current state before attempting the atomic update.
 	const [existing] = await db
 		.select()
 		.from(reservations)
@@ -258,14 +278,38 @@ export async function updateReservation(
 		);
 	}
 
+	// Atomic update: only succeeds when version matches clientVersion.
+	// On match: increments version and writes changes.
+	// On mismatch: returns undefined (no rows updated) — no partial writes.
 	const [updated] = await db
 		.update(reservations)
-		.set(buildUpdatePayload(input, resolvedTableIds))
-		.where(eq(reservations.id, id))
+		.set({
+			...buildUpdatePayload(input, resolvedTableIds),
+			version: sql`${reservations.version} + 1`,
+		})
+		.where(
+			and(
+				eq(reservations.id, id),
+				eq(reservations.version, clientVersion),
+			),
+		)
 		.returning();
 
 	if (!updated) {
-		throw fastify.httpErrors.internalServerError('Failed to update reservation');
+		// Row exists (we fetched it above) but version did not match — conflict.
+		// Re-fetch current state so the 409 response body contains fresh data.
+		const [current] = await db
+			.select()
+			.from(reservations)
+			.where(eq(reservations.id, id))
+			.limit(1);
+
+		if (!current) {
+			// Race: reservation was deleted between our fetch and the update attempt.
+			throw fastify.httpErrors.notFound('Reservation not found');
+		}
+
+		throw new VersionConflictError(current);
 	}
 
 	return updated;

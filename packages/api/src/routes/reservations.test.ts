@@ -180,6 +180,7 @@ describe('Reservations API', () => {
 
 	describe('PUT /api/reservations/:id', () => {
 		let createdReservationId: string;
+		let createdReservationVersion: number;
 
 		beforeEach(async () => {
 			// Create a reservation to update
@@ -203,6 +204,8 @@ describe('Reservations API', () => {
 
 			const body = createResponse.json<CreateReservationResponse>();
 			createdReservationId = body.reservation.id;
+			// Track version so tests can supply a valid versionId (optimistic locking)
+			createdReservationVersion = body.reservation.version;
 		});
 
 		it('should update an existing reservation with valid data', async () => {
@@ -214,6 +217,7 @@ describe('Reservations API', () => {
 					phone: '+1-555-111-2222',
 					email: 'updated@example.com',
 				},
+				versionId: createdReservationVersion,
 			};
 
 			const response = await inject({
@@ -239,6 +243,7 @@ describe('Reservations API', () => {
 			const updateData = {
 				status: 'seated',
 				seatedAt,
+				versionId: createdReservationVersion,
 			};
 
 			const response = await inject({
@@ -261,6 +266,7 @@ describe('Reservations API', () => {
 				cancelledAt,
 				cancelledBy: 'manager-user-id',
 				cancellationReason: 'Customer requested cancellation',
+				versionId: createdReservationVersion,
 			};
 
 			const response = await inject({
@@ -283,6 +289,7 @@ describe('Reservations API', () => {
 		it('should partially update only specified fields', async () => {
 			const updateData = {
 				notes: 'Customer requested window seat',
+				versionId: createdReservationVersion,
 			};
 
 			const response = await inject({
@@ -304,6 +311,7 @@ describe('Reservations API', () => {
 			const nonExistentId = '00000000-0000-0000-0000-000000000000';
 			const updateData = {
 				partySize: 4,
+				versionId: 1,
 			};
 
 			const response = await inject({
@@ -322,6 +330,7 @@ describe('Reservations API', () => {
 		it('should return 400 for invalid UUID format', async () => {
 			const updateData = {
 				partySize: 4,
+				versionId: 1,
 			};
 
 			const response = await inject({
@@ -336,6 +345,7 @@ describe('Reservations API', () => {
 		it('should return 400 for invalid data', async () => {
 			const updateData = {
 				partySize: -5, // Invalid: must be positive
+				versionId: createdReservationVersion,
 			};
 
 			const response = await inject({

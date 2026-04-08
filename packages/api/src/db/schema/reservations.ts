@@ -76,6 +76,11 @@ export const reservations = pgTable('reservations', {
 	cancelledAt: timestamp('cancelled_at').$type<Date | null>(),
 	cancelledBy: varchar('cancelled_by', { length: 255 }).$type<string | null>(), // User ID who cancelled
 	cancellationReason: text('cancellation_reason').$type<string | null>(),
+
+	// Optimistic locking — COLLAB-03
+	// Incremented atomically on each successful update.
+	// Clients must include the current version in PUT requests; a mismatch returns 409.
+	version: integer('version').notNull().default(1),
 });
 
 export type Reservation = typeof reservations.$inferSelect;

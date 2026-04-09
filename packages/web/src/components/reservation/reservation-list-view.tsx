@@ -37,6 +37,14 @@ function isoWeek(date: Date): string {
 	return `W${week} ${d.getUTCFullYear()}`;
 }
 
+function statusBadgeClass(status: string): string {
+	if (status === 'confirmed') return 'bg-green-100 text-green-700';
+	if (status === 'seated') return 'bg-blue-100 text-blue-700';
+	if (status === 'completed') return 'bg-slate-100 text-slate-600';
+	if (status === 'cancelled') return 'bg-red-100 text-red-600';
+	return 'bg-amber-100 text-amber-800';
+}
+
 function groupKey(res: Reservation, groupBy: GroupBy): string {
 	const d = new Date(res.date);
 	if (groupBy === 'day') return formatGroupDay(d);
@@ -122,6 +130,15 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 	}, [filteredAndSorted, groupBy]);
 
 	const isEmpty = filteredAndSorted.length === 0;
+
+	let emptyMessage: string;
+	if (debouncedQuery || selectedStatuses.length > 0) {
+		emptyMessage = 'No reservations match your filters. Try adjusting the date range or status.';
+	} else if (showDeleted) {
+		emptyMessage = 'No deleted reservations.';
+	} else {
+		emptyMessage = 'No reservations yet. Create one from the Timeline view.';
+	}
 
 	const SORT_LABELS: Record<SortField, string> = {
 		time: 'Time',
@@ -211,113 +228,110 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 
 				{!isLoading && isEmpty && (
 					<div className="py-16 text-center text-muted-foreground text-sm">
-						{debouncedQuery || selectedStatuses.length > 0
-							? 'No reservations match your filters. Try adjusting the date range or status.'
-							: showDeleted
-								? 'No deleted reservations.'
-								: 'No reservations yet. Create one from the Timeline view.'}
+						{emptyMessage}
 					</div>
 				)}
 
 				{!isLoading && !isEmpty && (
-					<div>
-						{grouped.map(({ key, items }) => (
-							<div key={key || '__all__'}>
-								{/* Group header */}
-								{key && (
-									<div className="sticky top-0 bg-muted text-muted-foreground text-xs font-semibold uppercase tracking-wide px-4 py-2 z-10 border-b border-border">
-										{key}
-									</div>
-								)}
+					<table className="w-full">
+						<thead className="sr-only">
+							<tr>
+								<th scope="col">Time</th>
+								<th scope="col">Guest</th>
+								<th scope="col">Status</th>
+								<th scope="col">Last edited</th>
+								<th scope="col">Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							{grouped.map(({ key, items }) => (
+								<React.Fragment key={key || '__all__'}>
+									{/* Group header */}
+									{key && (
+										<tr>
+											<th colSpan={5} scope="colgroup" className="sticky top-0 bg-muted text-muted-foreground text-xs font-semibold uppercase tracking-wide px-4 py-2 z-10 border-b border-border text-left font-semibold">
+												{key}
+											</th>
+										</tr>
+									)}
 
-								{/* Rows */}
-								{items.map((reservation) => (
-									<div
-										key={reservation.id}
-										className={[
-											'flex items-center gap-4 px-6 border-b border-border/50 min-h-[56px] cursor-pointer hover:bg-muted/50 transition-colors',
-											reservation.isDeleted ? 'opacity-60' : '',
-										].join(' ')}
-										onClick={() => onReservationClick?.(reservation)}
-										role="row"
-										tabIndex={0}
-										onKeyDown={(e) => {
-											if (e.key === 'Enter' || e.key === ' ')
-												onReservationClick?.(reservation);
-										}}
-									>
-										{/* Time */}
-										<div className="w-16 shrink-0 text-sm text-muted-foreground">
-											{new Date(reservation.date).toLocaleTimeString([], {
-												hour: '2-digit',
-												minute: '2-digit',
-											})}
-										</div>
+									{/* Rows */}
+									{items.map((reservation) => (
+										<tr
+											key={reservation.id}
+											className={[
+												'border-b border-border/50 cursor-pointer hover:bg-muted/50 transition-colors',
+												reservation.isDeleted ? 'opacity-60' : '',
+											].join(' ')}
+											onClick={() => onReservationClick?.(reservation)}
+											tabIndex={0}
+											onKeyDown={(e) => {
+												if (e.key === 'Enter' || e.key === ' ')
+													onReservationClick?.(reservation);
+											}}
+										>
+											{/* Time */}
+											<td className="w-16 px-6 py-3 text-sm text-muted-foreground whitespace-nowrap">
+												{new Date(reservation.date).toLocaleTimeString([], {
+													hour: '2-digit',
+													minute: '2-digit',
+												})}
+											</td>
 
-										{/* Guest info */}
-										<div className="flex-1 min-w-0">
-											<div className="font-medium text-sm truncate">
-												{reservation.emoji && (
-													<span className="mr-1">{reservation.emoji}</span>
+											{/* Guest info */}
+											<td className="py-3 pr-4 min-w-0">
+												<div className="font-medium text-sm truncate">
+													{reservation.emoji && (
+														<span className="mr-1">{reservation.emoji}</span>
+													)}
+													{reservation.customer.name}
+													{reservation.isLargeGroup && (
+														<span className="ml-1 text-xs bg-muted rounded px-1">
+															Large
+														</span>
+													)}
+												</div>
+												<div className="text-xs text-muted-foreground">
+													{reservation.partySize} guests · {reservation.category}
+												</div>
+											</td>
+
+											{/* Status badge */}
+											<td className="py-3 pr-4 whitespace-nowrap">
+												<span className={['text-xs font-medium px-2 py-0.5 rounded-full', statusBadgeClass(reservation.status)].join(' ')}>
+													{reservation.status}
+												</span>
+											</td>
+
+											{/* Last edited */}
+											<td className="hidden md:table-cell w-32 py-3 pr-4 text-xs text-muted-foreground text-right whitespace-nowrap">
+												{new Date(reservation.updatedAt).toLocaleDateString('en-GB', {
+													day: 'numeric',
+													month: 'short',
+												})}
+											</td>
+
+											{/* Recover action (deleted filter state) — D-12 */}
+											<td className="py-3 px-6">
+												{reservation.isDeleted && (
+													<button
+														type="button"
+														onClick={(e) => {
+															e.stopPropagation();
+															recoverMutation.mutate(reservation.id);
+														}}
+														className="px-3 py-1 text-xs font-medium rounded-md bg-amber-500 text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
+													>
+														Recover reservation
+													</button>
 												)}
-												{reservation.customer.name}
-												{reservation.isLargeGroup && (
-													<span className="ml-1 text-xs bg-muted rounded px-1">
-														Large
-													</span>
-												)}
-											</div>
-											<div className="text-xs text-muted-foreground">
-												{reservation.partySize} guests · {reservation.category}
-											</div>
-										</div>
-
-										{/* Status badge */}
-										<div className="shrink-0">
-											<span
-												className={[
-													'text-xs font-medium px-2 py-0.5 rounded-full',
-													reservation.status === 'confirmed'
-														? 'bg-green-100 text-green-700'
-														: reservation.status === 'seated'
-															? 'bg-blue-100 text-blue-700'
-															: reservation.status === 'completed'
-																? 'bg-slate-100 text-slate-600'
-																: reservation.status === 'cancelled'
-																	? 'bg-red-100 text-red-600'
-																	: 'bg-amber-100 text-amber-800',
-												].join(' ')}
-											>
-												{reservation.status}
-											</span>
-										</div>
-
-										{/* Last edited */}
-										<div className="hidden md:block w-32 shrink-0 text-xs text-muted-foreground text-right">
-											{new Date(reservation.updatedAt).toLocaleDateString('en-GB', {
-												day: 'numeric',
-												month: 'short',
-											})}
-										</div>
-
-										{/* Recover action (deleted filter state) — D-12 */}
-										{reservation.isDeleted && (
-											<button
-												type="button"
-												onClick={(e) => {
-													e.stopPropagation();
-													recoverMutation.mutate(reservation.id);
-												}}
-												className="shrink-0 px-3 py-1 text-xs font-medium rounded-md bg-amber-500 text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
-											>
-												Recover reservation
-											</button>
-										)}
-									</div>
-								))}
-							</div>
-						))}
-					</div>
+											</td>
+										</tr>
+									))}
+								</React.Fragment>
+							))}
+						</tbody>
+					</table>
 				)}
 			</div>
 		</div>

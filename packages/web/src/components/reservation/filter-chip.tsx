@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 type FilterChipProps = Readonly<{
 	label: string;
 	active: boolean;
@@ -14,24 +12,26 @@ type FilterChipProps = Readonly<{
  * FilterChip — reusable filter chip for list view filters.
  * Active state: bg-foreground text-background (inverted).
  * Inactive state: border border-border text-foreground.
- * Uses role="checkbox" + aria-checked for toggle semantics.
+ * Uses a native checkbox (visually hidden) for toggle semantics.
  */
 export function FilterChip({ label, active, onToggle, count }: FilterChipProps) {
 	return (
-		<button
-			type="button"
-			role="checkbox"
-			aria-checked={active}
-			onClick={onToggle}
+		<label
 			className={[
-				'inline-flex items-center gap-1.5 border rounded-full px-3 py-1 text-sm font-medium',
-				'transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
+				'inline-flex items-center gap-1.5 border rounded-full px-3 py-1 text-sm font-medium cursor-pointer',
+				'transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1',
 				'whitespace-nowrap',
 				active
 					? 'bg-foreground text-background border-foreground'
 					: 'bg-transparent text-foreground border-border hover:border-foreground/50 hover:bg-muted/50',
 			].join(' ')}
 		>
+			<input
+				type="checkbox"
+				checked={active}
+				onChange={() => { onToggle(); }}
+				className="sr-only"
+			/>
 			{label}
 			{count !== undefined && (
 				<span
@@ -43,6 +43,6 @@ export function FilterChip({ label, active, onToggle, count }: FilterChipProps) 
 					{count}
 				</span>
 			)}
-		</button>
+		</label>
 	);
 }

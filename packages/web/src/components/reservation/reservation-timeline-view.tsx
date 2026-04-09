@@ -33,8 +33,11 @@ export function ReservationTimelineView({
 	onSlotClick,
 }: ReservationTimelineViewProps) {
 	const scrollRef = useRef<HTMLDivElement>(null);
-	const { data: reservationsData } = useReservations();
-	const { data: tablesData } = useTables();
+	const { data: reservationsData, isLoading: reservationsLoading, isError: reservationsError } = useReservations();
+	const { data: tablesData, isLoading: tablesLoading, isError: tablesError } = useTables();
+
+	const isLoading = reservationsLoading || tablesLoading;
+	const isError = reservationsError || tablesError;
 
 	const tables = useMemo(() => tablesData?.tables ?? [], [tablesData]);
 
@@ -45,16 +48,20 @@ export function ReservationTimelineView({
 		no_booking_zone: ['special', 'walk_in'],
 	};
 
+	// Format a Date as a local-calendar YYYY-MM-DD string.
+	// Using toISOString() would convert to UTC first, causing off-by-one errors for
+	// timezones east of UTC (e.g. Italy UTC+2: local midnight = prior UTC day).
+	const toLocalDate = (d: Date) =>
+		`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 	// Filter reservations to the selected date + category (exclude deleted)
 	const filteredReservations = useMemo(() => {
 		const cats = categoryMap[category];
+		// Compare by local calendar date string (YYYY-MM-DD) — never toISOString()
+		const targetDateStr = toLocalDate(date);
 		return (reservationsData?.reservations ?? []).filter((r) => {
 			if (r.isDeleted) return false;
-			const rDate = new Date(r.date);
-			const sameDay =
-				rDate.getFullYear() === date.getFullYear() &&
-				rDate.getMonth() === date.getMonth() &&
-				rDate.getDate() === date.getDate();
+			const sameDay = toLocalDate(new Date(r.date)) === targetDateStr;
 			return sameDay && cats.includes(r.category);
 		});
 	}, [reservationsData, date, category]);
@@ -94,6 +101,26 @@ export function ReservationTimelineView({
 
 	const totalGridWidth = TABLE_LABEL_WIDTH + TOTAL_SLOTS * SLOT_WIDTH;
 	const isEmpty = filteredReservations.length === 0;
+
+	if (isLoading) {
+		return (
+			<div className="flex flex-col flex-1 gap-2 p-4" data-testid="reservation-timeline-view">
+				{Array.from({ length: 5 }, (_, i) => (
+					<div key={i} className="animate-pulse bg-muted rounded h-12 w-full" />
+				))}
+			</div>
+		);
+	}
+
+	if (isError) {
+		return (
+			<div className="flex items-center justify-center flex-1 py-16 px-6" data-testid="reservation-timeline-view">
+				<p className="text-sm text-destructive text-center" role="alert">
+					Could not load reservations. Check your connection and refresh.
+				</p>
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex flex-col flex-1 overflow-hidden" data-testid="reservation-timeline-view">

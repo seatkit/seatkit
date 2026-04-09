@@ -96,6 +96,7 @@ export function ReservationDrawer({
 	const [showUndoToast, setShowUndoToast] = useState(false);
 	const [showUndoneFeedback, setShowUndoneFeedback] = useState(false);
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+	const [validationError, setValidationError] = useState<string | null>(null);
 
 	const { setSnapshot } = useReservationUndoStore();
 
@@ -121,10 +122,29 @@ export function ReservationDrawer({
 			setConflictOpen(false);
 			setShowUndoToast(false);
 			setShowDeleteConfirm(false);
+			setValidationError(null);
 		}
 	}, [open, mode, reservation, prefill]);
 
 	const handleSave = useCallback(async () => {
+		// Client-side guard: catch missing required fields before the API call so the
+		// user gets immediate feedback instead of a silent 400.
+		if (!values.guestName.trim()) {
+			setValidationError('Guest name is required.');
+			return;
+		}
+		if (!values.phone.trim()) {
+			setValidationError('Phone number is required.');
+			return;
+		}
+		// PhoneSchema requires 10–15 digits. Count digits only.
+		const digits = values.phone.replaceAll(/\D/g, '');
+		if (digits.length < 10 || digits.length > 15) {
+			setValidationError('Phone number must contain between 10 and 15 digits.');
+			return;
+		}
+		setValidationError(null);
+
 		try {
 			if (mode === 'create') {
 				const dateTimeStr = `${values.date}T${values.startTime}:00`;
@@ -143,23 +163,16 @@ export function ReservationDrawer({
 					createdBy: currentUserId,
 					source: 'phone',
 				});
+				setShowUndoToast(true);
 				onClose();
 			} else if (mode === 'edit' && reservation) {
-				// Snapshot the CURRENT saved state before overwriting (for undo)
-				setSnapshot(reservation.id, {
-					id: reservation.id,
-					updatedAt: new Date(reservation.updatedAt),
-					customer: { name: savedValues.current.guestName, phone: savedValues.current.phone },
-					partySize: savedValues.current.partySize,
-					notes: savedValues.current.notes || null,
-					preferredLanguage: savedValues.current.preferredLanguage || null,
-					emoji: savedValues.current.emoji || null,
-					isLargeGroup: savedValues.current.isLargeGroup,
-					acceptanceState: savedValues.current.acceptanceState,
-				} as UpdateReservation & { versionId: number });
+				// Capture the pre-save form state now (before the await) so we can
+				// snapshot it for undo once we know the new version the server assigns.
+				const preEditFormValues = { ...savedValues.current };
+				const preEditUpdatedAt = new Date(reservation.updatedAt);
 
 				const dateTimeStr = `${values.date}T${values.startTime}:00`;
-				await updateMutation.mutateAsync({
+				const updated = await updateMutation.mutateAsync({
 					id: reservation.id,
 					updatedAt: new Date(),
 					versionId: reservation.version,
@@ -172,8 +185,26 @@ export function ReservationDrawer({
 					isLargeGroup: values.isLargeGroup,
 					acceptanceState: values.acceptanceState,
 				});
+
+				// Snapshot AFTER the save resolves so we have the server's new version.
+				// The undo payload must carry versionId = updated.version (N+1) so the
+				// optimistic lock accepts it when reverting to the pre-save data.
+				setSnapshot(reservation.id, {
+					id: reservation.id,
+					updatedAt: preEditUpdatedAt,
+					customer: { name: preEditFormValues.guestName, phone: preEditFormValues.phone },
+					partySize: preEditFormValues.partySize,
+					notes: preEditFormValues.notes || null,
+					preferredLanguage: preEditFormValues.preferredLanguage || null,
+					emoji: preEditFormValues.emoji || null,
+					isLargeGroup: preEditFormValues.isLargeGroup,
+					acceptanceState: preEditFormValues.acceptanceState,
+					versionId: updated.reservation.version,
+				} as UpdateReservation & { versionId: number });
+
 				savedValues.current = values;
 				setShowUndoToast(true);
+				onClose();
 			}
 		} catch {
 			// Errors handled by mutation.onError or ConflictModal via onConflict
@@ -274,41 +305,50 @@ export function ReservationDrawer({
 
 				{/* Footer — sticky */}
 				<div
-					className="sticky bottom-0 bg-background border-t border-border px-6 py-3 flex items-center justify-between min-h-[64px] shrink-0"
+					className="sticky bottom-0 bg-background border-t border-border px-6 py-3 shrink-0"
 					data-testid="reservation-presence-row"
 				>
-					{/* Left: presence badges */}
-					<div className="flex items-center gap-2">
-						{reservation?.id && (
-							<ReservationPresenceBadgeRow
-								reservationId={reservation.id}
-								currentUserId={currentUserId}
-							/>
-						)}
-					</div>
+					{/* Validation error — shown above the action row */}
+					{validationError && (
+						<p role="alert" className="text-sm text-destructive mb-2">
+							{validationError}
+						</p>
+					)}
 
-					{/* Right: Delete + Save */}
-					<div className="flex items-center gap-3">
-						{mode === 'edit' && reservation && !reservation.isDeleted && (
+					<div className="flex items-center justify-between min-h-[40px]">
+						{/* Left: presence badges */}
+						<div className="flex items-center gap-2">
+							{reservation?.id && (
+								<ReservationPresenceBadgeRow
+									reservationId={reservation.id}
+									currentUserId={currentUserId}
+								/>
+							)}
+						</div>
+
+						{/* Right: Delete + Save */}
+						<div className="flex items-center gap-3">
+							{mode === 'edit' && reservation && !reservation.isDeleted && (
+								<button
+									type="button"
+									onClick={() => {
+										setShowDeleteConfirm(true);
+									}}
+									aria-label="Delete reservation"
+									className="inline-flex items-center justify-center w-10 h-10 rounded-md border border-destructive text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-destructive"
+								>
+									<Trash2 className="w-4 h-4" />
+								</button>
+							)}
 							<button
 								type="button"
-								onClick={() => {
-									setShowDeleteConfirm(true);
-								}}
-								aria-label="Delete reservation"
-								className="inline-flex items-center justify-center w-10 h-10 rounded-md border border-destructive text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-destructive"
+								onClick={() => { handleSave(); }}
+								disabled={isSaving}
+								className="inline-flex items-center justify-center px-4 h-10 rounded-md bg-foreground text-background text-sm font-medium hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
 							>
-								<Trash2 className="w-4 h-4" />
+								{saveButtonLabel}
 							</button>
-						)}
-						<button
-							type="button"
-							onClick={() => { handleSave(); }}
-							disabled={isSaving}
-							className="inline-flex items-center justify-center px-4 h-10 rounded-md bg-foreground text-background text-sm font-medium hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
-						>
-							{saveButtonLabel}
-						</button>
+						</div>
 					</div>
 				</div>
 

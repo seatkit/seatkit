@@ -50,6 +50,13 @@
       "when": 1775689549070,
       "tag": "0006_worthless_shiva",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1775726801778,
+      "tag": "0007_easy_morbius",
+      "breakpoints": true
     }
   ]
 }

@@ -24,6 +24,19 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 	{ value: 'cancelled', label: 'Cancelled' },
 ];
 
+const CATEGORY_OPTIONS: { value: string; label: string }[] = [
+	{ value: 'lunch', label: 'Lunch' },
+	{ value: 'dinner', label: 'Dinner' },
+	{ value: 'special', label: 'Special' },
+	{ value: 'walk_in', label: 'Walk-in' },
+];
+
+const PARTY_SIZE_RANGES: { value: string; label: string; min: number; max: number }[] = [
+	{ value: '1-2', label: '1–2', min: 1, max: 2 },
+	{ value: '3-4', label: '3–4', min: 3, max: 4 },
+	{ value: '5+', label: '5+', min: 5, max: Infinity },
+];
+
 function formatGroupDay(date: Date): string {
 	return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 }
@@ -38,11 +51,20 @@ function isoWeek(date: Date): string {
 }
 
 function statusBadgeClass(status: string): string {
-	if (status === 'confirmed') return 'bg-green-100 text-green-700';
-	if (status === 'seated') return 'bg-blue-100 text-blue-700';
-	if (status === 'completed') return 'bg-slate-100 text-slate-600';
-	if (status === 'cancelled') return 'bg-red-100 text-red-600';
-	return 'bg-amber-100 text-amber-800';
+	if (status === 'confirmed') return 'bg-green-600 text-white';
+	if (status === 'seated') return 'bg-blue-500 text-white';
+	if (status === 'completed') return 'bg-slate-400 text-white';
+	if (status === 'cancelled') return 'bg-red-500 text-white';
+	if (status === 'no_show') return 'bg-gray-600 text-white';
+	return 'bg-amber-500 text-amber-900';
+}
+
+function compareReservations(a: Reservation, b: Reservation, field: SortField): number {
+	if (field === 'time') return new Date(a.date).getTime() - new Date(b.date).getTime();
+	if (field === 'name') return a.customer.name.localeCompare(b.customer.name);
+	if (field === 'partySize') return a.partySize - b.partySize;
+	if (field === 'createdAt') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+	return 0;
 }
 
 function groupKey(res: Reservation, groupBy: GroupBy): string {
@@ -60,6 +82,10 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 	const [debouncedQuery, setDebouncedQuery] = useState('');
 	const [showDeleted, setShowDeleted] = useState(false);
 	const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+	const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+	const [selectedPartySizeRange, setSelectedPartySizeRange] = useState<string | null>(null);
+	const [dateFrom, setDateFrom] = useState('');
+	const [dateTo, setDateTo] = useState('');
 	const [sortField, setSortField] = useState<SortField>('time');
 	const [groupBy, setGroupBy] = useState<GroupBy>('none');
 
@@ -85,6 +111,12 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 		);
 	}, []);
 
+	const toggleCategory = useCallback((category: string) => {
+		setSelectedCategories((prev) =>
+			prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
+		);
+	}, []);
+
 	// Filter → Sort → Group
 	const filteredAndSorted = useMemo(() => {
 		let list = data?.reservations ?? [];
@@ -103,18 +135,34 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 			list = list.filter((r) => selectedStatuses.includes(r.status));
 		}
 
+		// Category filter
+		if (selectedCategories.length > 0) {
+			list = list.filter((r) => selectedCategories.includes(r.category));
+		}
+
+		// Date range filter
+		if (dateFrom) {
+			const from = new Date(dateFrom + 'T00:00:00');
+			list = list.filter((r) => new Date(r.date) >= from);
+		}
+		if (dateTo) {
+			const to = new Date(dateTo + 'T23:59:59');
+			list = list.filter((r) => new Date(r.date) <= to);
+		}
+
+		// Party size range filter
+		if (selectedPartySizeRange) {
+			const range = PARTY_SIZE_RANGES.find((r) => r.value === selectedPartySizeRange);
+			if (range) {
+				list = list.filter((r) => r.partySize >= range.min && r.partySize <= range.max);
+			}
+		}
+
 		// Sort
-		list = [...list].sort((a, b) => {
-			if (sortField === 'time') return new Date(a.date).getTime() - new Date(b.date).getTime();
-			if (sortField === 'name') return a.customer.name.localeCompare(b.customer.name);
-			if (sortField === 'partySize') return a.partySize - b.partySize;
-			if (sortField === 'createdAt')
-				return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-			return 0;
-		});
+		list = [...list].sort((a, b) => compareReservations(a, b, sortField));
 
 		return list;
-	}, [data, debouncedQuery, selectedStatuses, sortField, showDeleted]);
+	}, [data, debouncedQuery, selectedStatuses, selectedCategories, dateFrom, dateTo, selectedPartySizeRange, sortField, showDeleted]);
 
 	// Group
 	const grouped = useMemo(() => {
@@ -194,6 +242,56 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 
 					<span className="mx-2 text-border">|</span>
 					<span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-1">
+						Type:
+					</span>
+					{CATEGORY_OPTIONS.map((opt) => (
+						<FilterChip
+							key={opt.value}
+							label={opt.label}
+							active={selectedCategories.includes(opt.value)}
+							onToggle={() => toggleCategory(opt.value)}
+						/>
+					))}
+
+					<span className="mx-2 text-border">|</span>
+					<span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-1">
+						Guests:
+					</span>
+					{PARTY_SIZE_RANGES.map((range) => (
+						<FilterChip
+							key={range.value}
+							label={range.label}
+							active={selectedPartySizeRange === range.value}
+							onToggle={() =>
+								setSelectedPartySizeRange((prev) =>
+									prev === range.value ? null : range.value,
+								)
+							}
+						/>
+					))}
+
+					<span className="mx-2 text-border">|</span>
+					<span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-1">
+						Date:
+					</span>
+					<input
+						type="date"
+						aria-label="From date"
+						value={dateFrom}
+						onChange={(e) => setDateFrom(e.target.value)}
+						className="h-7 px-2 text-xs rounded-full border border-border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+					/>
+					<span className="text-xs text-muted-foreground">–</span>
+					<input
+						type="date"
+						aria-label="To date"
+						value={dateTo}
+						onChange={(e) => setDateTo(e.target.value)}
+						className="h-7 px-2 text-xs rounded-full border border-border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+					/>
+
+					<span className="mx-2 text-border">|</span>
+					<span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-1">
 						Sort:
 					</span>
 					{(['time', 'name', 'partySize', 'createdAt'] as SortField[]).map((field) => (
@@ -249,7 +347,7 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 									{/* Group header */}
 									{key && (
 										<tr>
-											<th colSpan={5} scope="colgroup" className="sticky top-0 bg-muted text-muted-foreground text-xs font-semibold uppercase tracking-wide px-4 py-2 z-10 border-b border-border text-left font-semibold">
+											<th colSpan={5} scope="colgroup" className="sticky top-0 bg-muted text-muted-foreground text-xs font-semibold uppercase tracking-wide px-4 py-2 z-10 border-b border-border text-left">
 												{key}
 											</th>
 										</tr>

@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-import { uuidToColor } from '../../lib/uuid-color.js';
+import { uuidToColor, type ColorScheme } from '../../lib/uuid-color.js';
 
 type TimelineBlockProps = Readonly<{
 	reservationId: string;
@@ -27,7 +27,12 @@ export function TimelineBlock({
 	endTime,
 	onClick,
 }: TimelineBlockProps) {
-	const { bg, text } = uuidToColor(reservationId);
+	const colorScheme: ColorScheme =
+		typeof globalThis.window !== 'undefined' &&
+		globalThis.window.matchMedia('(prefers-color-scheme: dark)').matches
+			? 'dark'
+			: 'light';
+	const { bg, text } = uuidToColor(reservationId, colorScheme);
 
 	return (
 		<button

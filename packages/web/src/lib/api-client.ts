@@ -66,7 +66,7 @@ export async function apiRequest<T>(
 	const url = `${API_BASE_URL}${endpoint}`;
 
 	const requestHeaders: HeadersInit = {
-		'Content-Type': 'application/json',
+		...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
 		...headers,
 	};
 

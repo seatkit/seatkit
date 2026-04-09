@@ -21,7 +21,7 @@ type UndoToastProps = Readonly<{
  */
 export function UndoToast({ onDismiss, visible, showUndone = false }: UndoToastProps) {
 	const { snapshot, snapshotId, clearSnapshot } = useReservationUndoStore();
-	const updateMutation = useUpdateReservation();
+	const updateMutation = useUpdateReservation({ retry: 0 });
 
 	// Auto-dismiss after 10 seconds
 	useEffect(() => {

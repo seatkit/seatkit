@@ -65,7 +65,7 @@ export function UndoToast({ onDismiss, visible, showUndone = false }: UndoToastP
 					<span>Saved</span>
 					<button
 						type="button"
-						onClick={() => void handleUndo()}
+						onClick={() => { handleUndo(); }}
 						className="font-semibold text-amber-400 underline cursor-pointer hover:text-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 rounded"
 					>
 						Undo

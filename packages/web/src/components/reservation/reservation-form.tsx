@@ -149,7 +149,7 @@ export function ReservationForm({
 							max={100}
 							required
 							value={values.partySize}
-							onChange={(e) => update({ partySize: parseInt(e.target.value, 10) || 1 })}
+							onChange={(e) => update({ partySize: Number.parseInt(e.target.value, 10) || 1 })}
 							className={fieldClass()}
 						/>
 					</div>
@@ -238,7 +238,7 @@ export function ReservationForm({
 				</div>
 
 				<div>
-					<label className={labelClass()}>Emoji tag</label>
+					<p className={labelClass()}>Emoji tag</p>
 					<div className="flex flex-wrap gap-2">
 						{COMMON_EMOJIS.map((e) => (
 							<button
@@ -280,7 +280,6 @@ export function ReservationForm({
 					</button>
 					<span
 						className="text-sm font-medium cursor-pointer select-none"
-						role="presentation"
 						onClick={() => update({ isLargeGroup: !values.isLargeGroup })}
 					>
 						Large group
@@ -293,7 +292,7 @@ export function ReservationForm({
 				<legend className={sectionHeadingClass()}>Table Assignment</legend>
 
 				<div>
-					<label className={labelClass()}>Assigned tables</label>
+					<p className={labelClass()}>Assigned tables</p>
 					<p className="text-sm text-muted-foreground">
 						{values.tableIds.length > 0
 							? `Tables: ${values.tableIds.join(', ')}`

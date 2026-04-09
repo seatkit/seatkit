@@ -194,7 +194,7 @@ export function ReservationDrawer({
 			setConflictOpen(false);
 			// The user clicks Apply — they accept their draft on top of server state.
 			// Re-trigger save with updated version.
-			void handleSave();
+			handleSave();
 		},
 		[handleSave],
 	);
@@ -210,6 +210,10 @@ export function ReservationDrawer({
 	}, [conflictServerVersion]);
 
 	const isSaving = createMutation.isPending || updateMutation.isPending;
+	const saveButtonLabel =
+		isSaving ? 'Saving...' :
+		mode === 'create' ? 'Save reservation' :
+		'Save changes';
 
 	return (
 		<>
@@ -222,15 +226,15 @@ export function ReservationDrawer({
 				/>
 			)}
 
-			{/* Drawer — slide-over */}
-			<div
-				role="dialog"
-				aria-modal="true"
+			{/* Drawer — slide-over. Uses <dialog> for semantics; !flex overrides the
+			    browser's default display:none so the CSS transform animation still works. */}
+			<dialog
 				aria-labelledby="drawer-title"
+				aria-hidden={!open}
 				className={[
 					'fixed inset-y-0 right-0 w-full md:w-[480px] z-50 bg-background shadow-2xl',
 					'transition-transform duration-200 ease-out',
-					'flex flex-col',
+					'!flex flex-col m-0 p-0 max-h-none max-w-none h-full border-none',
 					open ? 'translate-x-0' : 'translate-x-full',
 				].join(' ')}
 			>
@@ -299,11 +303,11 @@ export function ReservationDrawer({
 						)}
 						<button
 							type="button"
-							onClick={() => void handleSave()}
+							onClick={() => { handleSave(); }}
 							disabled={isSaving}
 							className="inline-flex items-center justify-center px-4 h-10 rounded-md bg-foreground text-background text-sm font-medium hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
 						>
-							{isSaving ? 'Saving...' : mode === 'create' ? 'Save reservation' : 'Save changes'}
+							{saveButtonLabel}
 						</button>
 					</div>
 				</div>
@@ -334,7 +338,7 @@ export function ReservationDrawer({
 							</button>
 							<button
 								type="button"
-								onClick={() => void handleDelete()}
+								onClick={() => { handleDelete(); }}
 								className="px-4 py-2 text-sm rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-destructive"
 							>
 								Delete reservation
@@ -353,7 +357,7 @@ export function ReservationDrawer({
 						onDiscard={handleConflictDiscard}
 					/>
 				)}
-			</div>
+			</dialog>
 
 			{/* UndoToast — outside drawer, bottom-center */}
 			<UndoToast

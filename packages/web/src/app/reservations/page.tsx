@@ -138,7 +138,7 @@ export default function ReservationsPage() {
 				</div>
 
 				{/* Service category tabs (not shown in list view — context is date-level) */}
-				{activeView !== 'list' && (
+				{(activeView === 'timeline' || activeView === 'floorplan') && (
 					<div className="flex items-center gap-0" role="tablist" aria-label="Service category">
 						{categoryTabs.map((tab) => (
 							<button
@@ -184,7 +184,7 @@ export default function ReservationsPage() {
 				open={drawerOpen}
 				mode={drawerMode}
 				reservation={activeReservation}
-				{...(drawerPrefill !== undefined ? { prefill: drawerPrefill } : {})}
+				{...(drawerPrefill === undefined ? {} : { prefill: drawerPrefill })}
 				onClose={() => {
 					setDrawerOpen(false);
 				}}
@@ -195,11 +195,11 @@ export default function ReservationsPage() {
 }
 
 // Temporary stubs — replaced in Plans 05 (list) and 06 (floor plan)
-function ReservationListViewStub({ date }: { date: Date }) {
+function ReservationListViewStub({ date }: Readonly<{ date: Date }>) {
 	return <div className="p-6 text-muted-foreground text-sm">List: {date.toDateString()}</div>;
 }
 
-function FloorPlanViewStub({ date, category }: { date: Date; category: ServiceCategory }) {
+function FloorPlanViewStub({ date, category }: Readonly<{ date: Date; category: ServiceCategory }>) {
 	return (
 		<div className="p-6 text-muted-foreground text-sm">
 			Floor plan: {date.toDateString()} — {category}

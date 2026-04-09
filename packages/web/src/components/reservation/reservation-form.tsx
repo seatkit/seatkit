@@ -278,10 +278,7 @@ export function ReservationForm({
 							].join(' ')}
 						/>
 					</button>
-					<span
-						className="text-sm font-medium cursor-pointer select-none"
-						onClick={() => update({ isLargeGroup: !values.isLargeGroup })}
-					>
+					<span className="text-sm font-medium select-none">
 						Large group
 					</span>
 				</div>

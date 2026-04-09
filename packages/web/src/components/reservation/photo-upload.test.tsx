@@ -11,6 +11,19 @@ beforeEach(() => {
 	vi.stubGlobal('fetch', mockFetch);
 });
 
+async function renderAndUpload() {
+	render(
+		<PhotoUpload
+			reservationId="test-id"
+			currentPhotoUrl={null}
+			onPhotoUrlChange={() => {}}
+		/>,
+	);
+	const input = screen.getByLabelText('Attach a photo');
+	const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+	await userEvent.upload(input, file);
+}
+
 describe('PhotoUpload (RES-10)', () => {
 	it('shows progress bar during upload', async () => {
 		mockFetch.mockImplementation(
@@ -63,17 +76,7 @@ describe('PhotoUpload (RES-10)', () => {
 			json: async () => ({ message: 'Too large' }),
 		} as Response);
 
-		render(
-			<PhotoUpload
-				reservationId="test-id"
-				currentPhotoUrl={null}
-				onPhotoUrlChange={() => {}}
-			/>,
-		);
-
-		const input = screen.getByLabelText('Attach a photo');
-		const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
-		await userEvent.upload(input, file);
+		await renderAndUpload();
 
 		await waitFor(() => {
 			expect(screen.getByText('File too large. Maximum size is 10 MB.')).toBeTruthy();
@@ -83,17 +86,7 @@ describe('PhotoUpload (RES-10)', () => {
 	it('shows "Upload failed" error on network error', async () => {
 		mockFetch.mockRejectedValue(new Error('Network error'));
 
-		render(
-			<PhotoUpload
-				reservationId="test-id"
-				currentPhotoUrl={null}
-				onPhotoUrlChange={() => {}}
-			/>,
-		);
-
-		const input = screen.getByLabelText('Attach a photo');
-		const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
-		await userEvent.upload(input, file);
+		await renderAndUpload();
 
 		await waitFor(() => {
 			expect(screen.getByText('Upload failed. Check your connection and try again.')).toBeTruthy();

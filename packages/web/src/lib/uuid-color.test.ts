@@ -18,8 +18,8 @@ describe('uuidToColor (RES-11)', () => {
 
 	it('bg and text share the same hue', () => {
 		const { bg, text } = uuidToColor('aaaabbbb-cccc-dddd-eeee-ffffffffffff');
-		const bgHue = parseInt(bg.replace(/^hsl\((\d+).*/, '$1'));
-		const textHue = parseInt(text.replace(/^hsl\((\d+).*/, '$1'));
+		const bgHue = Number.parseInt(bg.replace(/^hsl\((\d+).*/, '$1'));
+		const textHue = Number.parseInt(text.replace(/^hsl\((\d+).*/, '$1'));
 		expect(bgHue).toBe(textHue);
 	});
 
@@ -31,7 +31,7 @@ describe('uuidToColor (RES-11)', () => {
 		];
 		for (const uuid of uuids) {
 			const { bg } = uuidToColor(uuid);
-			const hue = parseInt(bg.replace(/^hsl\((\d+).*/, '$1'));
+			const hue = Number.parseInt(bg.replace(/^hsl\((\d+).*/, '$1'));
 			expect(hue).toBeGreaterThanOrEqual(0);
 			expect(hue).toBeLessThan(360);
 		}

@@ -20,8 +20,8 @@ export type ReservationColor = {
  */
 export function uuidToColor(uuid: string): ReservationColor {
 	// Strip dashes and take first 6 hex chars
-	const hex = uuid.replace(/-/g, '').slice(0, 6);
-	const hue = parseInt(hex, 16) % 360;
+	const hex = uuid.replaceAll('-', '').slice(0, 6);
+	const hue = Number.parseInt(hex, 16) % 360;
 	return {
 		bg: `hsl(${hue}, 65%, 72%)`,
 		text: `hsl(${hue}, 65%, 22%)`,

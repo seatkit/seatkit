@@ -9,7 +9,7 @@ import '@testing-library/jest-dom';
 // jsdom does not implement ResizeObserver, so we provide a minimal mock that
 // immediately fires the callback with a non-zero rect so virtualizer renders rows.
 class MockResizeObserver {
-	private callback: ResizeObserverCallback;
+	private readonly callback: ResizeObserverCallback;
 	constructor(callback: ResizeObserverCallback) {
 		this.callback = callback;
 	}
@@ -28,8 +28,8 @@ class MockResizeObserver {
 			this as unknown as ResizeObserver,
 		);
 	}
-	unobserve() {}
-	disconnect() {}
+	unobserve() { /* noop — ResizeObserver stub */ }
+	disconnect() { /* noop — ResizeObserver stub */ }
 }
 
 globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;

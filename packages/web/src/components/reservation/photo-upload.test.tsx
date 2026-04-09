@@ -65,7 +65,7 @@ describe('PhotoUpload (RES-10)', () => {
 		await userEvent.upload(input, file);
 
 		await waitFor(() => {
-			expect(screen.getByAltText('Reservation photo')).toBeTruthy();
+			expect(screen.getByAltText('Reservation')).toBeTruthy();
 		});
 	});
 
@@ -102,7 +102,7 @@ describe('PhotoUpload (RES-10)', () => {
 			/>,
 		);
 
-		expect(screen.getByAltText('Reservation photo')).toBeTruthy();
+		expect(screen.getByAltText('Reservation')).toBeTruthy();
 		await userEvent.click(screen.getByLabelText('Remove photo'));
 		expect(screen.queryByAltText('Reservation photo')).toBeNull();
 	});

@@ -103,12 +103,12 @@ export function PhotoUpload({ reservationId, currentPhotoUrl, onPhotoUrlChange }
 
 			{/* Progress bar */}
 			{uploadState === 'uploading' && (
-				<div className="bg-muted rounded-full h-1.5" role="progressbar" aria-valuenow={uploadProgress}>
-					<div
-						className="bg-amber-500 rounded-full h-1.5 transition-[width] duration-200"
-						style={{ width: `${uploadProgress}%` }}
-					/>
-				</div>
+				<progress
+					value={uploadProgress}
+					max={100}
+					aria-label="Upload progress"
+					className="w-full h-1.5 rounded-full overflow-hidden appearance-none [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-amber-500 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-value]:rounded-full [&::-moz-progress-bar]:bg-amber-500"
+				/>
 			)}
 
 			{/* Error messages */}
@@ -129,7 +129,7 @@ export function PhotoUpload({ reservationId, currentPhotoUrl, onPhotoUrlChange }
 					{/* eslint-disable-next-line @next/next/no-img-element */}
 					<img
 						src={photoUrl}
-						alt="Reservation photo"
+						alt="Reservation"
 						className="w-16 h-16 rounded-md object-cover"
 					/>
 					<button

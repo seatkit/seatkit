@@ -3,7 +3,13 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
+import type { Reservation } from '@/lib/api-types';
+
+import { ReservationDrawer } from '@/components/reservation/reservation-drawer';
 import { ReservationTimelineView } from '@/components/reservation/reservation-timeline-view';
+import { useSession } from '@/lib/auth-client';
+import { useReservations } from '@/lib/queries/reservations';
+
 
 type ViewTab = 'timeline' | 'list' | 'floorplan';
 type ServiceCategory = 'lunch' | 'dinner' | 'no_booking_zone';
@@ -23,6 +29,18 @@ export default function ReservationsPage() {
 	const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 	const [selectedCategory, setSelectedCategory] = useState<ServiceCategory>('lunch');
 
+	// Drawer state
+	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create');
+	const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
+	const [drawerPrefill, setDrawerPrefill] = useState<
+		| { tableId?: string; date?: Date; time?: string; category?: 'lunch' | 'dinner' | 'special' | 'walk_in' }
+		| undefined
+	>();
+
+	const { data: reservationsData } = useReservations();
+	const { data: session } = useSession();
+
 	const viewTabs: { id: ViewTab; label: string }[] = [
 		{ id: 'timeline', label: 'Timeline' },
 		{ id: 'list', label: 'List' },
@@ -35,6 +53,27 @@ export default function ReservationsPage() {
 		{ id: 'no_booking_zone', label: 'No booking zone' },
 	];
 
+	const handleReservationClick = (id: string) => {
+		const res = reservationsData?.reservations.find((r) => r.id === id);
+		if (res) {
+			setActiveReservation(res);
+			setDrawerMode('edit');
+			setDrawerOpen(true);
+		}
+	};
+
+	const handleSlotClick = (tableId: string, slotStart: Date) => {
+		setActiveReservation(null);
+		setDrawerMode('create');
+		setDrawerPrefill({
+			tableId,
+			date: slotStart,
+			time: slotStart.toTimeString().slice(0, 5),
+			category: selectedCategory === 'no_booking_zone' ? 'special' : selectedCategory,
+		});
+		setDrawerOpen(true);
+	};
+
 	return (
 		<div className="flex flex-col flex-1 overflow-hidden">
 			{/* Page header */}
@@ -44,7 +83,9 @@ export default function ReservationsPage() {
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
-						onClick={() => { setSelectedDate(d => addDays(d, -1)); }}
+						onClick={() => {
+							setSelectedDate((d) => addDays(d, -1));
+						}}
 						aria-label="Previous day"
 						className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
 					>
@@ -53,12 +94,16 @@ export default function ReservationsPage() {
 					<input
 						type="date"
 						value={formatDate(selectedDate)}
-						onChange={(e) => { setSelectedDate(new Date(e.target.value + 'T00:00:00')); }}
+						onChange={(e) => {
+							setSelectedDate(new Date(e.target.value + 'T00:00:00'));
+						}}
 						className="text-sm border border-border rounded-md px-2 py-1 bg-background focus:outline-none focus:ring-2 focus:ring-ring"
 					/>
 					<button
 						type="button"
-						onClick={() => { setSelectedDate(d => addDays(d, 1)); }}
+						onClick={() => {
+							setSelectedDate((d) => addDays(d, 1));
+						}}
 						aria-label="Next day"
 						className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
 					>
@@ -71,13 +116,15 @@ export default function ReservationsPage() {
 			<div className="h-10 px-6 bg-muted flex items-center justify-between border-b border-border shrink-0">
 				{/* View tabs */}
 				<div className="flex items-center gap-0" role="tablist" aria-label="View">
-					{viewTabs.map(tab => (
+					{viewTabs.map((tab) => (
 						<button
 							key={tab.id}
 							role="tab"
 							aria-selected={activeView === tab.id}
 							type="button"
-							onClick={() => { setActiveView(tab.id); }}
+							onClick={() => {
+								setActiveView(tab.id);
+							}}
 							className={[
 								'px-4 h-10 text-sm font-medium transition-colors',
 								activeView === tab.id
@@ -91,15 +138,17 @@ export default function ReservationsPage() {
 				</div>
 
 				{/* Service category tabs (not shown in list view — context is date-level) */}
-				{activeView !== 'list' && (
+				{(activeView === 'timeline' || activeView === 'floorplan') && (
 					<div className="flex items-center gap-0" role="tablist" aria-label="Service category">
-						{categoryTabs.map(tab => (
+						{categoryTabs.map((tab) => (
 							<button
 								key={tab.id}
 								role="tab"
 								aria-selected={selectedCategory === tab.id}
 								type="button"
-								onClick={() => { setSelectedCategory(tab.id); }}
+								onClick={() => {
+									setSelectedCategory(tab.id);
+								}}
 								className={[
 									'px-4 h-10 text-sm font-medium transition-colors',
 									selectedCategory === tab.id
@@ -116,39 +165,41 @@ export default function ReservationsPage() {
 
 			{/* Tab content */}
 			<div className="flex-1 overflow-auto" role="tabpanel">
-				{/* onReservationClick and onSlotClick wired in Plan 05 (drawer) */}
 				{activeView === 'timeline' && (
 					<ReservationTimelineView
 						date={selectedDate}
 						category={selectedCategory}
+						onReservationClick={handleReservationClick}
+						onSlotClick={handleSlotClick}
 					/>
 				)}
-				{activeView === 'list' && (
-					<ReservationListViewStub
-						date={selectedDate}
-					/>
-				)}
+				{activeView === 'list' && <ReservationListViewStub date={selectedDate} />}
 				{activeView === 'floorplan' && (
-					<FloorPlanViewStub
-						date={selectedDate}
-						category={selectedCategory}
-					/>
+					<FloorPlanViewStub date={selectedDate} category={selectedCategory} />
 				)}
 			</div>
+
+			{/* Reservation drawer — slide-over */}
+			<ReservationDrawer
+				open={drawerOpen}
+				mode={drawerMode}
+				reservation={activeReservation}
+				{...(drawerPrefill === undefined ? {} : { prefill: drawerPrefill })}
+				onClose={() => {
+					setDrawerOpen(false);
+				}}
+				currentUserId={session?.user?.id ?? ''}
+			/>
 		</div>
 	);
 }
 
 // Temporary stubs — replaced in Plans 05 (list) and 06 (floor plan)
-function ReservationListViewStub({ date }: { date: Date }) {
-	return (
-		<div className="p-6 text-muted-foreground text-sm">
-			List: {date.toDateString()}
-		</div>
-	);
+function ReservationListViewStub({ date }: Readonly<{ date: Date }>) {
+	return <div className="p-6 text-muted-foreground text-sm">List: {date.toDateString()}</div>;
 }
 
-function FloorPlanViewStub({ date, category }: { date: Date; category: ServiceCategory }) {
+function FloorPlanViewStub({ date, category }: Readonly<{ date: Date; category: ServiceCategory }>) {
 	return (
 		<div className="p-6 text-muted-foreground text-sm">
 			Floor plan: {date.toDateString()} — {category}

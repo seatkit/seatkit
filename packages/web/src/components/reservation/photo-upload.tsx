@@ -93,7 +93,7 @@ export function PhotoUpload({ reservationId, currentPhotoUrl, onPhotoUrlChange }
 						type="file"
 						accept="image/*"
 						capture="environment"
-						onChange={handleFileChange}
+						onChange={(e) => { handleFileChange(e); }}
 						disabled={uploadState === 'uploading' || !reservationId}
 						className="text-sm text-foreground file:mr-3 file:py-1 file:px-3 file:rounded-md file:border file:border-border file:text-sm file:font-medium file:bg-background file:cursor-pointer disabled:opacity-50"
 						aria-label="Attach a photo"
@@ -126,7 +126,7 @@ export function PhotoUpload({ reservationId, currentPhotoUrl, onPhotoUrlChange }
 			{/* Preview thumbnail */}
 			{uploadState === 'success' && photoUrl && (
 				<div className="relative inline-block w-16 h-16">
-					{/* eslint-disable-next-line @next/next/no-img-element */}
+					{/* img tag — photoUrl is our own API response URL, not external user content */}
 					<img
 						src={photoUrl}
 						alt="Reservation"

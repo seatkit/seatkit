@@ -34,3 +34,18 @@ class MockResizeObserver {
 
 globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
 
+// Mock window.matchMedia — not implemented in jsdom but used for dark-mode detection.
+Object.defineProperty(globalThis, 'matchMedia', {
+	writable: true,
+	value: (query: string): MediaQueryList => ({
+		matches: false,
+		media: query,
+		onchange: null,
+		addListener: () => { /* noop */ },
+		removeListener: () => { /* noop */ },
+		addEventListener: () => { /* noop */ },
+		removeEventListener: () => { /* noop */ },
+		dispatchEvent: () => false,
+	}),
+});
+

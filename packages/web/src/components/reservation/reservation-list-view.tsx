@@ -1,7 +1,7 @@
 'use client';
 
 import { Search } from 'lucide-react';
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { Fragment, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 import { useAllReservations, useRecoverReservation } from '../../lib/queries/reservations.js';
 
@@ -343,7 +343,7 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 						</thead>
 						<tbody>
 							{grouped.map(({ key, items }) => (
-								<React.Fragment key={key || '__all__'}>
+								<Fragment key={key || '__all__'}>
 									{/* Group header */}
 									{key && (
 										<tr>
@@ -426,7 +426,7 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 											</td>
 										</tr>
 									))}
-								</React.Fragment>
+								</Fragment>
 							))}
 						</tbody>
 					</table>

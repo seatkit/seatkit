@@ -93,7 +93,7 @@ export function PhotoUpload({ reservationId, currentPhotoUrl, onPhotoUrlChange }
 						type="file"
 						accept="image/*"
 						capture="environment"
-						onChange={(e) => { handleFileChange(e); }}
+						onChange={(e) => void handleFileChange(e)} // NOSONAR S3735 — void required by no-floating-promises
 						disabled={uploadState === 'uploading' || !reservationId}
 						className="text-sm text-foreground file:mr-3 file:py-1 file:px-3 file:rounded-md file:border file:border-border file:text-sm file:font-medium file:bg-background file:cursor-pointer disabled:opacity-50"
 						aria-label="Attach a photo"

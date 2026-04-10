@@ -225,7 +225,7 @@ export function ReservationDrawer({
 			setConflictOpen(false);
 			// The user clicks Apply — they accept their draft on top of server state.
 			// Re-trigger save with updated version.
-			handleSave();
+			void handleSave(); // NOSONAR S3735 — void required by no-floating-promises
 		},
 		[handleSave],
 	);
@@ -342,7 +342,7 @@ export function ReservationDrawer({
 							)}
 							<button
 								type="button"
-								onClick={() => { handleSave(); }}
+								onClick={() => void handleSave()} // NOSONAR S3735
 								disabled={isSaving}
 								className="inline-flex items-center justify-center px-4 h-10 rounded-md bg-foreground text-background text-sm font-medium hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
 							>
@@ -378,7 +378,7 @@ export function ReservationDrawer({
 							</button>
 							<button
 								type="button"
-								onClick={() => { handleDelete(); }}
+								onClick={() => void handleDelete()} // NOSONAR S3735
 								className="px-4 py-2 text-sm rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-destructive"
 							>
 								Delete reservation

@@ -4,11 +4,12 @@
  */
 
 import { CreateReservationSchema, ReservationSchema, UpdateReservationSchema } from '@seatkit/types';
-import { z } from 'zod';
 import { and, eq } from 'drizzle-orm';
+import { z } from 'zod';
 
 import { db } from '../db/index.js';
 import { reservations } from '../db/schema/index.js';
+import { uploadReservationPhoto } from '../services/photo-service.js';
 import {
 	createReservation,
 	updateReservation,
@@ -16,7 +17,6 @@ import {
 	recoverReservation,
 	VersionConflictError,
 } from '../services/reservation-service.js';
-import { uploadReservationPhoto } from '../services/photo-service.js';
 
 import type { FastifyPluginAsync } from 'fastify';
 
@@ -221,7 +221,7 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 				// @fastify/multipart throws RequestFileTooLargeError on limit exceeded — surface as 413
 				const msg = err instanceof Error ? err.message : String(err);
 				if (msg.toLowerCase().includes('limit') || msg.toLowerCase().includes('too large')) {
-					throw fastify.httpErrors.requestEntityTooLarge('File too large. Maximum size is 10 MB.');
+					throw fastify.httpErrors.payloadTooLarge('File too large. Maximum size is 10 MB.');
 				}
 				throw err;
 			}

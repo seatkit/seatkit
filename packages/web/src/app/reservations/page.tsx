@@ -5,7 +5,9 @@ import { useState } from 'react';
 
 import type { Reservation } from '@/lib/api-types';
 
+import { FloorPlanView } from '@/components/reservation/floor-plan-view';
 import { ReservationDrawer } from '@/components/reservation/reservation-drawer';
+import { ReservationListView } from '@/components/reservation/reservation-list-view';
 import { ReservationTimelineView } from '@/components/reservation/reservation-timeline-view';
 import { useSession } from '@/lib/auth-client';
 import { useReservations } from '@/lib/queries/reservations';
@@ -173,9 +175,17 @@ export default function ReservationsPage() {
 						onSlotClick={handleSlotClick}
 					/>
 				)}
-				{activeView === 'list' && <ReservationListViewStub date={selectedDate} />}
+				{activeView === 'list' && (
+					<ReservationListView
+						onReservationClick={(reservation) => {
+							setActiveReservation(reservation);
+							setDrawerMode('edit');
+							setDrawerOpen(true);
+						}}
+					/>
+				)}
 				{activeView === 'floorplan' && (
-					<FloorPlanViewStub date={selectedDate} category={selectedCategory} />
+					<FloorPlanView date={selectedDate} category={selectedCategory} />
 				)}
 			</div>
 
@@ -194,15 +204,3 @@ export default function ReservationsPage() {
 	);
 }
 
-// Temporary stubs — replaced in Plans 05 (list) and 06 (floor plan)
-function ReservationListViewStub({ date }: Readonly<{ date: Date }>) {
-	return <div className="p-6 text-muted-foreground text-sm">List: {date.toDateString()}</div>;
-}
-
-function FloorPlanViewStub({ date, category }: Readonly<{ date: Date; category: ServiceCategory }>) {
-	return (
-		<div className="p-6 text-muted-foreground text-sm">
-			Floor plan: {date.toDateString()} — {category}
-		</div>
-	);
-}

@@ -315,30 +315,87 @@ export async function updateReservation(
 	return updated;
 }
 
-// ── deleteReservation ────────────────────────────────────────────────────────
+// ── softDeleteReservation ────────────────────────────────────────────────────
 
-export async function deleteReservation(
+/**
+ * Soft-deletes a reservation by setting isDeleted=true and deletedAt=now().
+ * Does not purge the row from the database — RES-03, RES-04.
+ * Throws 404 if the reservation does not exist or is already soft-deleted.
+ */
+export async function softDeleteReservation(
 	id: string,
 	fastify: FastifyInstance,
 ): Promise<Reservation> {
+	const [updated] = await db
+		.update(reservations)
+		.set({ isDeleted: true, deletedAt: new Date(), updatedAt: new Date() })
+		.where(and(eq(reservations.id, id), eq(reservations.isDeleted, false)))
+		.returning();
+
+	if (!updated) {
+		throw fastify.httpErrors.notFound('Reservation not found or already deleted');
+	}
+
+	return updated;
+}
+
+// Backward-compatible alias so existing callers that import deleteReservation continue to work.
+export { softDeleteReservation as deleteReservation };
+
+// ── recoverReservation ───────────────────────────────────────────────────────
+
+/**
+ * Recovers a soft-deleted reservation by setting isDeleted=false and re-running
+ * table assignment to verify the original tables are still available — RES-04.
+ * Throws 404 if no soft-deleted reservation with the given id exists.
+ */
+export async function recoverReservation(
+	id: string,
+	fastify: FastifyInstance,
+): Promise<Reservation> {
+	// Fetch the current soft-deleted row
 	const [existing] = await db
 		.select()
 		.from(reservations)
-		.where(eq(reservations.id, id))
-		.limit(1);
+		.where(and(eq(reservations.id, id), eq(reservations.isDeleted, true)));
 
 	if (!existing) {
-		throw fastify.httpErrors.notFound('Reservation not found');
+		throw fastify.httpErrors.notFound('Deleted reservation not found');
 	}
 
-	const [deleted] = await db
-		.delete(reservations)
+	// Re-run table assignment to verify tables are still available
+	const allTables = await db.select().from(tables);
+	const existingReservations = await db
+		.select()
+		.from(reservations)
+		.where(and(eq(reservations.isDeleted, false), ne(reservations.id, id)));
+	const settings = await db.select().from(restaurantSettings).limit(1);
+	const priorityOrder: string[] = settings[0]?.priorityOrder ?? [];
+
+	const assignedTableIds = await resolveAssignment(
+		{ date: existing.date, duration: existing.duration, partySize: existing.partySize },
+		existingReservations,
+		allTables,
+		priorityOrder,
+		undefined,
+		fastify,
+	);
+
+	const [recovered] = await db
+		.update(reservations)
+		.set({
+			isDeleted: false,
+			deletedAt: null,
+			status: 'pending',
+			tableIds: assignedTableIds,
+			updatedAt: new Date(),
+		})
 		.where(eq(reservations.id, id))
 		.returning();
 
-	if (!deleted) {
-		throw fastify.httpErrors.internalServerError('Failed to delete reservation');
+	if (!recovered) {
+		throw fastify.httpErrors.internalServerError('Recovery failed');
 	}
 
-	return deleted;
+	return recovered;
 }

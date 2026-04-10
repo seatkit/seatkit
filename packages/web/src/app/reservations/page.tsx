@@ -79,7 +79,7 @@ export default function ReservationsPage() {
 	return (
 		<div className="flex flex-col flex-1 overflow-hidden">
 			{/* Page header */}
-			<div className="h-12 px-6 flex items-center justify-between border-b border-border shrink-0">
+			<div className="h-12 px-6 flex items-center justify-between shrink-0">
 				<h1 className="text-3xl font-semibold">Reservations</h1>
 				{/* Date picker */}
 				<div className="flex items-center gap-2">

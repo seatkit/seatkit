@@ -102,10 +102,8 @@ describe('apiRequest', () => {
 				'http://localhost:3001/test',
 				expect.objectContaining({
 					method: 'GET',
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-					headers: expect.objectContaining({
-						'Content-Type': 'application/json',
-					}),
+					// GET requests have no body — Content-Type is intentionally omitted
+					credentials: 'include',
 				}),
 			);
 			expect(result).toEqual(mockData);
@@ -179,7 +177,7 @@ describe('apiRequest', () => {
 				expect.objectContaining({
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					headers: expect.objectContaining({
-						'Content-Type': 'application/json',
+						// No body — Content-Type intentionally omitted for bodyless requests
 						Authorization: 'Bearer token123',
 						'X-Custom-Header': 'custom-value',
 					}),

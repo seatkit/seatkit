@@ -8,6 +8,9 @@
  */
 'use client';
 
+import { useShallow } from 'zustand/shallow';
+
+import { useStaff } from '../lib/queries/staff.js';
 import { usePresenceStore } from '../stores/presence-store.js';
 
 type PresenceBadgeProps = Readonly<{
@@ -35,7 +38,21 @@ export function PresenceBadge({ initials, state }: PresenceBadgeProps) {
 
 /** Show all staff currently online (app-level, D-09) */
 export function AppPresenceBadgeRow() {
-	const entries = usePresenceStore((s) => Object.values(s.entries));
+	const entries = usePresenceStore(useShallow((s) => Object.values(s.entries)));
+	const { data: staffData } = useStaff();
+
+	// Build userId → initials map — Phase 4 resolves real names (RESEARCH.md Pitfall 4)
+	const staffMap = new Map(
+		(staffData?.users ?? []).map((s) => [
+			s.id,
+			s.name
+				.split(' ')
+				.map((part) => part[0]?.toUpperCase() ?? '')
+				.slice(0, 2)
+				.join(''),
+		]),
+	);
+
 	if (entries.length === 0) return null;
 
 	return (
@@ -43,7 +60,7 @@ export function AppPresenceBadgeRow() {
 			{entries.map((entry) => (
 				<PresenceBadge
 					key={entry.sessionId}
-					initials={entry.userId.slice(0, 2)} // Phase 4 will look up real names
+					initials={staffMap.get(entry.userId) ?? entry.userId.slice(0, 2).toUpperCase()}
 					state={entry.presenceState}
 				/>
 			))}
@@ -59,20 +76,34 @@ export function ReservationPresenceBadgeRow({
 	reservationId: string;
 	currentUserId: string;
 }>) {
-	const entries = usePresenceStore((s) =>
-		Object.values(s.entries).filter(
-			(e) => e.currentReservationId === reservationId && e.userId !== currentUserId,
+	const entries = usePresenceStore(
+		useShallow((s) =>
+			Object.values(s.entries).filter(
+				(e) => e.currentReservationId === reservationId && e.userId !== currentUserId,
+			),
 		),
+	);
+	const { data: staffData } = useStaff();
+
+	const staffMap = new Map(
+		(staffData?.users ?? []).map((s) => [
+			s.id,
+			s.name
+				.split(' ')
+				.map((part) => part[0]?.toUpperCase() ?? '')
+				.slice(0, 2)
+				.join(''),
+		]),
 	);
 
 	if (entries.length === 0) return null;
 
 	return (
-		<div className="flex items-center gap-1" aria-label="Colleagues viewing this reservation">
+		<div className="flex items-center gap-1" aria-label="Colleagues editing this reservation">
 			{entries.map((entry) => (
 				<PresenceBadge
 					key={entry.sessionId}
-					initials={entry.userId.slice(0, 2)}
+					initials={staffMap.get(entry.userId) ?? entry.userId.slice(0, 2).toUpperCase()}
 					state={entry.presenceState}
 				/>
 			))}

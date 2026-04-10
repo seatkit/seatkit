@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 type FilterChipProps = Readonly<{
 	label: string;
 	active: boolean;

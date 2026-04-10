@@ -24,7 +24,7 @@ export default function RootLayout({
 				<ErrorBoundary>
 					<QueryProvider>
 						{/* App nav bar — h-14, border-b */}
-						<header className="h-14 bg-background border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
+						<header className="h-14 bg-background flex items-center justify-between px-6 sticky top-0 z-30">
 							<Link href="/reservations" className="font-semibold text-lg tracking-tight">
 								SeatKit
 							</Link>

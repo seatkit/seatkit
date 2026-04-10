@@ -13,16 +13,18 @@ import {
 } from '@tanstack/react-query';
 
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from '../api-client.js';
-import { API_ENDPOINTS } from '../api-config.js';
+import { API_ENDPOINTS, API_BASE_URL } from '../api-config.js';
 import {
 	ListReservationsResponseSchema,
 	CreateReservationResponseSchema,
 	UpdateReservationResponseSchema,
 	DeleteReservationResponseSchema,
+	PhotoUploadResponseSchema,
 	type ListReservationsResponse,
 	type CreateReservationResponse,
 	type UpdateReservationResponse,
 	type DeleteReservationResponse,
+	type PhotoUploadResponse,
 	type Reservation,
 } from '../api-types.js';
 
@@ -227,6 +229,85 @@ export function useDeleteReservation(
 				.catch(() => {
 					// Ignore errors from cache invalidation
 				});
+		},
+		...options,
+	});
+}
+
+/**
+ * Recover a soft-deleted reservation (re-runs table assignment)
+ */
+async function recoverReservation(id: string): Promise<DeleteReservationResponse> {
+	return apiPost<DeleteReservationResponse>(
+		API_ENDPOINTS.reservations.recover(id),
+		{},
+		DeleteReservationResponseSchema,
+	);
+}
+
+/**
+ * Hook to recover a soft-deleted reservation
+ */
+export function useRecoverReservation(
+	options?: UseMutationOptions<DeleteReservationResponse, Error, string>,
+) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: recoverReservation,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: reservationKeys.lists() }).catch(() => {});
+		},
+		...options,
+	});
+}
+
+/**
+ * Upload a photo to a reservation
+ */
+async function uploadReservationPhoto(params: {
+	id: string;
+	file: File;
+}): Promise<PhotoUploadResponse> {
+	const formData = new FormData();
+	formData.append('file', params.file);
+
+	const response = await fetch(
+		`${API_BASE_URL}${API_ENDPOINTS.reservations.photo(params.id)}`,
+		{
+			method: 'POST',
+			body: formData,
+			credentials: 'include',
+		},
+	);
+
+	if (!response.ok) {
+		const text = await response.text();
+		throw new ApiError(response.status, response.statusText, {
+			error: response.statusText,
+			message: text,
+		});
+	}
+
+	const json: unknown = await response.json();
+	return PhotoUploadResponseSchema.parse(json);
+}
+
+/**
+ * Hook to upload a photo to a reservation
+ */
+export function useUploadReservationPhoto(
+	options?: UseMutationOptions<PhotoUploadResponse, Error, { id: string; file: File }>,
+) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: uploadReservationPhoto,
+		onSuccess: (_data, variables) => {
+			queryClient
+				.invalidateQueries({ queryKey: reservationKeys.detail(variables.id) })
+				.catch(() => {});
+			queryClient
+				.invalidateQueries({ queryKey: reservationKeys.lists() })
+				.catch(() => {});
 		},
 		...options,
 	});

@@ -59,6 +59,16 @@ export type DeleteReservationResponse = z.infer<
 >;
 
 /**
+ * API response wrapper for photo upload endpoint (RES-10)
+ */
+export const PhotoUploadResponseSchema = z.object({
+	photoUrl: z.string().url(),
+	message: z.string(),
+});
+
+export type PhotoUploadResponse = z.infer<typeof PhotoUploadResponseSchema>;
+
+/**
  * Presence entry — represents a connected staff member's current state
  * Mirrors the server PresenceEntry shape from Plan 03
  */

@@ -6,6 +6,7 @@
 import cors from '@fastify/cors';
 import env from '@fastify/env';
 import helmet from '@fastify/helmet';
+import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 import swagger from '@fastify/swagger';
@@ -138,6 +139,13 @@ async function createServer() {
 	await fastify.register(rateLimit, {
 		max: 100,
 		timeWindow: '1 minute',
+	});
+
+	await fastify.register(multipart, {
+		limits: {
+			fileSize: 10 * 1024 * 1024, // 10 MB — D-18
+			files: 1, // Single file per upload
+		},
 	});
 
 	// Register OpenAPI documentation — MUST be before route registrations (Pitfall 2)

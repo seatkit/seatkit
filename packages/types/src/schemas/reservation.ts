@@ -109,6 +109,9 @@ export const ReservationSchema = BaseEntitySchema.extend({
 
 	// Emoji tag — RES-12
 	emoji: z.string().max(10).nullable().optional(),
+
+	// Photo attachment URL — RES-10
+	photoUrl: z.string().url().nullable().optional(),
 });
 
 export type Reservation = z.infer<typeof ReservationSchema>;

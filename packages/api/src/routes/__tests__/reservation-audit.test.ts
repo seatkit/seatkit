@@ -14,15 +14,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
-import { db } from '../../db/index.js';
-import { reservations, tables, restaurantSettings } from '../../db/schema/index.js';
-import { TABLE_DATA, DEFAULT_PRIORITY_ORDER } from '../../db/seed-data.js';
-import { createServer } from '../../index.js';
-import { createUserIdempotent, signIn } from '../test-helpers.js';
-
-import type { FastifyInstance, InjectOptions } from 'fastify';
+import { setupIntegrationSuite } from '../test-helpers.js';
 
 // Read the reservations.ts source for structural assertions
 const reservationsSourcePath = resolve(import.meta.dirname, '..', 'reservations.ts');
@@ -101,11 +95,11 @@ describe('Reservation audit log events (structural)', () => {
 			}
 		});
 
-		it('created event includes date, startTime, partySize, category fields', () => {
+		it('created event includes date, duration, partySize, category fields', () => {
 			const createdIdx = reservationsSource.indexOf("event: 'reservation.created'");
 			const block = reservationsSource.slice(createdIdx, createdIdx + 300);
 			expect(block).toContain('date: reservation.date');
-			expect(block).toContain('startTime: reservation.startTime');
+			expect(block).toContain('duration: reservation.duration');
 			expect(block).toContain('partySize: reservation.partySize');
 			expect(block).toContain('category: reservation.category');
 		});
@@ -115,7 +109,7 @@ describe('Reservation audit log events (structural)', () => {
 			const block = reservationsSource.slice(updatedIdx, updatedIdx + 500);
 			// Spread-conditional pattern: ...(body.field !== undefined && { field: body.field })
 			expect(block).toContain('body.date !== undefined');
-			expect(block).toContain('body.startTime !== undefined');
+			expect(block).toContain('body.duration !== undefined');
 			expect(block).toContain('body.partySize !== undefined');
 			expect(block).toContain('body.status !== undefined');
 			expect(block).toContain('body.category !== undefined');
@@ -156,41 +150,11 @@ describe('Reservation audit log events (structural)', () => {
 const hasDb = Boolean(process.env.DATABASE_URL || process.env.TEST_DATABASE_URL);
 
 describe.skipIf(!hasDb)('Reservation audit log events (integration)', () => {
-	let app: FastifyInstance;
-	let sessionCookie: string;
-
-	beforeAll(async () => {
-		app = await createServer();
-
-		// Seed tables and restaurant settings required by the engine's table assignment logic
-		await db.insert(tables).values([...TABLE_DATA]).onConflictDoNothing({ target: tables.name });
-		await db
-			.insert(restaurantSettings)
-			.values({ priorityOrder: [...DEFAULT_PRIORITY_ORDER] })
-			.onConflictDoNothing();
-
-		await createUserIdempotent(TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD, 'Audit Test Admin', 'admin');
-		sessionCookie = await signIn(app, TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD);
+	const { inject } = setupIntegrationSuite({
+		email: TEST_ADMIN_EMAIL,
+		password: TEST_ADMIN_PASSWORD,
+		displayName: 'Audit Test Admin',
 	});
-
-	afterAll(async () => {
-		await app.close();
-	});
-
-	// Clean up all reservations before each test so table availability is not exhausted
-	beforeEach(async () => {
-		await db.delete(reservations);
-	});
-
-	// Authenticated inject helper
-	const inject = (options: InjectOptions | string) =>
-		app.inject({
-			...(typeof options === 'string' ? { url: options } : options),
-			headers: {
-				...(typeof options === 'object' ? (options.headers as Record<string, string> | undefined) : undefined),
-				...(sessionCookie ? { cookie: sessionCookie } : {}),
-			},
-		});
 
 	it('POST /api/v1/reservations returns 201 (create audit log code path executed)', async () => {
 		const res = await inject({

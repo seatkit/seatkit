@@ -2,14 +2,9 @@
  * Tests for reservation API routes
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
-import { db } from '../db/index.js';
-import { reservations, tables, restaurantSettings } from '../db/schema/index.js';
-import { TABLE_DATA, DEFAULT_PRIORITY_ORDER } from '../db/seed-data.js';
-import { createServer } from '../index.js';
-
-import { createUserIdempotent, signIn } from './test-helpers.js';
+import { setupIntegrationSuite } from './test-helpers.js';
 
 import type {
 	CreateReservationResponse,
@@ -18,7 +13,6 @@ import type {
 	ListReservationsResponse,
 	ErrorResponse,
 } from '../schemas/index.js';
-import type { FastifyInstance, InjectOptions } from 'fastify';
 
 // Dedicated test admin — self-contained credentials so this file does not
 // depend on global seedAdminIfEmpty or test execution order.
@@ -26,42 +20,10 @@ const TEST_ADMIN_EMAIL = 'reservations-admin@test.com';
 const TEST_ADMIN_PASSWORD = 'reservations-test-pass123!';
 
 describe('Reservations API', () => {
-	let app: FastifyInstance;
-	let sessionCookie: string;
-
-	beforeAll(async () => {
-		app = await createServer();
-
-		// Seed tables and restaurant settings required by the engine's table assignment logic
-		await db.insert(tables).values([...TABLE_DATA]).onConflictDoNothing({ target: tables.name });
-		await db
-			.insert(restaurantSettings)
-			.values({ priorityOrder: [...DEFAULT_PRIORITY_ORDER] })
-			.onConflictDoNothing();
-
-		await createUserIdempotent(TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD, 'Reservations Test Admin', 'admin');
-		sessionCookie = await signIn(app, TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD);
-	});
-
-	// Authenticated inject helper — includes session cookie on every request.
-	// InjectOptions is used directly (not Parameters<typeof app.inject>[0]) because
-	// Fastify v5 has a no-arg overload that makes Parameters<> resolve to [].
-	const inject = (options: InjectOptions | string) =>
-		app.inject({
-			...(typeof options === 'string' ? { url: options } : options),
-			headers: {
-				...(typeof options === 'object' ? (options.headers as Record<string, string> | undefined) : undefined),
-				...(sessionCookie ? { cookie: sessionCookie } : {}),
-			},
-		});
-
-	// Clean up all reservations before each test so table availability is never exhausted
-	beforeEach(async () => {
-		await db.delete(reservations);
-	});
-
-	afterAll(async () => {
-		await app.close();
+	const { inject } = setupIntegrationSuite({
+		email: TEST_ADMIN_EMAIL,
+		password: TEST_ADMIN_PASSWORD,
+		displayName: 'Reservations Test Admin',
 	});
 
 	describe('POST /api/v1/reservations', () => {

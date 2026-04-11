@@ -81,7 +81,7 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 					reservationId: reservation.id,
 					fields: {
 						date: reservation.date,
-						startTime: reservation.startTime,
+						duration: reservation.duration,
 						partySize: reservation.partySize,
 						category: reservation.category,
 					},
@@ -136,8 +136,7 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 						reservationId: updated.id,
 						fields: {
 							...(body.date !== undefined && { date: body.date }),
-							...(body.startTime !== undefined && { startTime: body.startTime }),
-							...(body.endTime !== undefined && { endTime: body.endTime }),
+							...(body.duration !== undefined && { duration: body.duration }),
 							...(body.partySize !== undefined && { partySize: body.partySize }),
 							...(body.status !== undefined && { status: body.status }),
 							...(body.category !== undefined && { category: body.category }),

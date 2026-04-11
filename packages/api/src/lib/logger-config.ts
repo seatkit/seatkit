@@ -29,12 +29,7 @@ const PINO_LEVEL_TO_GCP_SEVERITY: Record<string, string> = {
 	fatal: 'CRITICAL',
 };
 
-type LoggerEnv = {
-	LOG_LEVEL?: string;
-	LOG_PRETTY?: string;
-	LOG_FORMAT?: string;
-	NODE_ENV?: string;
-}
+type LoggerEnv = Record<string, string | undefined>;
 
 /**
  * Build pino logger options for the Fastify constructor.

@@ -58,7 +58,9 @@ const wsRoutes: FastifyPluginAsync = async (fastify) => {
 			const wsLog = fastify.log.child({ userId, sessionId });
 
 			// Register presence on connect — start as 'viewing', no specific reservation
-			void upsertPresence(sessionId, userId, null, 'viewing');
+			void upsertPresence(sessionId, userId, null, 'viewing').catch((err) => {
+				wsLog.error({ err }, 'presence upsert failed on connect');
+			});
 			wsLog.warn('WebSocket client connected');
 
 			// Broadcast the full current presence list to all connected clients
@@ -91,20 +93,32 @@ const wsRoutes: FastifyPluginAsync = async (fastify) => {
 				const msg = result.data;
 				wsLog.debug({ messageType: msg.type }, 'WebSocket message received');
 				if (msg.type === 'heartbeat') {
-					void upsertPresence(sessionId, userId, null, 'viewing').then(broadcastPresence);
+					void upsertPresence(sessionId, userId, null, 'viewing')
+						.then(broadcastPresence)
+						.catch((err) => {
+							wsLog.error({ err }, 'presence upsert/broadcast failed');
+						});
 				} else if (msg.type === 'presence-state') {
 					void upsertPresence(
 						sessionId,
 						userId,
 						msg.reservationId,
 						msg.state as PresenceState,
-					).then(broadcastPresence);
+					)
+						.then(broadcastPresence)
+						.catch((err) => {
+							wsLog.error({ err }, 'presence upsert/broadcast failed');
+						});
 				}
 			});
 
 			socket.on('close', (code: number) => {
 				wsLog.warn({ code }, 'WebSocket client disconnected');
-				void deletePresence(sessionId).then(broadcastPresence);
+				void deletePresence(sessionId)
+					.then(broadcastPresence)
+					.catch((err) => {
+						wsLog.error({ err }, 'presence delete/broadcast failed on disconnect');
+					});
 			});
 
 			socket.on('error', (err: Error) => {

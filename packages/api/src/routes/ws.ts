@@ -14,15 +14,17 @@
  * (set by Better Auth onRequest hook), not from the message payload.
  */
 import { z } from 'zod';
-import type { FastifyPluginAsync } from 'fastify';
-import type { WebSocket } from 'ws';
 
 import {
 	deletePresence,
 	listActivePresence,
 	upsertPresence,
 } from '../presence/presence-service.js';
+
 import type { PresenceState } from '../presence/presence-service.js';
+import type { FastifyPluginAsync } from 'fastify';
+import type { WebSocket } from 'ws';
+
 
 // Zod schemas for client WebSocket messages
 const HeartbeatMessageSchema = z.object({
@@ -50,9 +52,16 @@ const wsRoutes: FastifyPluginAsync = async (fastify) => {
 			const userId = req.session!.user.id;
 			const sessionId = req.session!.session.id;
 
+			// Per-socket child logger carries userId + sessionId in all log lines (Pitfall 6 mitigation).
+			// Uses fastify.log (root logger) as parent — not req.log — because subsequent
+			// WebSocket message events fire outside the HTTP request lifecycle.
+			const wsLog = fastify.log.child({ userId, sessionId });
+
 			// Register presence on connect — start as 'viewing', no specific reservation
-			void upsertPresence(sessionId, userId, null, 'viewing');
-			fastify.log.debug({ userId, sessionId }, 'WebSocket client connected');
+			void upsertPresence(sessionId, userId, null, 'viewing').catch((err) => {
+				wsLog.error({ err }, 'presence upsert failed on connect');
+			});
+			wsLog.warn('WebSocket client connected');
 
 			// Broadcast the full current presence list to all connected clients
 			const broadcastPresence = async (): Promise<void> => {
@@ -68,39 +77,52 @@ const wsRoutes: FastifyPluginAsync = async (fastify) => {
 				try {
 					parsed = JSON.parse(raw.toString());
 				} catch {
-					fastify.log.warn({ userId }, 'WebSocket: invalid JSON message received — ignoring');
+					wsLog.warn('WebSocket: invalid JSON message received — ignoring');
 					return;
 				}
 
 				const result = ClientMessageSchema.safeParse(parsed);
 				if (!result.success) {
-					fastify.log.warn(
-						{ userId, issues: result.error.issues },
+					wsLog.warn(
+						{ issues: result.error.issues },
 						'WebSocket: invalid message shape — ignoring',
 					);
 					return;
 				}
 
 				const msg = result.data;
+				wsLog.debug({ messageType: msg.type }, 'WebSocket message received');
 				if (msg.type === 'heartbeat') {
-					void upsertPresence(sessionId, userId, null, 'viewing').then(broadcastPresence);
+					void upsertPresence(sessionId, userId, null, 'viewing')
+						.then(broadcastPresence)
+						.catch((err) => {
+							wsLog.error({ err }, 'presence upsert/broadcast failed');
+						});
 				} else if (msg.type === 'presence-state') {
 					void upsertPresence(
 						sessionId,
 						userId,
 						msg.reservationId,
 						msg.state as PresenceState,
-					).then(broadcastPresence);
+					)
+						.then(broadcastPresence)
+						.catch((err) => {
+							wsLog.error({ err }, 'presence upsert/broadcast failed');
+						});
 				}
 			});
 
 			socket.on('close', (code: number) => {
-				fastify.log.debug({ userId, sessionId, code }, 'WebSocket client disconnected');
-				void deletePresence(sessionId).then(broadcastPresence);
+				wsLog.warn({ code }, 'WebSocket client disconnected');
+				void deletePresence(sessionId)
+					.then(broadcastPresence)
+					.catch((err) => {
+						wsLog.error({ err }, 'presence delete/broadcast failed on disconnect');
+					});
 			});
 
 			socket.on('error', (err: Error) => {
-				fastify.log.error({ userId, err }, 'WebSocket socket error');
+				wsLog.error({ err }, 'WebSocket socket error');
 			});
 		},
 	);

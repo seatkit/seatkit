@@ -75,6 +75,19 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 				request.body as z.infer<typeof CreateReservationSchema>,
 				fastify,
 			);
+			request.log.warn(
+				{
+					event: 'reservation.created',
+					reservationId: reservation.id,
+					fields: {
+						date: reservation.date,
+						duration: reservation.duration,
+						partySize: reservation.partySize,
+						category: reservation.category,
+					},
+				},
+				'Reservation created',
+			);
 			const response = await reply.status(201).send({
 				reservation,
 				message: 'Reservation created successfully',
@@ -84,7 +97,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 			fastify.notifyReservationChange({
 				type: 'reservation_changed',
 				reservationId: reservation.id,
-			}).catch(() => {});
+			}).catch((err) => {
+				request.log.error({ err, reservationId: reservation.id }, 'Failed to notify reservation change');
+			});
 			return response;
 		},
 	);
@@ -115,6 +130,21 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 			const { versionId, ...body } = request.body as z.infer<typeof UpdateReservationBodySchema>;
 			try {
 				const updated = await updateReservation(id, versionId, body, fastify);
+				request.log.warn(
+					{
+						event: 'reservation.updated',
+						reservationId: updated.id,
+						fields: {
+							...(body.date !== undefined && { date: body.date }),
+							...(body.duration !== undefined && { duration: body.duration }),
+							...(body.partySize !== undefined && { partySize: body.partySize }),
+							...(body.status !== undefined && { status: body.status }),
+							...(body.category !== undefined && { category: body.category }),
+							...(body.isDeleted !== undefined && { isDeleted: body.isDeleted }),
+						},
+					},
+					'Reservation updated',
+				);
 				const response = await reply.status(200).send({
 					reservation: updated,
 					message: 'Reservation updated successfully',
@@ -123,7 +153,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 				fastify.notifyReservationChange({
 					type: 'reservation_changed',
 					reservationId: updated.id,
-				}).catch(() => {});
+				}).catch((err) => {
+					request.log.error({ err, reservationId: updated.id }, 'Failed to notify reservation change');
+				});
 				return response;
 			} catch (err: unknown) {
 				if (err instanceof VersionConflictError) {
@@ -152,6 +184,13 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 		async (request, reply) => {
 			const { id } = request.params as { id: string };
 			const deleted = await softDeleteReservation(id, fastify);
+			request.log.warn(
+				{
+					event: 'reservation.deleted',
+					reservationId: deleted.id,
+				},
+				'Reservation soft-deleted',
+			);
 			const response = await reply.status(200).send({
 				reservation: deleted,
 				message: 'Reservation deleted successfully',
@@ -160,7 +199,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 			fastify.notifyReservationChange({
 				type: 'reservation_deleted',
 				reservationId: deleted.id,
-			}).catch(() => {});
+			}).catch((err) => {
+				request.log.error({ err, reservationId: deleted.id }, 'Failed to notify reservation change');
+			});
 			return response;
 		},
 	);
@@ -177,6 +218,13 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 		async (request, reply) => {
 			const { id } = request.params as { id: string };
 			const recovered = await recoverReservation(id, fastify);
+			request.log.warn(
+				{
+					event: 'reservation.recovered',
+					reservationId: recovered.id,
+				},
+				'Reservation recovered',
+			);
 			const response = await reply.status(200).send({
 				reservation: recovered,
 				message: 'Reservation recovered successfully',
@@ -185,7 +233,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 			fastify.notifyReservationChange({
 				type: 'reservation_changed',
 				reservationId: recovered.id,
-			}).catch(() => {});
+			}).catch((err) => {
+				request.log.error({ err, reservationId: recovered.id }, 'Failed to notify reservation change');
+			});
 			return response;
 		},
 	);
@@ -245,7 +295,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 				.where(eq(reservations.id, id));
 
 			// Fire-and-forget: notify WebSocket clients of the photo update
-			fastify.notifyReservationChange({ type: 'reservation_changed', reservationId: id }).catch(() => {});
+			fastify.notifyReservationChange({ type: 'reservation_changed', reservationId: id }).catch((err) => {
+				request.log.error({ err, reservationId: id }, 'Failed to notify reservation change');
+			});
 
 			return reply.status(200).send({
 				photoUrl,

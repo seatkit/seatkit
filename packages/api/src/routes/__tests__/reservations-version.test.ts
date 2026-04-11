@@ -3,18 +3,14 @@
  * Verifies COLLAB-03: concurrent writes are detected and rejected with full conflict data.
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { eq } from 'drizzle-orm';
+import { describe, it, expect } from 'vitest';
 
 import { db } from '../../db/index.js';
-import { reservations, tables, restaurantSettings } from '../../db/schema/index.js';
-import { TABLE_DATA, DEFAULT_PRIORITY_ORDER } from '../../db/seed-data.js';
-import { createServer } from '../../index.js';
-
-import { createUserIdempotent, signIn } from '../test-helpers.js';
+import { reservations } from '../../db/schema/index.js';
+import { setupIntegrationSuite } from '../test-helpers.js';
 
 import type { Reservation } from '../../db/schema/reservations.js';
-import type { FastifyInstance, InjectOptions } from 'fastify';
 
 // Dedicated test admin for version conflict tests
 const TEST_ADMIN_EMAIL = 'reservations-version-admin@test.com';
@@ -45,41 +41,11 @@ type ConflictResponse = {
 };
 
 describe('Reservations API — Optimistic Locking', () => {
-	let app: FastifyInstance;
-	let sessionCookie: string;
-
-	beforeAll(async () => {
-		app = await createServer();
-
-		// Seed tables and restaurant settings required by the engine's table assignment logic
-		await db.insert(tables).values([...TABLE_DATA]).onConflictDoNothing({ target: tables.name });
-		await db
-			.insert(restaurantSettings)
-			.values({ priorityOrder: [...DEFAULT_PRIORITY_ORDER] })
-			.onConflictDoNothing();
-
-		await createUserIdempotent(TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD, 'Version Test Admin', 'admin');
-		sessionCookie = await signIn(app, TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD);
+	const { inject } = setupIntegrationSuite({
+		email: TEST_ADMIN_EMAIL,
+		password: TEST_ADMIN_PASSWORD,
+		displayName: 'Version Test Admin',
 	});
-
-	afterAll(async () => {
-		await app.close();
-	});
-
-	// Clean up all reservations before each test so table availability is not exhausted
-	beforeEach(async () => {
-		await db.delete(reservations);
-	});
-
-	// Authenticated inject helper — includes session cookie on every request
-	const inject = (options: InjectOptions | string) =>
-		app.inject({
-			...(typeof options === 'string' ? { url: options } : options),
-			headers: {
-				...(typeof options === 'object' ? (options.headers as Record<string, string> | undefined) : undefined),
-				...(sessionCookie ? { cookie: sessionCookie } : {}),
-			},
-		});
 
 	/**
 	 * Helper: create a reservation via POST and return the full body.

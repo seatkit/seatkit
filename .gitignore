@@ -107,3 +107,7 @@ temp/
 package-lock.json
 yarn.lock
 .planning/
+
+# Terraform
+**/.terraform/
+.terraform.lock.hcl

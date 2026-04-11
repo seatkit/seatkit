@@ -26,10 +26,12 @@ import {
 } from 'fastify-type-provider-zod';
 
 import { auth } from './auth.js';
-import type { ReservationChangePayload } from './lib/pg-subscriber.js';
+import { buildLoggerOptions } from './lib/logger-config.js';
 import { getSecrets } from './lib/simple-secrets.js';
 import { cleanupExpired } from './presence/presence-service.js';
 import { seedAdminIfEmpty } from './services/auth-service.js';
+
+import type { ReservationChangePayload } from './lib/pg-subscriber.js';
 
 // Cast auth to satisfy fastify-better-auth's generic overloads.
 // Our concrete Auth type (with admin + invite plugins) is structurally
@@ -56,6 +58,9 @@ const envSchema = {
 		PORT: { type: 'string', default: '3001' },
 		HOST: { type: 'string', default: '0.0.0.0' },
 		GOOGLE_CLOUD_PROJECT: { type: 'string', default: 'seatkit-dev' },
+		LOG_LEVEL: { type: 'string', default: '' },
+		LOG_PRETTY: { type: 'string', default: '' },
+		LOG_FORMAT: { type: 'string', default: '' },
 	},
 	required: [], // Secrets are loaded separately
 } as const;
@@ -69,9 +74,8 @@ const PUBLIC_URL_PREFIXES = [
 
 async function createServer() {
 	const fastify = Fastify({
-		logger: {
-			level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-		},
+		logger: buildLoggerOptions(process.env),
+		requestIdHeader: 'x-request-id', // D-05: accept upstream request ID
 	}).withTypeProvider<ZodTypeProvider>();
 
 	// Custom serializer with Date object handling
@@ -198,6 +202,15 @@ async function createServer() {
 		// shape lacks the admin plugin fields (impersonatedBy etc.) that our
 		// concrete auth instance actually returns at runtime.
 		request.session = session as Awaited<ReturnType<typeof auth.api.getSession>>;
+	});
+
+	// D-06: Inject authenticated userId into pino child logger bindings.
+	// Registered AFTER the auth guard hook so request.session is populated.
+	// Unauthenticated requests (health, auth endpoints) log without userId.
+	fastify.addHook('onRequest', async (request) => {
+		if (request.session?.user?.id) {
+			request.log = request.log.child({ userId: request.session.user.id });
+		}
 	});
 
 	fastify.get('/health', () => {

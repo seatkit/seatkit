@@ -119,7 +119,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Logger config factory, Fastify wiring (requestIdHeader, userId enrichment), pino-pretty devDep, GCP severity mapping
+- [x] 05-01-PLAN.md — Logger config factory, Fastify wiring (requestIdHeader, userId enrichment), pino-pretty devDep, GCP severity mapping
 - [ ] 05-02-PLAN.md — WebSocket lifecycle logging (warn connect/disconnect, debug message type) + reservation mutation audit events
 
 ### Phase 6: Sales Management

@@ -133,10 +133,10 @@ Plans:
   2. Both services are deployed to GCP Cloud Run and reachable at stable staging URLs
   3. A push to main triggers a GitHub Actions workflow that builds, pushes, and deploys both services automatically
   4. The staging environment connects to Supabase PostgreSQL with secrets managed via GCP Secret Manager
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
-- [ ] 05.1-01-PLAN.md — Dockerfiles for API and Web using turbo prune multi-stage builds, .dockerignore, standalone Next.js output
+- [x] 05.1-01-PLAN.md — Dockerfiles for API and Web using turbo prune multi-stage builds, .dockerignore, standalone Next.js output
 - [x] 05.1-02-PLAN.md — Terraform IaC: Cloud Run v2 services, Artifact Registry, IAM, Secret Manager, domain mapping, DNS
 - [ ] 05.1-03-PLAN.md — GitHub Actions deploy workflow with workflow_run trigger, parallel jobs, manual dispatch, human verification
 
@@ -188,7 +188,7 @@ Note: Phase 6 (Sales) and Phase 7 (Migration) both depend on Phase 2 and can pro
 | 3. Real-Time Collaboration | 4/4 | Complete | 2026-04-08 |
 | 4. Reservation Management UI | 7/7 | In Progress | - |
 | 5. Structured Logging | 2/2 | Complete | - |
-| 05.1 GCP Staging Deployment | 1/3 | In Progress|  |
+| 05.1 GCP Staging Deployment | 2/3 | In Progress|  |
 | 6. Sales Management | 0/? | Not started | - |
 | 7. Data Migration | 0/? | Not started | - |
 | 8. Deployment | 0/? | Not started | - |

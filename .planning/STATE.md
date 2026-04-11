@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05.1-02-PLAN.md
-last_updated: "2026-04-11T20:26:17.733Z"
+stopped_at: Completed 05.1-01-PLAN.md
+last_updated: "2026-04-11T20:27:18.930Z"
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 28
-  completed_plans: 26
-  percent: 93
+  completed_plans: 27
+  percent: 96
 ---
 
 # Project State
@@ -57,6 +57,7 @@ Progress: [████████░░] 80%
 | Phase 05 P01 | 5min | 2 tasks | 4 files |
 | Phase 05 P02 | 5min | 2 tasks | 4 files |
 | Phase 05.1-gcp-staging-deployment P02 | 2min | 2 tasks | 5 files |
+| Phase 05.1 P01 | 3min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase 05]: Per-socket child logger (wsLog) uses fastify.log as parent (not req.log) for WebSocket lifecycle events
 - [Phase 05]: Update audit event uses spread-conditional to log only changed fields, minimizing PII exposure
 - [Phase 05.1-gcp-staging-deployment]: Per-secret IAM bindings for least privilege; lifecycle.ignore_changes on image for CI/CD compatibility; Cloud Run v1 domain_mapping with v2 services
+- [Phase 05.1]: Preserve monorepo directory structure in API Docker runner for pnpm symlink resolution
+- [Phase 05.1]: Copy patches/ directory in Docker installer stages for pnpm patchedDependencies
 
 ### Roadmap Evolution
 
@@ -97,6 +100,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-11T20:26:17.728Z
-Stopped at: Completed 05.1-02-PLAN.md
+Last session: 2026-04-11T20:27:18.925Z
+Stopped at: Completed 05.1-01-PLAN.md
 Resume file: None

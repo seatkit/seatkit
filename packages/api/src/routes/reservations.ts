@@ -97,7 +97,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 			fastify.notifyReservationChange({
 				type: 'reservation_changed',
 				reservationId: reservation.id,
-			}).catch(() => {});
+			}).catch((err) => {
+				request.log.error({ err, reservationId: reservation.id }, 'Failed to notify reservation change');
+			});
 			return response;
 		},
 	);
@@ -152,7 +154,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 				fastify.notifyReservationChange({
 					type: 'reservation_changed',
 					reservationId: updated.id,
-				}).catch(() => {});
+				}).catch((err) => {
+					request.log.error({ err, reservationId: updated.id }, 'Failed to notify reservation change');
+				});
 				return response;
 			} catch (err: unknown) {
 				if (err instanceof VersionConflictError) {
@@ -196,7 +200,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 			fastify.notifyReservationChange({
 				type: 'reservation_deleted',
 				reservationId: deleted.id,
-			}).catch(() => {});
+			}).catch((err) => {
+				request.log.error({ err, reservationId: deleted.id }, 'Failed to notify reservation change');
+			});
 			return response;
 		},
 	);
@@ -228,7 +234,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 			fastify.notifyReservationChange({
 				type: 'reservation_changed',
 				reservationId: recovered.id,
-			}).catch(() => {});
+			}).catch((err) => {
+				request.log.error({ err, reservationId: recovered.id }, 'Failed to notify reservation change');
+			});
 			return response;
 		},
 	);
@@ -288,7 +296,9 @@ const reservationsRoutes: FastifyPluginAsync = async fastify => {
 				.where(eq(reservations.id, id));
 
 			// Fire-and-forget: notify WebSocket clients of the photo update
-			fastify.notifyReservationChange({ type: 'reservation_changed', reservationId: id }).catch(() => {});
+			fastify.notifyReservationChange({ type: 'reservation_changed', reservationId: id }).catch((err) => {
+				request.log.error({ err, reservationId: id }, 'Failed to notify reservation change');
+			});
 
 			return reply.status(200).send({
 				photoUrl,

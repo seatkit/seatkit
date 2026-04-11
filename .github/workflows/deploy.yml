@@ -1,0 +1,121 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service to deploy"
+        required: true
+        type: choice
+        options:
+          - api
+          - web
+          - both
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGION: europe-west1
+  GAR_REGISTRY: europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/seatkit
+
+jobs:
+  deploy-api:
+    if: >
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.service == 'api' || github.event.inputs.service == 'both')) ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
+
+      - name: Build and push API image
+        run: |
+          IMAGE="${{ env.GAR_REGISTRY }}/api"
+          SHA="${GITHUB_SHA::7}"
+          docker build -f packages/api/Dockerfile \
+            -t "${IMAGE}:${SHA}" \
+            -t "${IMAGE}:${GITHUB_SHA}" \
+            -t "${IMAGE}:latest" \
+            .
+          docker push "${IMAGE}" --all-tags
+
+      - name: Deploy API to Cloud Run
+        id: deploy-api
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: seatkit-api
+          image: ${{ env.GAR_REGISTRY }}/api:${{ github.sha }}
+          region: ${{ env.REGION }}
+
+      - name: Print deployed API URL
+        run: echo "API deployed to ${{ steps.deploy-api.outputs.url }}"
+
+  deploy-web:
+    if: >
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.service == 'web' || github.event.inputs.service == 'both')) ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
+
+      - name: Build and push Web image
+        run: |
+          IMAGE="${{ env.GAR_REGISTRY }}/web"
+          SHA="${GITHUB_SHA::7}"
+          docker build -f packages/web/Dockerfile \
+            --build-arg NEXT_PUBLIC_API_URL=https://api-staging.seatkit.dev \
+            -t "${IMAGE}:${SHA}" \
+            -t "${IMAGE}:${GITHUB_SHA}" \
+            -t "${IMAGE}:latest" \
+            .
+          docker push "${IMAGE}" --all-tags
+
+      - name: Deploy Web to Cloud Run
+        id: deploy-web
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: seatkit-web
+          image: ${{ env.GAR_REGISTRY }}/web:${{ github.sha }}
+          region: ${{ env.REGION }}
+
+      - name: Print deployed Web URL
+        run: echo "Web deployed to ${{ steps.deploy-web.outputs.url }}"

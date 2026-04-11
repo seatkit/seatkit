@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Real-Time Collaboration** - Changes propagate to all connected devices within 1 second
 - [ ] **Phase 4: Reservation Management UI** - Staff can manage reservations on any device via timeline and list views
 - [ ] **Phase 5: Structured Logging** - Structured logs shipped to GCP Cloud Logging; errors tracked, queryable, and alertable in production
+- [ ] **Phase 05.1: GCP Staging Deployment** - Dockerize and deploy to Cloud Run with CI/CD auto-deploy
 - [ ] **Phase 6: Sales Management** - Managers can enter and review daily and monthly sales data
 - [ ] **Phase 7: Data Migration** - Koenji's production Firestore data moves to PostgreSQL without loss
 - [ ] **Phase 8: Deployment** - Any restaurant can self-host SeatKit with Docker Compose
@@ -120,7 +121,24 @@ Plans:
 
 Plans:
 - [x] 05-01-PLAN.md — Logger config factory, Fastify wiring (requestIdHeader, userId enrichment), pino-pretty devDep, GCP severity mapping
-- [ ] 05-02-PLAN.md — WebSocket lifecycle logging (warn connect/disconnect, debug message type) + reservation mutation audit events
+- [x] 05-02-PLAN.md — WebSocket lifecycle logging (warn connect/disconnect, debug message type) + reservation mutation audit events
+
+### Phase 05.1: GCP Staging Deployment (INSERTED)
+
+**Goal**: The API and web app run on GCP Cloud Run behind a staging URL; pushes to main auto-deploy via GitHub Actions; Supabase PostgreSQL serves as the staging database
+**Depends on**: Phase 5
+**Requirements**: SC-01, SC-02, SC-03, SC-04
+**Success Criteria** (what must be TRUE):
+  1. The Fastify API and Next.js web app each have a Dockerfile that builds and runs correctly
+  2. Both services are deployed to GCP Cloud Run and reachable at stable staging URLs
+  3. A push to main triggers a GitHub Actions workflow that builds, pushes, and deploys both services automatically
+  4. The staging environment connects to Supabase PostgreSQL with secrets managed via GCP Secret Manager
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05.1-01-PLAN.md — Dockerfiles for API and Web using turbo prune multi-stage builds, .dockerignore, standalone Next.js output
+- [ ] 05.1-02-PLAN.md — Terraform IaC: Cloud Run v2 services, Artifact Registry, IAM, Secret Manager, domain mapping, DNS
+- [ ] 05.1-03-PLAN.md — GitHub Actions deploy workflow with workflow_run trigger, parallel jobs, manual dispatch, human verification
 
 ### Phase 6: Sales Management
 **Goal**: Managers can enter daily sales data per service period and view monthly and yearly rollups; sales totals are gated behind manager authentication
@@ -160,8 +178,8 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
-Note: Phase 6 (Sales) and Phase 7 (Migration) both depend on Phase 2 and can proceed in parallel with Phase 4 (Reservation UI) once Phase 3 is complete. Phase 5 (Logging) unlocks after Phase 4.
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 05.1 -> 6 -> 7 -> 8
+Note: Phase 6 (Sales) and Phase 7 (Migration) both depend on Phase 2 and can proceed in parallel with Phase 4 (Reservation UI) once Phase 3 is complete. Phase 5 (Logging) unlocks after Phase 4. Phase 05.1 (GCP Staging) unlocks after Phase 5.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -169,7 +187,8 @@ Note: Phase 6 (Sales) and Phase 7 (Migration) both depend on Phase 2 and can pro
 | 2. Authentication and Configuration | 7/7 | Complete | 2026-04-08 |
 | 3. Real-Time Collaboration | 4/4 | Complete | 2026-04-08 |
 | 4. Reservation Management UI | 7/7 | In Progress | - |
-| 5. Structured Logging | 0/2 | Not started | - |
+| 5. Structured Logging | 2/2 | Complete | - |
+| 05.1 GCP Staging Deployment | 0/3 | Not started | - |
 | 6. Sales Management | 0/? | Not started | - |
 | 7. Data Migration | 0/? | Not started | - |
 | 8. Deployment | 0/? | Not started | - |

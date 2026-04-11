@@ -51,13 +51,22 @@ resource "google_secret_manager_secret_iam_member" "admin_password" {
   member    = "serviceAccount:${google_service_account.cloud_run.email}"
 }
 
+# Allow Cloud Run SA to pull images from Artifact Registry
+resource "google_artifact_registry_repository_iam_member" "cloud_run_reader" {
+  location   = google_artifact_registry_repository.seatkit.location
+  repository = google_artifact_registry_repository.seatkit.repository_id
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${google_service_account.cloud_run.email}"
+}
+
 # =============================================================================
 # Cloud Run — API Service
 # =============================================================================
 
 resource "google_cloud_run_v2_service" "api" {
-  name     = var.api_service_name
-  location = var.region
+  name                = var.api_service_name
+  location            = var.region
+  deletion_protection = false
 
   template {
     service_account  = google_service_account.cloud_run.email
@@ -125,12 +134,26 @@ resource "google_cloud_run_v2_service" "api" {
       }
 
       # D-19: Non-sensitive config
-      env { name = "NODE_ENV";             value = "production" }
-      env { name = "PORT";                 value = "3001" }
-      env { name = "LOG_LEVEL";            value = "info" }
-      env { name = "LOG_FORMAT";           value = "gcp" }
-      env { name = "CORS_ORIGIN";          value = "https://${var.web_staging_domain}" }
-      env { name = "GOOGLE_CLOUD_PROJECT"; value = var.project_id }
+      env {
+        name  = "NODE_ENV"
+        value = "production"
+      }
+      env {
+        name  = "LOG_LEVEL"
+        value = "info"
+      }
+      env {
+        name  = "LOG_FORMAT"
+        value = "gcp"
+      }
+      env {
+        name  = "CORS_ORIGIN"
+        value = "https://${var.web_staging_domain}"
+      }
+      env {
+        name  = "GOOGLE_CLOUD_PROJECT"
+        value = var.project_id
+      }
     }
   }
 
@@ -154,8 +177,9 @@ resource "google_cloud_run_v2_service_iam_member" "api_public" {
 # =============================================================================
 
 resource "google_cloud_run_v2_service" "web" {
-  name     = var.web_service_name
-  location = var.region
+  name                = var.web_service_name
+  location            = var.region
+  deletion_protection = false
 
   template {
     service_account = google_service_account.cloud_run.email
@@ -180,8 +204,10 @@ resource "google_cloud_run_v2_service" "web" {
       }
 
       # Non-sensitive config
-      env { name = "NODE_ENV"; value = "production" }
-      env { name = "PORT";     value = "3000" }
+      env {
+        name  = "NODE_ENV"
+        value = "production"
+      }
     }
   }
 
@@ -231,21 +257,9 @@ resource "google_cloud_run_domain_mapping" "web_staging" {
 }
 
 # =============================================================================
-# DNS Records (CNAME to Cloud Run domain mapping)
+# DNS Records
 # =============================================================================
-
-resource "google_dns_record_set" "api_staging" {
-  name         = "${var.api_staging_domain}."
-  type         = "CNAME"
-  ttl          = 300
-  managed_zone = var.dns_zone_name
-  rrdatas      = ["ghs.googlehosted.com."]
-}
-
-resource "google_dns_record_set" "web_staging" {
-  name         = "${var.web_staging_domain}."
-  type         = "CNAME"
-  ttl          = 300
-  managed_zone = var.dns_zone_name
-  rrdatas      = ["ghs.googlehosted.com."]
-}
+# DNS is managed in Cloudflare (not Google Cloud DNS).
+# Create these CNAME records manually in Cloudflare dashboard (proxy OFF / DNS only):
+#   api-staging.seatkit.dev → ghs.googlehosted.com
+#   staging.seatkit.dev     → ghs.googlehosted.com

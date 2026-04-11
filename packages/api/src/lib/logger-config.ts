@@ -87,7 +87,7 @@ export function buildLoggerOptions(
 		opts.transport = {
 			target: 'pino-pretty',
 			options: {
-				translateTime: 'HH:MM:ss Z',
+				translateTime: 'HH:mm:ss Z',
 				ignore: 'pid,hostname',
 			},
 		};

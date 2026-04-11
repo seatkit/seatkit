@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-04-11T09:42:44.423Z"
+stopped_at: Completed 05.1-02-PLAN.md
+last_updated: "2026-04-11T20:26:17.733Z"
 progress:
-  total_phases: 8
-  completed_phases: 4
-  total_plans: 25
-  completed_plans: 24
-  percent: 96
+  total_phases: 9
+  completed_phases: 5
+  total_plans: 28
+  completed_plans: 26
+  percent: 93
 ---
 
 # Project State
@@ -24,8 +24,8 @@ See: .planning/PROJECT.md (updated 2026-04-06)
 
 ## Current Position
 
-Phase: 05 (structured-logging) — EXECUTING
-Plan: 2 of 2
+Phase: 6
+Plan: Not started
 Status: Ready to execute
 
 Progress: [████████░░] 80%
@@ -34,7 +34,7 @@ Progress: [████████░░] 80%
 
 **Velocity:**
 
-- Total plans completed: 16 (Phase 1: 5, Phase 2: 7, Phase 3: 4)
+- Total plans completed: 18 (Phase 1: 5, Phase 2: 7, Phase 3: 4)
 - Average duration: ~40 min/plan
 - Total execution time: ~11 hours
 
@@ -45,6 +45,7 @@ Progress: [████████░░] 80%
 | 01-business-logic-engine | 5 | ~3.5h | ~42min |
 | 02-authentication-and-configuration | 7 | ~5h | ~43min |
 | 03-real-time-collaboration | 4 | ~2.5h | ~38min |
+| 05 | 2 | - | - |
 
 **Recent Trend:**
 
@@ -54,6 +55,8 @@ Progress: [████████░░] 80%
 *Updated after each plan completion*
 | Phase 03-real-time-collaboration P04 | 30min | 3 tasks | 9 files |
 | Phase 05 P01 | 5min | 2 tasks | 4 files |
+| Phase 05 P02 | 5min | 2 tasks | 4 files |
+| Phase 05.1-gcp-staging-deployment P02 | 2min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -72,6 +75,13 @@ Recent decisions affecting current work:
 - [Phase 03-real-time-collaboration]: setPresenceUpdateCallback injection keeps ws-client.ts free of Zustand import (circular dep avoidance)
 - [Phase 03-real-time-collaboration]: ConflictModal and PresenceBadge intentionally orphaned in Phase 3 — Phase 4 reservation edit form will mount them
 - [Phase 05]: GCP format implemented inline (~30 lines) instead of pino-cloud-logging (incompatible with pino 9.x)
+- [Phase 05]: Per-socket child logger (wsLog) uses fastify.log as parent (not req.log) for WebSocket lifecycle events
+- [Phase 05]: Update audit event uses spread-conditional to log only changed fields, minimizing PII exposure
+- [Phase 05.1-gcp-staging-deployment]: Per-secret IAM bindings for least privilege; lifecycle.ignore_changes on image for CI/CD compatibility; Cloud Run v1 domain_mapping with v2 services
+
+### Roadmap Evolution
+
+- Phase 05.1 inserted after Phase 5: GCP Staging Deployment (URGENT) — Dockerize API and web, deploy to Cloud Run with Supabase PostgreSQL, wire CI/CD for auto-deploy on push to main
 
 ### Pending Todos
 
@@ -87,6 +97,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-11T09:42:44.418Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-04-11T20:26:17.728Z
+Stopped at: Completed 05.1-02-PLAN.md
 Resume file: None

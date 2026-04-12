@@ -47,14 +47,15 @@ COPY --from=builder /app/packages/utils/package.json ./packages/utils/package.js
 COPY --from=builder /app/packages/engine/dist ./packages/engine/dist
 COPY --from=builder /app/packages/engine/package.json ./packages/engine/package.json
 # Production node_modules from installer (no devDependencies)
+# pnpm strict layout: root node_modules has .pnpm store, package-level has symlinks
 COPY --from=installer /app/node_modules ./node_modules
+COPY --from=installer /app/packages/api/node_modules ./packages/api/node_modules
 # Copy migration files — migrate.ts reads from ./src/db/migrations
 COPY --from=builder /app/packages/api/src/db/migrations ./packages/api/src/db/migrations
 
 USER seatkit
 
 ENV NODE_ENV=production
-ENV PORT=3001
 EXPOSE 3001
 # Working directory is /app; API entry point at packages/api/dist/index.js
 CMD ["node", "packages/api/dist/index.js"]

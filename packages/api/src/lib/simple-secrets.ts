@@ -65,7 +65,7 @@ async function tryGetSecret(secretName: string): Promise<string | undefined> {
 }
 
 async function loadFromSecretManager(): Promise<Secrets> {
-	const env = ENVIRONMENT === 'production' ? 'prod' : 'dev';
+	const env = PROJECT_ID === 'seatkit-prod' ? 'prod' : 'dev';
 
 	console.log(`☁️  Loading secrets from Google Secret Manager (${env})`);
 

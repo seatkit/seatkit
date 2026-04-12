@@ -18,6 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4: Reservation Management UI** - Staff can manage reservations on any device via timeline and list views
 - [ ] **Phase 5: Structured Logging** - Structured logs shipped to GCP Cloud Logging; errors tracked, queryable, and alertable in production
 - [ ] **Phase 05.1: GCP Staging Deployment** - Dockerize and deploy to Cloud Run with CI/CD auto-deploy
+- [ ] **Phase 05.2: UI Review & Polish** - Review, polish, and elevate all existing UI to production quality
 - [ ] **Phase 6: Sales Management** - Managers can enter and review daily and monthly sales data
 - [ ] **Phase 7: Data Migration** - Koenji's production Firestore data moves to PostgreSQL without loss
 - [ ] **Phase 8: Deployment** - Any restaurant can self-host SeatKit with Docker Compose
@@ -140,6 +141,26 @@ Plans:
 - [x] 05.1-02-PLAN.md — Terraform IaC: Cloud Run v2 services, Artifact Registry, IAM, Secret Manager, domain mapping, DNS
 - [ ] 05.1-03-PLAN.md — GitHub Actions deploy workflow with workflow_run trigger, parallel jobs, manual dispatch, human verification
 
+### Phase 05.2: UI Review & Polish (INSERTED)
+
+**Goal**: All existing UI surfaces — authentication pages, settings/admin pages, and reservation management views (timeline, list, floor plan) — are reviewed, polished, and elevated from basic scaffolding to production-quality interfaces with consistent design, responsive layouts, accessibility compliance, and refined UX
+**Depends on**: Phase 05.1
+**Requirements**: UI-POLISH-01, UI-POLISH-02, UI-POLISH-03, UI-POLISH-04, UI-POLISH-05
+**Success Criteria** (what must be TRUE):
+  1. All UI pages pass a visual consistency audit — typography, spacing, color usage, and component styling follow a single coherent design language
+  2. Every page is responsive and usable on mobile (375px), tablet (768px), and desktop (1280px+) breakpoints without horizontal scrolling or broken layouts
+  3. Interactive elements (buttons, inputs, modals, drawers) have visible focus indicators and meet WCAG 2.1 AA contrast ratios
+  4. Loading states, empty states, and error states are handled gracefully across all views — no raw spinners, blank screens, or uncaught error boundaries
+  5. The timeline view, list view, and floor plan are visually polished with clear information hierarchy, readable text, and intuitive interaction patterns
+**Plans**: 4 plans
+**UI hint**: yes
+
+Plans:
+- [ ] 05.2-01-PLAN.md — Infrastructure: dark mode (next-themes), shadcn CLI init, Tailwind config, ThemeToggle, home redirect, token fixes on standalone components
+- [ ] 05.2-02-PLAN.md — shadcn migrations: ReservationDrawer to Sheet, UndoToast to Sonner, tab strip to Tabs
+- [ ] 05.2-03-PLAN.md — Token fixes: status badge tokens, Skeleton loading states, ConfirmDialog to Dialog, form responsive, focus rings
+- [ ] 05.2-04-PLAN.md — Animation layer: motion, Magic UI, Aceternity copy-paste components, wire animations, reduced motion fallback, human verification
+
 ### Phase 6: Sales Management
 **Goal**: Managers can enter daily sales data per service period and view monthly and yearly rollups; sales totals are gated behind manager authentication
 **Depends on**: Phase 2
@@ -178,8 +199,8 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 05.1 -> 6 -> 7 -> 8
-Note: Phase 6 (Sales) and Phase 7 (Migration) both depend on Phase 2 and can proceed in parallel with Phase 4 (Reservation UI) once Phase 3 is complete. Phase 5 (Logging) unlocks after Phase 4. Phase 05.1 (GCP Staging) unlocks after Phase 5.
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 05.1 -> 05.2 -> 6 -> 7 -> 8
+Note: Phase 6 (Sales) and Phase 7 (Migration) both depend on Phase 2 and can proceed in parallel with Phase 4 (Reservation UI) once Phase 3 is complete. Phase 5 (Logging) unlocks after Phase 4. Phase 05.1 (GCP Staging) unlocks after Phase 5. Phase 05.2 (UI Review & Polish) unlocks after Phase 05.1.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -189,6 +210,7 @@ Note: Phase 6 (Sales) and Phase 7 (Migration) both depend on Phase 2 and can pro
 | 4. Reservation Management UI | 7/7 | In Progress | - |
 | 5. Structured Logging | 2/2 | Complete | - |
 | 05.1 GCP Staging Deployment | 2/3 | In Progress|  |
+| 05.2 UI Review & Polish | 0/4 | Not started | - |
 | 6. Sales Management | 0/? | Not started | - |
 | 7. Data Migration | 0/? | Not started | - |
 | 8. Deployment | 0/? | Not started | - |

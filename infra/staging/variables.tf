@@ -65,9 +65,12 @@ variable "ci_service_account_email" {
 variable "secret_ids" {
   description = "Map of secret names to their Secret Manager secret IDs"
   type = object({
-    database_url       = string
-    better_auth_secret = string
-    admin_email        = string
-    admin_password     = string
+    database_url             = string
+    better_auth_secret       = string
+    admin_email              = string
+    admin_password           = string
+    supabase_url             = string
+    supabase_publishable_key = string
+    supabase_secret_key      = string
   })
 }

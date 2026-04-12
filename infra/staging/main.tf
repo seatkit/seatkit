@@ -51,6 +51,24 @@ resource "google_secret_manager_secret_iam_member" "admin_password" {
   member    = "serviceAccount:${google_service_account.cloud_run.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "supabase_url" {
+  secret_id = var.secret_ids.supabase_url
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloud_run.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "supabase_publishable_key" {
+  secret_id = var.secret_ids.supabase_publishable_key
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloud_run.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "supabase_secret_key" {
+  secret_id = var.secret_ids.supabase_secret_key
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloud_run.email}"
+}
+
 # Allow Cloud Run SA to pull images from Artifact Registry
 resource "google_artifact_registry_repository_iam_member" "cloud_run_reader" {
   location   = google_artifact_registry_repository.seatkit.location

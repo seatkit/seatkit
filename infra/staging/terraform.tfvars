@@ -2,6 +2,9 @@
 project_id = "seatkit-dev"
 region     = "europe-west1"
 
+# CI/CD
+ci_service_account_email = "seatkit-ci@seatkit-dev.iam.gserviceaccount.com"
+
 # Secret Manager secret IDs (the secret names, NOT the secret values)
 secret_ids = {
   database_url       = "seatkit-dev-database-url"

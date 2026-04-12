@@ -12,8 +12,6 @@ WORKDIR /app
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
-# patchedDependencies in root package.json requires the patches directory
-COPY --from=pruner /app/patches ./patches
 RUN pnpm install --frozen-lockfile --shamefully-hoist
 
 # Stage 3: Build with NEXT_PUBLIC_API_URL baked in (per D-20)

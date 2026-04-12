@@ -14,7 +14,7 @@ COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 # patchedDependencies in root package.json requires the patches directory
 COPY --from=pruner /app/patches ./patches
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --shamefully-hoist
 
 # Stage 3: Build with NEXT_PUBLIC_API_URL baked in (per D-20)
 FROM installer AS builder
@@ -37,7 +37,6 @@ COPY --from=builder /app/packages/web/public ./packages/web/public
 USER seatkit
 
 ENV NODE_ENV=production
-ENV PORT=3000
 EXPOSE 3000
 
 # In monorepo standalone mode, server.js is at packages/web/server.js

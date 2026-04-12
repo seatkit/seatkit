@@ -55,6 +55,12 @@ variable "web_staging_domain" {
   default     = "staging.seatkit.dev"
 }
 
+# --- CI/CD ---
+variable "ci_service_account_email" {
+  description = "CI service account email (GitHub Actions)"
+  type        = string
+}
+
 # --- Secrets ---
 variable "secret_ids" {
   description = "Map of secret names to their Secret Manager secret IDs"

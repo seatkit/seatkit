@@ -4,10 +4,10 @@
  * Used by the Fastify plugin (index.ts) and programmatic API (auth-service.ts).
  */
 
-import { betterAuth, type BetterAuthPlugin } from 'better-auth';
+import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { admin } from 'better-auth/plugins';
-import { invite } from 'better-auth-invite-plugin';
+import { invite } from 'better-invite';
 
 import { db } from './db/index.js';
 import * as authSchema from './db/schema/auth.js';
@@ -42,9 +42,6 @@ export const auth = betterAuth({
 			defaultRole: 'staff',
 			adminRoles: ['admin'],
 		}),
-		// Type cast: better-auth-invite-plugin 0.4.1 was built against better-auth ^1.4.13;
-		// the $ERROR_CODES type narrowed in 1.6.0 causing a TS structural mismatch.
-		// Runtime behavior is unaffected — the cast is safe.
 		invite({
 			async sendUserInvitation({ email, role, url }: { email: string; role: string; url: string }): Promise<void> {
 				// Fire-and-forget: do not await so the invite response returns immediately
@@ -54,7 +51,7 @@ export const auth = betterAuth({
 					console.error('[invite] Failed to send invite email:', err);
 				});
 			},
-		}) as unknown as BetterAuthPlugin,
+		}),
 	],
 	trustedOrigins: [
 		process.env.CORS_ORIGIN ?? 'http://localhost:3000',

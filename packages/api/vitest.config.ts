@@ -31,12 +31,11 @@ export default createPackageConfig({
 		},
 
 		// Inline packages with ESM compatibility issues under Node.js:
-		// - better-auth-invite-plugin: extensionless relative imports
 		// - @opentelemetry/semantic-conventions: directory imports transitively
 		//   pulled in by better-auth, incompatible with strict Node.js ESM
 		server: {
 			deps: {
-				inline: ['better-auth-invite-plugin', /^@opentelemetry\//],
+				inline: [/^@opentelemetry\//],
 			},
 		},
 	},

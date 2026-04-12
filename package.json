@@ -34,10 +34,5 @@
 	},
 	"workspaces": [
 		"packages/*"
-	],
-	"pnpm": {
-		"patchedDependencies": {
-			"better-auth-invite-plugin@0.4.1": "patches/better-auth-invite-plugin@0.4.1.patch"
-		}
-	}
+	]
 }

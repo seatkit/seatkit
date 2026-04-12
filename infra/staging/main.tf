@@ -59,6 +59,28 @@ resource "google_artifact_registry_repository_iam_member" "cloud_run_reader" {
   member     = "serviceAccount:${google_service_account.cloud_run.email}"
 }
 
+# Allow CI service account to push images to Artifact Registry
+resource "google_artifact_registry_repository_iam_member" "ci_writer" {
+  location   = google_artifact_registry_repository.seatkit.location
+  repository = google_artifact_registry_repository.seatkit.repository_id
+  role       = "roles/artifactregistry.writer"
+  member     = "serviceAccount:${var.ci_service_account_email}"
+}
+
+# Allow CI service account to deploy to Cloud Run
+resource "google_project_iam_member" "ci_run_developer" {
+  project = var.project_id
+  role    = "roles/run.developer"
+  member  = "serviceAccount:${var.ci_service_account_email}"
+}
+
+# Allow CI service account to act as the Cloud Run service account
+resource "google_service_account_iam_member" "ci_act_as_cloud_run" {
+  service_account_id = google_service_account.cloud_run.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${var.ci_service_account_email}"
+}
+
 # =============================================================================
 # Cloud Run — API Service
 # =============================================================================

@@ -14,7 +14,8 @@ COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 # patchedDependencies in root package.json requires the patches directory
 COPY --from=pruner /app/patches ./patches
-RUN pnpm install --frozen-lockfile --prod
+# shamefully-hoist flattens node_modules (no symlinks) so Docker COPY works correctly
+RUN pnpm install --frozen-lockfile --prod --shamefully-hoist
 
 # Stage 3: Build the API
 FROM node:22-slim AS builder
@@ -34,23 +35,19 @@ FROM node:22-slim AS runner
 RUN addgroup --system seatkit && adduser --system --ingroup seatkit seatkit
 WORKDIR /app
 
-# Copy the full pruned monorepo structure from builder (includes workspace
-# package dist/ dirs that pnpm symlinks in node_modules point to)
-COPY --from=builder /app/package.json ./package.json
+# Copy built API output
 COPY --from=builder /app/packages/api/dist ./packages/api/dist
 COPY --from=builder /app/packages/api/package.json ./packages/api/package.json
-# Workspace dependencies — built output needed for pnpm symlink resolution
+# Workspace dependency dist/ dirs (imported by API at runtime)
 COPY --from=builder /app/packages/types/dist ./packages/types/dist
 COPY --from=builder /app/packages/types/package.json ./packages/types/package.json
 COPY --from=builder /app/packages/utils/dist ./packages/utils/dist
 COPY --from=builder /app/packages/utils/package.json ./packages/utils/package.json
 COPY --from=builder /app/packages/engine/dist ./packages/engine/dist
 COPY --from=builder /app/packages/engine/package.json ./packages/engine/package.json
-# Production node_modules from installer (no devDependencies)
-# pnpm strict layout: root node_modules has .pnpm store, package-level has symlinks
+# Hoisted node_modules — flat layout, no symlinks
 COPY --from=installer /app/node_modules ./node_modules
-COPY --from=installer /app/packages/api/node_modules ./packages/api/node_modules
-# Copy migration files — migrate.ts reads from ./src/db/migrations
+# Migration files — migrate.ts reads from ./src/db/migrations
 COPY --from=builder /app/packages/api/src/db/migrations ./packages/api/src/db/migrations
 
 USER seatkit

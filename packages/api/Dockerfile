@@ -15,8 +15,6 @@ COPY --from=pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 RUN pnpm install --frozen-lockfile --shamefully-hoist
 COPY --from=pruner /app/out/full/ .
 RUN pnpm build --filter=@seatkit/api
-# Prune dev dependencies after build
-RUN pnpm prune --prod
 
 # Stage 3: Production runner
 FROM node:22-slim AS runner

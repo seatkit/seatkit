@@ -1,7 +1,8 @@
 'use client';
 
-import { X, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 
 import {
 	useCreateReservation,
@@ -11,9 +12,16 @@ import {
 import { useReservationUndoStore } from '../../stores/reservation-undo-store.js';
 import { ConflictModal } from '../conflict-modal.js';
 import { ReservationPresenceBadgeRow } from '../presence-badge.js';
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+	SheetDescription,
+	SheetClose,
+} from '../ui/sheet.js';
 
 import { ReservationForm, type FormValues } from './reservation-form.js';
-import { UndoToast } from './undo-toast.js';
 
 import type { Reservation } from '../../lib/api-types.js';
 import type { UpdateReservation } from '@seatkit/types';
@@ -93,12 +101,14 @@ export function ReservationDrawer({
 	const [conflictDraft, setConflictDraft] = useState<Partial<UpdateReservation> | null>(null);
 	const [conflictServerVersion, setConflictServerVersion] = useState<Reservation | null>(null);
 
-	const [showUndoToast, setShowUndoToast] = useState(false);
-	const [showUndoneFeedback, setShowUndoneFeedback] = useState(false);
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [validationError, setValidationError] = useState<string | null>(null);
 
 	const { setSnapshot } = useReservationUndoStore();
+
+	// Ref for the undo callback to read the latest snapshot at invocation time,
+	// not at toast creation time (Pitfall 8: Sonner captures closure at creation).
+	const undoRef = useRef<{ id: string; snapshot: UpdateReservation & { versionId: number } } | null>(null);
 
 	const createMutation = useCreateReservation();
 	const updateMutation = useUpdateReservation({
@@ -120,11 +130,27 @@ export function ReservationDrawer({
 			setValues(init);
 			savedValues.current = init;
 			setConflictOpen(false);
-			setShowUndoToast(false);
 			setShowDeleteConfirm(false);
 			setValidationError(null);
 		}
 	}, [open, mode, reservation, prefill]);
+
+	/** Undo handler — reads from undoRef at invocation time, not at toast creation time */
+	const handleUndoFromToast = useCallback(async () => {
+		const undoData = undoRef.current;
+		if (!undoData) return;
+		undoRef.current = null;
+		try {
+			await updateMutation.mutateAsync({
+				...undoData.snapshot,
+				id: undoData.id,
+				versionId: undoData.snapshot.versionId,
+			});
+			toast('Undone');
+		} catch {
+			// Undo failed silently — the user can refresh to see current state
+		}
+	}, [updateMutation]);
 
 	const handleSave = useCallback(async () => {
 		// Client-side guard: catch missing required fields before the API call so the
@@ -163,7 +189,7 @@ export function ReservationDrawer({
 					createdBy: currentUserId,
 					source: 'phone',
 				});
-				setShowUndoToast(true);
+				toast('Saved', { duration: 10_000 });
 				onClose();
 			} else if (mode === 'edit' && reservation) {
 				// Capture the pre-save form state now (before the await) so we can
@@ -189,7 +215,7 @@ export function ReservationDrawer({
 				// Snapshot AFTER the save resolves so we have the server's new version.
 				// The undo payload must carry versionId = updated.version (N+1) so the
 				// optimistic lock accepts it when reverting to the pre-save data.
-				setSnapshot(reservation.id, {
+				const undoSnapshot = {
 					id: reservation.id,
 					updatedAt: preEditUpdatedAt,
 					customer: { name: preEditFormValues.guestName, phone: preEditFormValues.phone },
@@ -200,16 +226,27 @@ export function ReservationDrawer({
 					isLargeGroup: preEditFormValues.isLargeGroup,
 					acceptanceState: preEditFormValues.acceptanceState,
 					versionId: updated.reservation.version,
-				} as UpdateReservation & { versionId: number });
+				} as UpdateReservation & { versionId: number };
+
+				setSnapshot(reservation.id, undoSnapshot);
+				undoRef.current = { id: reservation.id, snapshot: undoSnapshot };
 
 				savedValues.current = values;
-				setShowUndoToast(true);
+				toast('Saved', {
+					action: {
+						label: 'Undo',
+						onClick: () => {
+							void handleUndoFromToast(); // NOSONAR S3735
+						},
+					},
+					duration: 10_000,
+				});
 				onClose();
 			}
 		} catch {
 			// Errors handled by mutation.onError or ConflictModal via onConflict
 		}
-	}, [mode, values, reservation, currentUserId, createMutation, updateMutation, setSnapshot, onClose]);
+	}, [mode, values, reservation, currentUserId, createMutation, updateMutation, setSnapshot, onClose, handleUndoFromToast]);
 
 	const handleDelete = useCallback(async () => {
 		if (!reservation) return;
@@ -247,47 +284,22 @@ export function ReservationDrawer({
 		'Save changes';
 
 	return (
-		<>
-			{/* Backdrop */}
-			{open && (
-				<div
-					className="fixed inset-0 bg-black/40 z-40"
-					aria-hidden="true"
-					onClick={() => onClose()}
-				/>
-			)}
-
-			{/* Drawer — slide-over. Uses <dialog> for semantics; !flex overrides the
-			    browser's default display:none so the CSS transform animation still works. */}
-			<dialog
-				aria-labelledby="drawer-title"
-				aria-hidden={!open}
-				className={[
-					'fixed inset-y-0 right-0 w-full md:w-[480px] z-50 bg-background shadow-2xl',
-					'transition-transform duration-200 ease-out',
-					'!flex flex-col m-0 p-0 max-h-none max-w-none h-full border-none',
-					open ? 'translate-x-0' : 'translate-x-full',
-				].join(' ')}
-			>
+		<Sheet open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
+			<SheetContent side="right" className="w-full md:w-[480px] flex flex-col p-0 sm:max-w-none">
 				{/* Header */}
-				<div className="h-14 px-6 flex items-center justify-between border-b border-border shrink-0">
-					<button
-						type="button"
-						onClick={onClose}
-						aria-label="Close drawer"
-						className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-					>
-						<X className="w-4 h-4" />
-					</button>
-					<h2 id="drawer-title" className="text-xl font-semibold">
+				<SheetHeader className="h-14 px-6 flex flex-row items-center justify-between border-b border-border shrink-0 space-y-0">
+					<SheetTitle className="text-xl font-semibold">
 						{mode === 'create'
 							? 'New reservation'
 							: (reservation?.customer.name ?? 'Edit reservation')}
-					</h2>
+					</SheetTitle>
+					<SheetDescription className="sr-only">
+						{mode === 'create' ? 'Create a new reservation' : 'Edit reservation details'}
+					</SheetDescription>
 					<span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
 						{mode === 'create' ? 'New' : 'Edit'}
 					</span>
-				</div>
+				</SheetHeader>
 
 				{/* Body — scrollable form */}
 				<div className="flex-1 overflow-y-auto px-6">
@@ -397,17 +409,7 @@ export function ReservationDrawer({
 						onDiscard={handleConflictDiscard}
 					/>
 				)}
-			</dialog>
-
-			{/* UndoToast — outside drawer, bottom-center */}
-			<UndoToast
-				visible={showUndoToast}
-				showUndone={showUndoneFeedback}
-				onDismiss={() => {
-					setShowUndoToast(false);
-					setShowUndoneFeedback(false);
-				}}
-			/>
-		</>
+			</SheetContent>
+		</Sheet>
 	);
 }

@@ -1,3 +1,5 @@
+// DEPRECATED: Replaced by Sonner toast() in reservation-drawer.tsx
+// Kept for backwards compatibility — do not add new imports of this component.
 'use client';
 
 import React, { useEffect, useCallback } from 'react';

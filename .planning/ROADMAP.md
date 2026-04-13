@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 5: Structured Logging** - Structured logs shipped to GCP Cloud Logging; errors tracked, queryable, and alertable in production
 - [ ] **Phase 05.1: GCP Staging Deployment** - Dockerize and deploy to Cloud Run with CI/CD auto-deploy
 - [x] **Phase 05.2: UI Review & Polish** - Review, polish, and elevate all existing UI to production quality (completed 2026-04-13)
+- [ ] **Phase 05.3: Timeline & Table Interactions** - Pinch-to-zoom on timeline, drag-and-drop table reorder in settings
 - [ ] **Phase 6: Sales Management** - Managers can enter and review daily and monthly sales data
 - [ ] **Phase 7: Data Migration** - Koenji's production Firestore data moves to PostgreSQL without loss
 - [ ] **Phase 8: Deployment** - Any restaurant can self-host SeatKit with Docker Compose
@@ -160,6 +161,18 @@ Plans:
 - [x] 05.2-02-PLAN.md — shadcn migrations: ReservationDrawer to Sheet, UndoToast to Sonner, tab strip to Tabs
 - [x] 05.2-03-PLAN.md — Token fixes: status badge tokens, Skeleton loading states, ConfirmDialog to Dialog, form responsive, focus rings
 - [x] 05.2-04-PLAN.md — Animation layer: motion, Magic UI, Aceternity copy-paste components, wire animations, reduced motion fallback, human verification
+
+### Phase 05.3: Timeline & Table Interactions (INSERTED)
+
+**Goal**: The timeline view supports pinch-to-zoom to expand row height and reveal more reservation details; the settings tables page supports drag-and-drop reorder; the floor plan supports drag-to-reposition tables (TABLE-05)
+**Depends on**: Phase 05.2
+**Requirements**: TABLE-05, VIEW-01
+**Success Criteria** (what must be TRUE):
+  1. Pinch-to-zoom on the timeline expands row height and shows additional reservation details (party size, notes); release snaps to the nearest density tier
+  2. Tables in /settings/tables can be reordered via drag-and-drop using @dnd-kit/sortable with keyboard support
+  3. Floor plan tables can be dragged to new grid positions and the new position persists across page reload (TABLE-05)
+**Plans**: TBD
+**UI hint**: yes
 
 ### Phase 6: Sales Management
 **Goal**: Managers can enter daily sales data per service period and view monthly and yearly rollups; sales totals are gated behind manager authentication

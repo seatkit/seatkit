@@ -28,7 +28,7 @@ export function PresenceBadge({ initials, state }: PresenceBadgeProps) {
 				'inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold select-none',
 				isEditing
 					? 'bg-amber-400 text-amber-900 ring-2 ring-amber-500'
-					: 'bg-gray-200 text-gray-600 ring-2 ring-gray-300',
+					: 'bg-muted text-muted-foreground ring-2 ring-border',
 			].join(' ')}
 		>
 			{initials.slice(0, 2).toUpperCase()}

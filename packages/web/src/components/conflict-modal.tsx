@@ -73,19 +73,19 @@ export function ConflictModal({ open, draft, serverVersion, onApply, onDiscard }
 			className="rounded-lg shadow-xl max-w-md w-full mx-4 p-6 backdrop:bg-black/40"
 			onClose={onDiscard}
 		>
-			<h2 id="conflict-modal-title" className="text-lg font-semibold text-gray-900 mb-2">
+			<h2 id="conflict-modal-title" className="text-lg font-semibold text-foreground mb-2">
 				Edit conflict
 			</h2>
-			<p className="text-sm text-gray-600 mb-4">
+			<p className="text-sm text-muted-foreground mb-4">
 				Another staff member saved changes while you were editing. Review the differences below.
 			</p>
 
 			{diffs.length === 0 ? (
-				<p className="text-sm text-gray-500 italic mb-4">No conflicting fields — safe to apply.</p>
+				<p className="text-sm text-muted-foreground italic mb-4">No conflicting fields — safe to apply.</p>
 			) : (
 				<table className="w-full text-sm mb-4 border-collapse">
 					<thead>
-						<tr className="text-left text-gray-500">
+						<tr className="text-left text-muted-foreground">
 							<th className="py-1 pr-4">Field</th>
 							<th className="py-1 pr-4">Your draft</th>
 							<th className="py-1">Current saved</th>
@@ -93,10 +93,10 @@ export function ConflictModal({ open, draft, serverVersion, onApply, onDiscard }
 					</thead>
 					<tbody>
 						{diffs.map(({ field, draft: d, server: s }) => (
-							<tr key={field} className="border-t border-gray-100">
-								<td className="py-1 pr-4 font-medium text-gray-700">{field}</td>
-								<td className="py-1 pr-4 text-amber-700">{formatValue(d)}</td>
-								<td className="py-1 text-gray-600">{formatValue(s)}</td>
+							<tr key={field} className="border-t border-border">
+								<td className="py-1 pr-4 font-medium text-foreground">{field}</td>
+								<td className="py-1 pr-4 text-amber-400">{formatValue(d)}</td>
+								<td className="py-1 text-muted-foreground">{formatValue(s)}</td>
 							</tr>
 						))}
 					</tbody>
@@ -107,14 +107,14 @@ export function ConflictModal({ open, draft, serverVersion, onApply, onDiscard }
 				<button
 					type="button"
 					onClick={onDiscard}
-					className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+					className="px-4 py-2 text-sm text-foreground border border-border rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
 				>
 					Discard draft
 				</button>
 				<button
 					type="button"
 					onClick={() => onApply(serverVersion.version)}
-					className="px-4 py-2 text-sm text-white bg-amber-600 rounded-md hover:bg-amber-700"
+					className="px-4 py-2 text-sm text-white bg-amber-600 rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
 				>
 					Apply your changes on top
 				</button>

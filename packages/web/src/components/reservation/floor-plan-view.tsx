@@ -19,9 +19,10 @@ const CATEGORY_MAP: Record<ServiceCategory, string[]> = {
 type FloorPlanViewProps = Readonly<{
 	date: Date;
 	category: ServiceCategory;
+	onReservationClick?: (reservationId: string) => void;
 }>;
 
-export function FloorPlanView({ date, category }: FloorPlanViewProps) {
+export function FloorPlanView({ date, category, onReservationClick }: FloorPlanViewProps) {
 	const prefersReduced = useReducedMotion();
 	const { data: tablesData, isLoading: tablesLoading, isError: tablesError } = useTables();
 	const { data: reservationsData, isLoading: reservationsLoading, isError: reservationsError } = useReservations();
@@ -112,13 +113,17 @@ export function FloorPlanView({ date, category }: FloorPlanViewProps) {
 							data-testid="table-card"
 							whileHover={prefersReduced ? {} : { scale: 1.03 }}
 							transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+							onClick={() => { if (reservation) onReservationClick?.(reservation.id); }}
+							role={reservation ? 'button' : undefined}
+							tabIndex={reservation ? 0 : undefined}
+							onKeyDown={(e) => { if (reservation && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onReservationClick?.(reservation.id); } }}
 							style={{
 								gridRow: (table.positionY ?? 0) + 1,
 								gridColumn: (table.positionX ?? 0) + 1,
-								// ring color as inline boxShadow (dynamic value — not a Tailwind class)
 								boxShadow: color ? `0 0 0 2px ${color.bg}` : undefined,
+								cursor: reservation ? 'pointer' : 'default',
 							}}
-							className="relative w-20 h-20 rounded-xl bg-card border border-border flex items-center justify-center select-none"
+							className="relative w-20 h-20 rounded-xl bg-card border border-border flex items-center justify-center select-none focus:outline-none focus:ring-2 focus:ring-ring"
 						>
 							{/* Cluster color dot — top-right corner (TABLE-07) */}
 							{color && (

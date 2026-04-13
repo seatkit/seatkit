@@ -4,8 +4,8 @@ import React from 'react';
 
 // TABLE_LABEL_WIDTH and SLOT_WIDTH must match constants used in ReservationTimelineView
 const TABLE_LABEL_WIDTH = 120; // px
-const SLOT_WIDTH = 60; // px per 30-min slot
-const SLOTS_PER_HOUR = 2;
+const SLOT_WIDTH = 40; // px per 15-min slot
+const SLOTS_PER_HOUR = 4;
 
 type TimelineHeaderProps = Readonly<{
 	/** Operating hours to display: e.g., startHour=9, endHour=23 → 9am to 11pm */
@@ -28,7 +28,7 @@ export function TimelineHeader({ startHour, endHour, selectedDate }: TimelineHea
 	const nowOffsetPx = isToday
 		? (() => {
 				const minutesSinceStart = (now.getHours() - startHour) * 60 + now.getMinutes();
-				return (minutesSinceStart / 30) * SLOT_WIDTH;
+				return (minutesSinceStart / 15) * SLOT_WIDTH;
 			})()
 		: null;
 
@@ -63,7 +63,7 @@ export function TimelineHeader({ startHour, endHour, selectedDate }: TimelineHea
 						</span>
 						{/* Half-hour notch */}
 						<div
-							style={{ position: 'absolute', left: `${SLOT_WIDTH}px` }}
+							style={{ position: 'absolute', left: `${2 * SLOT_WIDTH}px` }}
 							className="h-2 border-l border-dashed border-border/50"
 						/>
 					</div>

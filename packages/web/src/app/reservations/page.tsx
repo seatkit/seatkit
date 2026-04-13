@@ -193,7 +193,7 @@ export default function ReservationsPage() {
 					/>
 				)}
 				{activeView === 'floorplan' && (
-					<FloorPlanView date={selectedDate} category={selectedCategory} />
+					<FloorPlanView date={selectedDate} category={selectedCategory} onReservationClick={handleReservationClick} />
 				)}
 			</div>
 

@@ -10,11 +10,11 @@ import { TimelineBlock } from './timeline-block.js';
 import { TimelineHeader } from './timeline-header.js';
 
 const TABLE_LABEL_WIDTH = 120; // px — must match TimelineHeader
-const SLOT_WIDTH = 60; // px per 30-min slot
+const SLOT_WIDTH = 40; // px per 15-min slot
 const ROW_HEIGHT = 48; // px per table row — matches UI-SPEC
 const START_HOUR = 9; // 9:00
 const END_HOUR = 23; // 23:00
-const TOTAL_SLOTS = (END_HOUR - START_HOUR) * 2; // 2 slots per hour
+const TOTAL_SLOTS = (END_HOUR - START_HOUR) * 4; // 4 slots per hour (15-min each)
 const OVERSCAN = 5;
 
 type ReservationTimelineViewProps = Readonly<{
@@ -82,8 +82,8 @@ export function ReservationTimelineView({
 	// Convert reservation date + duration to pixel position within the time grid
 	function reservationToPixels(startDate: Date, durationMinutes: number) {
 		const minutesFromStart = (startDate.getHours() - START_HOUR) * 60 + startDate.getMinutes();
-		const leftPx = (minutesFromStart / 30) * SLOT_WIDTH;
-		const widthPx = (durationMinutes / 30) * SLOT_WIDTH;
+		const leftPx = (minutesFromStart / 15) * SLOT_WIDTH;
+		const widthPx = (durationMinutes / 15) * SLOT_WIDTH;
 		return { leftPx, widthPx };
 	}
 
@@ -174,8 +174,8 @@ export function ReservationTimelineView({
 												{Array.from({ length: TOTAL_SLOTS }, (_, slotIdx) => {
 													const slotStart = new Date(date);
 													slotStart.setHours(
-														START_HOUR + Math.floor(slotIdx / 2),
-														(slotIdx % 2) * 30,
+														START_HOUR + Math.floor(slotIdx / 4),
+														(slotIdx % 4) * 15,
 														0,
 														0,
 													);
@@ -196,7 +196,7 @@ export function ReservationTimelineView({
 													);
 												})}
 
-												{/* Half-hour dividers */}
+												{/* Quarter-hour dividers */}
 												{Array.from({ length: TOTAL_SLOTS }, (_, slotIdx) => (
 													<div
 														key={slotIdx}
@@ -206,9 +206,9 @@ export function ReservationTimelineView({
 															height: '100%',
 														}}
 														className={
-															slotIdx % 2 === 0
+															slotIdx % 4 === 0
 																? 'border-l border-border/30'
-																: 'border-l border-dashed border-border/20'
+																: 'border-l border-dashed border-border/15'
 														}
 													/>
 												))}

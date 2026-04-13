@@ -13,6 +13,7 @@ function Toaster(props: ToasterProps) {
 		<Sonner
 			theme={resolvedTheme}
 			className="toaster group"
+			style={{ '--width': '300px' } as React.CSSProperties}
 			toastOptions={{
 				classNames: {
 					toast: 'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',

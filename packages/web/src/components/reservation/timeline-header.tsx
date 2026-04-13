@@ -2,8 +2,7 @@
 
 import React from 'react';
 
-// TABLE_LABEL_WIDTH and SLOT_WIDTH must match constants used in ReservationTimelineView
-const TABLE_LABEL_WIDTH = 120; // px
+// SLOT_WIDTH must match constants used in ReservationTimelineView
 const SLOT_WIDTH = 40; // px per 15-min slot
 const SLOTS_PER_HOUR = 4;
 
@@ -34,20 +33,14 @@ export function TimelineHeader({ startHour, endHour, selectedDate }: TimelineHea
 
 	return (
 		<div
-			className="sticky top-0 z-20 bg-background border-b border-border flex shrink-0"
+			className="sticky top-0 z-20 bg-background border-b border-border shrink-0"
 			style={{
 				height: '32px',
-				minWidth: `${TABLE_LABEL_WIDTH + (endHour - startHour) * SLOTS_PER_HOUR * SLOT_WIDTH}px`,
+				minWidth: `${(endHour - startHour) * SLOTS_PER_HOUR * SLOT_WIDTH}px`,
 			}}
 		>
-			{/* Table label placeholder (120px) — sticky on horizontal scroll */}
-			<div
-				style={{ width: TABLE_LABEL_WIDTH, minWidth: TABLE_LABEL_WIDTH }}
-				className="sticky left-0 z-10 border-r border-border shrink-0 bg-background"
-			/>
-
 			{/* Time slots */}
-			<div className="relative flex-1">
+			<div className="relative" style={{ width: '100%', height: '100%' }}>
 				{hours.map((hour) => (
 					<div
 						key={hour}

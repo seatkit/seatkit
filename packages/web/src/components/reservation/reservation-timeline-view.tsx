@@ -110,35 +110,70 @@ export function ReservationTimelineView({
 		);
 	}
 
+	const gridWidth = TOTAL_SLOTS * SLOT_WIDTH;
+
 	return (
 		<div className="flex flex-col flex-1 overflow-hidden" data-testid="reservation-timeline-view">
-			{/* Horizontal scroll wrapper */}
-			<div className="overflow-x-auto flex-1" style={{ minWidth: 0 }}>
-				{/* Min-width ensures grid does not collapse */}
-				<div style={{ minWidth: `${totalGridWidth}px` }} className="flex flex-col flex-1">
-					<TimelineHeader startHour={START_HOUR} endHour={END_HOUR} selectedDate={date} />
+			{tables.length === 0 && (
+				<div className="flex items-center justify-center flex-1 py-16 text-muted-foreground text-sm">
+					No tables configured. Add tables in Settings to see the floor plan.
+				</div>
+			)}
 
-					{tables.length === 0 && (
-						<div className="flex items-center justify-center flex-1 py-16 text-muted-foreground text-sm">
-							No tables configured. Add tables in Settings to see the floor plan.
+			{tables.length > 0 && isEmpty && (
+				<div className="flex items-center justify-center flex-1 py-16 text-muted-foreground text-sm">
+					No reservations for this service. Tap a time slot to add one.
+				</div>
+			)}
+
+			{tables.length > 0 && (
+				<div className="flex flex-1 overflow-hidden">
+					{/* Fixed table label column */}
+					<div style={{ width: TABLE_LABEL_WIDTH, minWidth: TABLE_LABEL_WIDTH }} className="shrink-0 flex flex-col border-r border-border">
+						{/* Header spacer */}
+						<div className="h-8 bg-background border-b border-border shrink-0" />
+						{/* Table labels — synced with virtualizer */}
+						<div
+							className="overflow-hidden flex-1"
+							style={{ maxHeight: 'calc(100vh - 200px)' }}
+						>
+							<div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+								{rowVirtualizer.getVirtualItems().map((virtualRow) => {
+									const table = tables[virtualRow.index];
+									if (!table) return null;
+									return (
+										<div
+											key={table.id}
+											style={{
+												position: 'absolute',
+												top: 0,
+												transform: `translateY(${virtualRow.start}px)`,
+												height: `${ROW_HEIGHT}px`,
+												width: '100%',
+											}}
+											className={[
+												'flex items-center px-3 text-sm font-semibold text-foreground border-b border-border/50 overflow-hidden whitespace-nowrap text-ellipsis',
+												virtualRow.index % 2 === 0 ? 'bg-background' : 'bg-muted/30',
+											].join(' ')}
+										>
+											{table.name}
+										</div>
+									);
+								})}
+							</div>
 						</div>
-					)}
+					</div>
 
-					{tables.length > 0 && isEmpty && (
-						<div className="flex items-center justify-center flex-1 py-16 text-muted-foreground text-sm">
-							No reservations for this service. Tap a time slot to add one.
-						</div>
-					)}
+					{/* Scrollable time grid */}
+					<div className="overflow-x-auto flex-1 flex flex-col" style={{ minWidth: 0 }}>
+						<TimelineHeader startHour={START_HOUR} endHour={END_HOUR} selectedDate={date} />
 
-					{tables.length > 0 && (
-						/* Vertically scrollable container — useVirtualizer targets this ref */
 						<div
 							ref={scrollRef}
 							className="overflow-y-auto flex-1"
 							style={{ height: '100%', maxHeight: 'calc(100vh - 200px)' }}
 						>
-							{/* Spacer div — useVirtualizer requires a positioned container with exact total height */}
-							<div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+							<div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative', minWidth: `${gridWidth}px` }}>
 								{rowVirtualizer.getVirtualItems().map((virtualRow) => {
 									const table = tables[virtualRow.index];
 									if (!table) return null;
@@ -153,24 +188,16 @@ export function ReservationTimelineView({
 												top: 0,
 												transform: `translateY(${virtualRow.start}px)`,
 												height: `${ROW_HEIGHT}px`,
-												width: '100%',
+												width: `${gridWidth}px`,
 											}}
 											className={[
-												'flex items-center border-b border-border/50',
+												'border-b border-border/50',
 												virtualRow.index % 2 === 0 ? 'bg-background' : 'bg-muted/30',
 											].join(' ')}
 										>
-											{/* Table label — 120px fixed, sticky on horizontal scroll */}
-											<div
-												style={{ width: TABLE_LABEL_WIDTH, minWidth: TABLE_LABEL_WIDTH }}
-												className="sticky left-0 z-10 px-3 text-sm font-semibold text-foreground border-r border-border shrink-0 overflow-hidden whitespace-nowrap text-ellipsis bg-inherit"
-											>
-												{table.name}
-											</div>
-
-											{/* Time grid for this row — relative, so blocks position absolutely */}
-											<div style={{ position: 'relative', flex: 1, height: '100%' }}>
-												{/* Empty slot overlay cells — D-05 */}
+											{/* Time grid — relative, so blocks position absolutely */}
+											<div style={{ position: 'relative', width: '100%', height: '100%' }}>
+												{/* Empty slot overlay cells */}
 												{Array.from({ length: TOTAL_SLOTS }, (_, slotIdx) => {
 													const slotStart = new Date(date);
 													slotStart.setHours(
@@ -215,7 +242,6 @@ export function ReservationTimelineView({
 
 												{/* Reservation blocks */}
 												{rowReservations.map((res) => {
-													// res.date is a Date object (z.coerce.date() in ReservationSchema)
 													const startDate =
 														res.date instanceof Date ? res.date : new Date(res.date);
 													const { leftPx, widthPx } = reservationToPixels(
@@ -244,9 +270,9 @@ export function ReservationTimelineView({
 								})}
 							</div>
 						</div>
-					)}
+					</div>
 				</div>
-			</div>
+			)}
 		</div>
 	);
 }

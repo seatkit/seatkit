@@ -240,15 +240,6 @@ export function ReservationDrawer({
 						onClick: () => {
 							void handleUndoFromToast(); // NOSONAR S3735
 						},
-						actionButtonStyle: {
-							color: 'hsl(38, 92%, 50%)',
-							fontWeight: '600',
-							textDecoration: 'underline',
-							background: 'transparent',
-							border: 'none',
-							padding: 0,
-							cursor: 'pointer',
-						},
 					},
 					duration: 10_000,
 				});

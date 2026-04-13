@@ -4,10 +4,10 @@ import {
 	SettingsPage,
 	ForbiddenBanner,
 	DestructiveButton,
-	ConfirmDialog,
 } from '@seatkit/ui';
 import { useState } from 'react';
 
+import { ConfirmDialog } from '../../../components/confirm-dialog.js';
 import { Skeleton } from '../../../components/ui/skeleton.js';
 import { useSession } from '../../../lib/auth-client.js';
 import { useTables, useCreateTable, useDeleteTable } from '../../../lib/queries/settings.js';

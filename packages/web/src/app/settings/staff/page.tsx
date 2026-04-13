@@ -1,13 +1,13 @@
 'use client';
 
 import {
-	ConfirmDialog,
 	DestructiveButton,
 	ForbiddenBanner,
 	SettingsPage,
 } from '@seatkit/ui';
 import { useState } from 'react';
 
+import { ConfirmDialog } from '../../../components/confirm-dialog.js';
 import { Skeleton } from '../../../components/ui/skeleton.js';
 import { useSession } from '../../../lib/auth-client.js';
 import { useStaff, useInviteStaff, useRemoveStaff, useSetStaffRole } from '../../../lib/queries/staff.js';

@@ -88,7 +88,7 @@ export function ReservationForm({
 					<button
 						type="button"
 						onClick={onResetToSaved}
-						className="text-sm text-muted-foreground underline cursor-pointer hover:text-foreground"
+						className="text-sm text-muted-foreground underline cursor-pointer hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
 					>
 						Reset to saved
 					</button>
@@ -137,7 +137,7 @@ export function ReservationForm({
 					/>
 				</div>
 
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div>
 						<label htmlFor="partySize" className={labelClass()}>
 							Party size *
@@ -172,7 +172,7 @@ export function ReservationForm({
 					</div>
 				</div>
 
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div>
 						<label htmlFor="date" className={labelClass()}>
 							Date *

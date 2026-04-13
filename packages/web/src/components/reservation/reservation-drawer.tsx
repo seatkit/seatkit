@@ -10,6 +10,7 @@ import {
 	useDeleteReservation,
 } from '../../lib/queries/reservations.js';
 import { useReservationUndoStore } from '../../stores/reservation-undo-store.js';
+import { ConfirmDialog } from '../confirm-dialog.js';
 import { ConflictModal } from '../conflict-modal.js';
 import { ReservationPresenceBadgeRow } from '../presence-badge.js';
 import {
@@ -365,39 +366,15 @@ export function ReservationDrawer({
 				</div>
 
 				{/* Delete confirmation dialog */}
-				{showDeleteConfirm && (
-					<dialog
-						open
-						className="fixed inset-0 z-[60] m-auto w-full max-w-sm rounded-xl bg-background border border-border shadow-2xl p-6"
-						aria-labelledby="delete-confirm-title"
-					>
-						<h3 id="delete-confirm-title" className="text-xl font-semibold mb-2">
-							Delete this reservation?
-						</h3>
-						<p className="text-sm text-muted-foreground mb-6">
-							The reservation will be hidden from all views. You can recover it at any time from
-							the Deleted filter in the list.
-						</p>
-						<div className="flex justify-end gap-3">
-							<button
-								type="button"
-								onClick={() => {
-									setShowDeleteConfirm(false);
-								}}
-								className="px-4 py-2 text-sm rounded-md border border-border hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-							>
-								Cancel
-							</button>
-							<button
-								type="button"
-								onClick={() => void handleDelete()} // NOSONAR S3735
-								className="px-4 py-2 text-sm rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-destructive"
-							>
-								Delete reservation
-							</button>
-						</div>
-					</dialog>
-				)}
+				<ConfirmDialog
+					open={showDeleteConfirm}
+					heading="Delete this reservation?"
+					body="The reservation will be hidden from all views. You can recover it at any time from the Deleted filter in the list."
+					confirmLabel="Delete reservation"
+					cancelLabel="Keep reservation"
+					onConfirm={() => void handleDelete()}
+					onCancel={() => setShowDeleteConfirm(false)}
+				/>
 
 				{/* ConflictModal — z-60, overlays the drawer at z-50 */}
 				{conflictOpen && conflictDraft && conflictServerVersion && (

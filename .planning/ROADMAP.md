@@ -164,13 +164,13 @@ Plans:
 
 ### Phase 05.3: Timeline & Table Interactions (INSERTED)
 
-**Goal**: The timeline view supports pinch-to-zoom to expand row height and reveal more reservation details; the settings tables page supports drag-and-drop reorder; the floor plan supports drag-to-reposition tables (TABLE-05)
+**Goal**: The timeline view supports pinch-to-zoom to expand row height and reveal more reservation details; the floor plan supports drag-to-reposition tables (TABLE-05); the settings tables page supports drag-and-drop reorder
 **Depends on**: Phase 05.2
 **Requirements**: TABLE-05, VIEW-01
 **Success Criteria** (what must be TRUE):
   1. Pinch-to-zoom on the timeline expands row height and shows additional reservation details (party size, notes); release snaps to the nearest density tier
-  2. Tables in /settings/tables can be reordered via drag-and-drop using @dnd-kit/sortable with keyboard support
-  3. Floor plan tables can be dragged to new grid positions and the new position persists across page reload (TABLE-05)
+  2. Floor plan tables can be dragged to new grid positions and the new position persists across page reload (TABLE-05)
+  3. Tables in /settings/tables can be reordered via drag-and-drop using @dnd-kit/sortable with keyboard support
 **Plans**: TBD
 **UI hint**: yes
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { Search } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import React, { Fragment, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 import { useAllReservations, useRecoverReservation } from '../../lib/queries/reservations.js';
@@ -79,6 +80,7 @@ function groupKey(res: Reservation, groupBy: GroupBy): string {
 }
 
 export function ReservationListView({ onReservationClick }: ReservationListViewProps) {
+	const prefersReduced = useReducedMotion();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [debouncedQuery, setDebouncedQuery] = useState('');
 	const [showDeleted, setShowDeleted] = useState(false);
@@ -347,6 +349,7 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 							</tr>
 						</thead>
 						<tbody>
+							<AnimatePresence mode="popLayout">
 							{grouped.map(({ key, items }) => (
 								<Fragment key={key || '__all__'}>
 									{/* Group header */}
@@ -359,9 +362,17 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 									)}
 
 									{/* Rows */}
-									{items.map((reservation) => (
-										<tr
+									{items.map((reservation, index) => (
+										<motion.tr
 											key={reservation.id}
+											initial={{ opacity: 0, y: prefersReduced ? 0 : 8 }}
+											animate={{ opacity: 1, y: 0 }}
+											exit={{ opacity: 0 }}
+											transition={
+												prefersReduced
+													? { duration: 0.15 }
+													: { duration: 0.15, delay: index < 8 ? index * 0.03 : 0 }
+											}
 											className={[
 												'border-b border-border/50 cursor-pointer hover:bg-muted/50 transition-colors',
 												reservation.isDeleted ? 'opacity-60' : '',
@@ -429,10 +440,11 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 													</button>
 												)}
 											</td>
-										</tr>
+										</motion.tr>
 									))}
 								</Fragment>
 							))}
+							</AnimatePresence>
 						</tbody>
 					</table>
 				)}

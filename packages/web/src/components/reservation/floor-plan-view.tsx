@@ -1,5 +1,6 @@
 'use client';
 
+import { motion, useReducedMotion } from 'motion/react';
 import React, { useMemo } from 'react';
 
 import { useReservations } from '../../lib/queries/reservations.js';
@@ -21,6 +22,7 @@ type FloorPlanViewProps = Readonly<{
 }>;
 
 export function FloorPlanView({ date, category }: FloorPlanViewProps) {
+	const prefersReduced = useReducedMotion();
 	const { data: tablesData, isLoading: tablesLoading, isError: tablesError } = useTables();
 	const { data: reservationsData, isLoading: reservationsLoading, isError: reservationsError } = useReservations();
 
@@ -105,9 +107,11 @@ export function FloorPlanView({ date, category }: FloorPlanViewProps) {
 					const color = reservation ? uuidToColor(reservation.id, colorScheme) : null;
 
 					return (
-						<div
+						<motion.div
 							key={table.id}
 							data-testid="table-card"
+							whileHover={prefersReduced ? {} : { scale: 1.03 }}
+							transition={{ type: 'spring', stiffness: 400, damping: 20 }}
 							style={{
 								gridRow: (table.positionY ?? 0) + 1,
 								gridColumn: (table.positionX ?? 0) + 1,
@@ -134,7 +138,7 @@ export function FloorPlanView({ date, category }: FloorPlanViewProps) {
 							>
 								{table.name}
 							</span>
-						</div>
+						</motion.div>
 					);
 				})}
 			</div>

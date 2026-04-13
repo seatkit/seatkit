@@ -17,18 +17,14 @@ const END_HOUR = 23; // 23:00
 const TOTAL_SLOTS = (END_HOUR - START_HOUR) * 2; // 2 slots per hour
 const OVERSCAN = 5;
 
-type ServiceCategory = 'lunch' | 'dinner' | 'no_booking_zone';
-
 type ReservationTimelineViewProps = Readonly<{
 	date: Date;
-	category: ServiceCategory;
 	onReservationClick?: (reservationId: string) => void;
 	onSlotClick?: (tableId: string, slotStart: Date) => void;
 }>;
 
 export function ReservationTimelineView({
 	date,
-	category,
 	onReservationClick,
 	onSlotClick,
 }: ReservationTimelineViewProps) {
@@ -41,30 +37,22 @@ export function ReservationTimelineView({
 
 	const tables = useMemo(() => tablesData?.tables ?? [], [tablesData]);
 
-	// Map UI category to reservation category values
-	const categoryMap: Record<ServiceCategory, string[]> = {
-		lunch: ['lunch'],
-		dinner: ['dinner'],
-		no_booking_zone: ['special', 'walk_in'],
-	};
-
 	// Format a Date as a local-calendar YYYY-MM-DD string.
 	// Using toISOString() would convert to UTC first, causing off-by-one errors for
 	// timezones east of UTC (e.g. Italy UTC+2: local midnight = prior UTC day).
 	const toLocalDate = (d: Date) =>
 		`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-	// Filter reservations to the selected date + category (exclude deleted)
+	// Filter reservations to the selected date (exclude deleted).
+	// Timeline shows all hours so category filtering is unnecessary — all
+	// reservations for the day are visible regardless of lunch/dinner slot.
 	const filteredReservations = useMemo(() => {
-		const cats = categoryMap[category];
-		// Compare by local calendar date string (YYYY-MM-DD) — never toISOString()
 		const targetDateStr = toLocalDate(date);
 		return (reservationsData?.reservations ?? []).filter((r) => {
 			if (r.isDeleted) return false;
-			const sameDay = toLocalDate(new Date(r.date)) === targetDateStr;
-			return sameDay && cats.includes(r.category);
+			return toLocalDate(new Date(r.date)) === targetDateStr;
 		});
-	}, [reservationsData, date, category]);
+	}, [reservationsData, date]);
 
 	// Build a map: tableId → reservations on that table for this date+category
 	const tableReservationMap = useMemo(() => {

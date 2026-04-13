@@ -349,7 +349,6 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 							</tr>
 						</thead>
 						<tbody>
-							<AnimatePresence mode="popLayout">
 							{grouped.map(({ key, items }) => (
 								<Fragment key={key || '__all__'}>
 									{/* Group header */}
@@ -362,6 +361,7 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 									)}
 
 									{/* Rows */}
+									<AnimatePresence mode="popLayout">
 									{items.map((reservation, index) => (
 										<motion.tr
 											key={reservation.id}
@@ -442,9 +442,9 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 											</td>
 										</motion.tr>
 									))}
+									</AnimatePresence>
 								</Fragment>
 							))}
-							</AnimatePresence>
 						</tbody>
 					</table>
 				)}

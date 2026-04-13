@@ -61,11 +61,13 @@ export function TimelineHeader({ startHour, endHour, selectedDate }: TimelineHea
 						<span className="text-xs text-muted-foreground pl-1">
 							{String(hour).padStart(2, '0')}:00
 						</span>
-						{/* Half-hour notch */}
-						<div
+						{/* Half-hour label + notch */}
+						<span
 							style={{ position: 'absolute', left: `${2 * SLOT_WIDTH}px` }}
-							className="h-2 border-l border-dashed border-border/50"
-						/>
+							className="text-[10px] text-muted-foreground/60 pl-1 flex items-end h-full pb-1"
+						>
+							:30
+						</span>
 					</div>
 				))}
 

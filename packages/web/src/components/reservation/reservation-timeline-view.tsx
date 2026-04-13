@@ -10,25 +10,21 @@ import { TimelineBlock } from './timeline-block.js';
 import { TimelineHeader } from './timeline-header.js';
 
 const TABLE_LABEL_WIDTH = 120; // px — must match TimelineHeader
-const SLOT_WIDTH = 60; // px per 30-min slot
+const SLOT_WIDTH = 40; // px per 15-min slot
 const ROW_HEIGHT = 48; // px per table row — matches UI-SPEC
 const START_HOUR = 9; // 9:00
 const END_HOUR = 23; // 23:00
-const TOTAL_SLOTS = (END_HOUR - START_HOUR) * 2; // 2 slots per hour
+const TOTAL_SLOTS = (END_HOUR - START_HOUR) * 4; // 4 slots per hour (15-min each)
 const OVERSCAN = 5;
-
-type ServiceCategory = 'lunch' | 'dinner' | 'no_booking_zone';
 
 type ReservationTimelineViewProps = Readonly<{
 	date: Date;
-	category: ServiceCategory;
 	onReservationClick?: (reservationId: string) => void;
 	onSlotClick?: (tableId: string, slotStart: Date) => void;
 }>;
 
 export function ReservationTimelineView({
 	date,
-	category,
 	onReservationClick,
 	onSlotClick,
 }: ReservationTimelineViewProps) {
@@ -41,30 +37,22 @@ export function ReservationTimelineView({
 
 	const tables = useMemo(() => tablesData?.tables ?? [], [tablesData]);
 
-	// Map UI category to reservation category values
-	const categoryMap: Record<ServiceCategory, string[]> = {
-		lunch: ['lunch'],
-		dinner: ['dinner'],
-		no_booking_zone: ['special', 'walk_in'],
-	};
-
 	// Format a Date as a local-calendar YYYY-MM-DD string.
 	// Using toISOString() would convert to UTC first, causing off-by-one errors for
 	// timezones east of UTC (e.g. Italy UTC+2: local midnight = prior UTC day).
 	const toLocalDate = (d: Date) =>
 		`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-	// Filter reservations to the selected date + category (exclude deleted)
+	// Filter reservations to the selected date (exclude deleted).
+	// Timeline shows all hours so category filtering is unnecessary — all
+	// reservations for the day are visible regardless of lunch/dinner slot.
 	const filteredReservations = useMemo(() => {
-		const cats = categoryMap[category];
-		// Compare by local calendar date string (YYYY-MM-DD) — never toISOString()
 		const targetDateStr = toLocalDate(date);
 		return (reservationsData?.reservations ?? []).filter((r) => {
 			if (r.isDeleted) return false;
-			const sameDay = toLocalDate(new Date(r.date)) === targetDateStr;
-			return sameDay && cats.includes(r.category);
+			return toLocalDate(new Date(r.date)) === targetDateStr;
 		});
-	}, [reservationsData, date, category]);
+	}, [reservationsData, date]);
 
 	// Build a map: tableId → reservations on that table for this date+category
 	const tableReservationMap = useMemo(() => {
@@ -94,8 +82,8 @@ export function ReservationTimelineView({
 	// Convert reservation date + duration to pixel position within the time grid
 	function reservationToPixels(startDate: Date, durationMinutes: number) {
 		const minutesFromStart = (startDate.getHours() - START_HOUR) * 60 + startDate.getMinutes();
-		const leftPx = (minutesFromStart / 30) * SLOT_WIDTH;
-		const widthPx = (durationMinutes / 30) * SLOT_WIDTH;
+		const leftPx = (minutesFromStart / 15) * SLOT_WIDTH;
+		const widthPx = (durationMinutes / 15) * SLOT_WIDTH;
 		return { leftPx, widthPx };
 	}
 
@@ -122,35 +110,70 @@ export function ReservationTimelineView({
 		);
 	}
 
+	const gridWidth = TOTAL_SLOTS * SLOT_WIDTH;
+
 	return (
 		<div className="flex flex-col flex-1 overflow-hidden" data-testid="reservation-timeline-view">
-			{/* Horizontal scroll wrapper */}
-			<div className="overflow-x-auto flex-1" style={{ minWidth: 0 }}>
-				{/* Min-width ensures grid does not collapse */}
-				<div style={{ minWidth: `${totalGridWidth}px` }} className="flex flex-col flex-1">
-					<TimelineHeader startHour={START_HOUR} endHour={END_HOUR} selectedDate={date} />
+			{tables.length === 0 && (
+				<div className="flex items-center justify-center flex-1 py-16 text-muted-foreground text-sm">
+					No tables configured. Add tables in Settings to see the floor plan.
+				</div>
+			)}
 
-					{tables.length === 0 && (
-						<div className="flex items-center justify-center flex-1 py-16 text-muted-foreground text-sm">
-							No tables configured. Add tables in Settings to see the floor plan.
+			{tables.length > 0 && isEmpty && (
+				<div className="flex items-center justify-center flex-1 py-16 text-muted-foreground text-sm">
+					No reservations for this service. Tap a time slot to add one.
+				</div>
+			)}
+
+			{tables.length > 0 && (
+				<div className="flex flex-1 overflow-hidden">
+					{/* Fixed table label column */}
+					<div style={{ width: TABLE_LABEL_WIDTH, minWidth: TABLE_LABEL_WIDTH }} className="shrink-0 flex flex-col border-r border-border">
+						{/* Header spacer */}
+						<div className="h-8 bg-background border-b border-border shrink-0" />
+						{/* Table labels — synced with virtualizer */}
+						<div
+							className="overflow-hidden flex-1"
+							style={{ maxHeight: 'calc(100vh - 200px)' }}
+						>
+							<div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+								{rowVirtualizer.getVirtualItems().map((virtualRow) => {
+									const table = tables[virtualRow.index];
+									if (!table) return null;
+									return (
+										<div
+											key={table.id}
+											style={{
+												position: 'absolute',
+												top: 0,
+												transform: `translateY(${virtualRow.start}px)`,
+												height: `${ROW_HEIGHT}px`,
+												width: '100%',
+											}}
+											className={[
+												'flex items-center px-3 text-sm font-semibold text-foreground border-b border-border/50 overflow-hidden whitespace-nowrap text-ellipsis',
+												virtualRow.index % 2 === 0 ? 'bg-background' : 'bg-muted/30',
+											].join(' ')}
+										>
+											{table.name}
+										</div>
+									);
+								})}
+							</div>
 						</div>
-					)}
+					</div>
 
-					{tables.length > 0 && isEmpty && (
-						<div className="flex items-center justify-center flex-1 py-16 text-muted-foreground text-sm">
-							No reservations for this service. Tap a time slot to add one.
-						</div>
-					)}
+					{/* Scrollable time grid */}
+					<div className="overflow-x-auto flex-1 flex flex-col" style={{ minWidth: 0 }}>
+						<TimelineHeader startHour={START_HOUR} endHour={END_HOUR} selectedDate={date} />
 
-					{tables.length > 0 && (
-						/* Vertically scrollable container — useVirtualizer targets this ref */
 						<div
 							ref={scrollRef}
 							className="overflow-y-auto flex-1"
 							style={{ height: '100%', maxHeight: 'calc(100vh - 200px)' }}
 						>
-							{/* Spacer div — useVirtualizer requires a positioned container with exact total height */}
-							<div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+							<div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative', minWidth: `${gridWidth}px` }}>
 								{rowVirtualizer.getVirtualItems().map((virtualRow) => {
 									const table = tables[virtualRow.index];
 									if (!table) return null;
@@ -165,29 +188,21 @@ export function ReservationTimelineView({
 												top: 0,
 												transform: `translateY(${virtualRow.start}px)`,
 												height: `${ROW_HEIGHT}px`,
-												width: '100%',
+												width: `${gridWidth}px`,
 											}}
 											className={[
-												'flex items-center border-b border-border/50',
+												'border-b border-border/50',
 												virtualRow.index % 2 === 0 ? 'bg-background' : 'bg-muted/30',
 											].join(' ')}
 										>
-											{/* Table label — 120px fixed */}
-											<div
-												style={{ width: TABLE_LABEL_WIDTH, minWidth: TABLE_LABEL_WIDTH }}
-												className="px-3 text-sm font-semibold text-foreground border-r border-border shrink-0 overflow-hidden whitespace-nowrap text-ellipsis"
-											>
-												{table.name}
-											</div>
-
-											{/* Time grid for this row — relative, so blocks position absolutely */}
-											<div style={{ position: 'relative', flex: 1, height: '100%' }}>
-												{/* Empty slot overlay cells — D-05 */}
+											{/* Time grid — relative, so blocks position absolutely */}
+											<div style={{ position: 'relative', width: '100%', height: '100%' }}>
+												{/* Empty slot overlay cells */}
 												{Array.from({ length: TOTAL_SLOTS }, (_, slotIdx) => {
 													const slotStart = new Date(date);
 													slotStart.setHours(
-														START_HOUR + Math.floor(slotIdx / 2),
-														(slotIdx % 2) * 30,
+														START_HOUR + Math.floor(slotIdx / 4),
+														(slotIdx % 4) * 15,
 														0,
 														0,
 													);
@@ -208,7 +223,7 @@ export function ReservationTimelineView({
 													);
 												})}
 
-												{/* Half-hour dividers */}
+												{/* Quarter-hour dividers */}
 												{Array.from({ length: TOTAL_SLOTS }, (_, slotIdx) => (
 													<div
 														key={slotIdx}
@@ -218,16 +233,15 @@ export function ReservationTimelineView({
 															height: '100%',
 														}}
 														className={
-															slotIdx % 2 === 0
+															slotIdx % 4 === 0
 																? 'border-l border-border/30'
-																: 'border-l border-dashed border-border/20'
+																: 'border-l border-dashed border-border/15'
 														}
 													/>
 												))}
 
 												{/* Reservation blocks */}
 												{rowReservations.map((res) => {
-													// res.date is a Date object (z.coerce.date() in ReservationSchema)
 													const startDate =
 														res.date instanceof Date ? res.date : new Date(res.date);
 													const { leftPx, widthPx } = reservationToPixels(
@@ -256,9 +270,9 @@ export function ReservationTimelineView({
 								})}
 							</div>
 						</div>
-					)}
+					</div>
 				</div>
-			</div>
+			)}
 		</div>
 	);
 }

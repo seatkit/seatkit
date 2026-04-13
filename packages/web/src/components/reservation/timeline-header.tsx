@@ -2,10 +2,9 @@
 
 import React from 'react';
 
-// TABLE_LABEL_WIDTH and SLOT_WIDTH must match constants used in ReservationTimelineView
-const TABLE_LABEL_WIDTH = 120; // px
-const SLOT_WIDTH = 60; // px per 30-min slot
-const SLOTS_PER_HOUR = 2;
+// SLOT_WIDTH must match constants used in ReservationTimelineView
+const SLOT_WIDTH = 40; // px per 15-min slot
+const SLOTS_PER_HOUR = 4;
 
 type TimelineHeaderProps = Readonly<{
 	/** Operating hours to display: e.g., startHour=9, endHour=23 → 9am to 11pm */
@@ -28,26 +27,20 @@ export function TimelineHeader({ startHour, endHour, selectedDate }: TimelineHea
 	const nowOffsetPx = isToday
 		? (() => {
 				const minutesSinceStart = (now.getHours() - startHour) * 60 + now.getMinutes();
-				return (minutesSinceStart / 30) * SLOT_WIDTH;
+				return (minutesSinceStart / 15) * SLOT_WIDTH;
 			})()
 		: null;
 
 	return (
 		<div
-			className="sticky top-0 z-20 bg-background border-b border-border flex shrink-0"
+			className="sticky top-0 z-20 bg-background border-b border-border shrink-0"
 			style={{
 				height: '32px',
-				minWidth: `${TABLE_LABEL_WIDTH + (endHour - startHour) * SLOTS_PER_HOUR * SLOT_WIDTH}px`,
+				minWidth: `${(endHour - startHour) * SLOTS_PER_HOUR * SLOT_WIDTH}px`,
 			}}
 		>
-			{/* Table label placeholder (120px) */}
-			<div
-				style={{ width: TABLE_LABEL_WIDTH, minWidth: TABLE_LABEL_WIDTH }}
-				className="border-r border-border shrink-0"
-			/>
-
 			{/* Time slots */}
-			<div className="relative flex-1">
+			<div className="relative" style={{ width: '100%', height: '100%' }}>
 				{hours.map((hour) => (
 					<div
 						key={hour}
@@ -61,11 +54,13 @@ export function TimelineHeader({ startHour, endHour, selectedDate }: TimelineHea
 						<span className="text-xs text-muted-foreground pl-1">
 							{String(hour).padStart(2, '0')}:00
 						</span>
-						{/* Half-hour notch */}
-						<div
-							style={{ position: 'absolute', left: `${SLOT_WIDTH}px` }}
-							className="h-2 border-l border-dashed border-border/50"
-						/>
+						{/* Half-hour label */}
+						<span
+							style={{ position: 'absolute', left: `${2 * SLOT_WIDTH}px`, bottom: '4px' }}
+							className="text-xs text-muted-foreground/50 pl-1"
+						>
+							:30
+						</span>
 					</div>
 				))}
 

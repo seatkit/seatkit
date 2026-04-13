@@ -145,8 +145,8 @@ export default function ReservationsPage() {
 					</TabsList>
 				</Tabs>
 
-				{/* Service category tabs (not shown in list view — context is date-level) */}
-				{(activeView === 'timeline' || activeView === 'floorplan') && (
+				{/* Service category tabs — only for floor plan (timeline shows all categories) */}
+				{activeView === 'floorplan' && (
 					<Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as ServiceCategory)}>
 						<TabsList className="bg-transparent h-10 p-0 gap-0 rounded-none">
 							{categoryTabs.map((tab) => (
@@ -179,7 +179,6 @@ export default function ReservationsPage() {
 				{activeView === 'timeline' && (
 					<ReservationTimelineView
 						date={selectedDate}
-						category={selectedCategory}
 						onReservationClick={handleReservationClick}
 						onSlotClick={handleSlotClick}
 					/>
@@ -194,7 +193,7 @@ export default function ReservationsPage() {
 					/>
 				)}
 				{activeView === 'floorplan' && (
-					<FloorPlanView date={selectedDate} category={selectedCategory} />
+					<FloorPlanView date={selectedDate} category={selectedCategory} onReservationClick={handleReservationClick} />
 				)}
 			</div>
 

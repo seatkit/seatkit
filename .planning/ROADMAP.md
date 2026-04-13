@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4: Reservation Management UI** - Staff can manage reservations on any device via timeline and list views
 - [ ] **Phase 5: Structured Logging** - Structured logs shipped to GCP Cloud Logging; errors tracked, queryable, and alertable in production
 - [ ] **Phase 05.1: GCP Staging Deployment** - Dockerize and deploy to Cloud Run with CI/CD auto-deploy
-- [ ] **Phase 05.2: UI Review & Polish** - Review, polish, and elevate all existing UI to production quality
+- [x] **Phase 05.2: UI Review & Polish** - Review, polish, and elevate all existing UI to production quality (completed 2026-04-13)
 - [ ] **Phase 6: Sales Management** - Managers can enter and review daily and monthly sales data
 - [ ] **Phase 7: Data Migration** - Koenji's production Firestore data moves to PostgreSQL without loss
 - [ ] **Phase 8: Deployment** - Any restaurant can self-host SeatKit with Docker Compose
@@ -156,10 +156,10 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 05.2-01-PLAN.md — Infrastructure: dark mode (next-themes), shadcn CLI init, Tailwind config, ThemeToggle, home redirect, token fixes on standalone components
-- [ ] 05.2-02-PLAN.md — shadcn migrations: ReservationDrawer to Sheet, UndoToast to Sonner, tab strip to Tabs
-- [ ] 05.2-03-PLAN.md — Token fixes: status badge tokens, Skeleton loading states, ConfirmDialog to Dialog, form responsive, focus rings
-- [ ] 05.2-04-PLAN.md — Animation layer: motion, Magic UI, Aceternity copy-paste components, wire animations, reduced motion fallback, human verification
+- [x] 05.2-01-PLAN.md — Infrastructure: dark mode (next-themes), shadcn CLI init, Tailwind config, ThemeToggle, home redirect, token fixes on standalone components
+- [x] 05.2-02-PLAN.md — shadcn migrations: ReservationDrawer to Sheet, UndoToast to Sonner, tab strip to Tabs
+- [x] 05.2-03-PLAN.md — Token fixes: status badge tokens, Skeleton loading states, ConfirmDialog to Dialog, form responsive, focus rings
+- [x] 05.2-04-PLAN.md — Animation layer: motion, Magic UI, Aceternity copy-paste components, wire animations, reduced motion fallback, human verification
 
 ### Phase 6: Sales Management
 **Goal**: Managers can enter daily sales data per service period and view monthly and yearly rollups; sales totals are gated behind manager authentication
@@ -210,7 +210,7 @@ Note: Phase 6 (Sales) and Phase 7 (Migration) both depend on Phase 2 and can pro
 | 4. Reservation Management UI | 7/7 | In Progress | - |
 | 5. Structured Logging | 2/2 | Complete | - |
 | 05.1 GCP Staging Deployment | 2/3 | In Progress|  |
-| 05.2 UI Review & Polish | 0/4 | Not started | - |
+| 05.2 UI Review & Polish | 4/4 | Complete   | 2026-04-13 |
 | 6. Sales Management | 0/? | Not started | - |
 | 7. Data Migration | 0/? | Not started | - |
 | 8. Deployment | 0/? | Not started | - |

@@ -2,6 +2,8 @@
 
 import React from 'react';
 
+import { NumberTicker } from '../magicui/number-ticker.js';
+
 import { PhotoUpload } from './photo-upload.js';
 
 type FormValues = {
@@ -142,16 +144,21 @@ export function ReservationForm({
 						<label htmlFor="partySize" className={labelClass()}>
 							Party size *
 						</label>
-						<input
-							id="partySize"
-							type="number"
-							min={1}
-							max={100}
-							required
-							value={values.partySize}
-							onChange={(e) => update({ partySize: Number.parseInt(e.target.value, 10) || 1 })}
-							className={fieldClass()}
-						/>
+						<div className="flex items-center gap-2">
+							<input
+								id="partySize"
+								type="number"
+								min={1}
+								max={100}
+								required
+								value={values.partySize}
+								onChange={(e) => update({ partySize: Number.parseInt(e.target.value, 10) || 1 })}
+								className={fieldClass()}
+							/>
+							<span className="text-2xl font-semibold text-foreground min-w-[2ch] text-center" aria-hidden="true">
+								<NumberTicker value={values.partySize} className="text-2xl font-semibold" />
+							</span>
+						</div>
 					</div>
 					<div>
 						<label htmlFor="category" className={labelClass()}>

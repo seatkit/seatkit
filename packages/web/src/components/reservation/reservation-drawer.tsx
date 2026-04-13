@@ -12,6 +12,7 @@ import {
 import { useReservationUndoStore } from '../../stores/reservation-undo-store.js';
 import { ConfirmDialog } from '../confirm-dialog.js';
 import { ConflictModal } from '../conflict-modal.js';
+import { BorderBeam } from '../magicui/border-beam.js';
 import { ReservationPresenceBadgeRow } from '../presence-badge.js';
 import {
 	Sheet,
@@ -353,14 +354,17 @@ export function ReservationDrawer({
 									<Trash2 className="w-4 h-4" />
 								</button>
 							)}
-							<button
-								type="button"
-								onClick={() => void handleSave()} // NOSONAR S3735
-								disabled={isSaving}
-								className="inline-flex items-center justify-center px-4 h-10 rounded-md bg-foreground text-background text-sm font-medium hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
-							>
-								{saveButtonLabel}
-							</button>
+							<div className="relative overflow-hidden rounded-md">
+								<button
+									type="button"
+									onClick={() => void handleSave()} // NOSONAR S3735
+									disabled={isSaving}
+									className="inline-flex items-center justify-center px-4 h-10 rounded-md bg-foreground text-background text-sm font-medium hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
+								>
+									{saveButtonLabel}
+								</button>
+								{isSaving && <BorderBeam size={80} duration={8} borderWidth={2} />}
+							</div>
 						</div>
 					</div>
 				</div>

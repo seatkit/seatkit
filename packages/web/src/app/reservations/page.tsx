@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
 import { useState } from 'react';
 
 import type { Reservation } from '@/lib/api-types';
@@ -28,6 +29,7 @@ function addDays(date: Date, days: number): Date {
 }
 
 export default function ReservationsPage() {
+	const prefersReduced = useReducedMotion();
 	const [activeView, setActiveView] = useState<ViewTab>('timeline');
 	const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 	const [selectedCategory, setSelectedCategory] = useState<ServiceCategory>('lunch');
@@ -124,9 +126,20 @@ export default function ReservationsPage() {
 							<TabsTrigger
 								key={tab.id}
 								value={tab.id}
-								className="px-4 h-10 text-sm font-medium rounded-none bg-transparent shadow-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-foreground data-[state=active]:font-semibold data-[state=active]:text-foreground text-muted-foreground hover:text-foreground transition-colors"
+								className="relative px-4 h-10 text-sm font-medium rounded-none bg-transparent shadow-none data-[state=active]:shadow-none data-[state=active]:font-semibold data-[state=active]:text-foreground text-muted-foreground hover:text-foreground transition-colors"
 							>
 								{tab.label}
+								{activeView === tab.id && (
+									<motion.span
+										layoutId="view-tab-indicator"
+										className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
+										transition={
+											prefersReduced
+												? { duration: 0.15 }
+												: { type: 'spring', stiffness: 400, damping: 30, duration: 0.18 }
+										}
+									/>
+								)}
 							</TabsTrigger>
 						))}
 					</TabsList>
@@ -140,9 +153,20 @@ export default function ReservationsPage() {
 								<TabsTrigger
 									key={tab.id}
 									value={tab.id}
-									className="px-4 h-10 text-sm font-medium rounded-none bg-transparent shadow-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-foreground data-[state=active]:font-semibold data-[state=active]:text-foreground text-muted-foreground hover:text-foreground transition-colors"
+									className="relative px-4 h-10 text-sm font-medium rounded-none bg-transparent shadow-none data-[state=active]:shadow-none data-[state=active]:font-semibold data-[state=active]:text-foreground text-muted-foreground hover:text-foreground transition-colors"
 								>
 									{tab.label}
+									{selectedCategory === tab.id && (
+										<motion.span
+											layoutId="category-tab-indicator"
+											className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
+											transition={
+												prefersReduced
+													? { duration: 0.15 }
+													: { type: 'spring', stiffness: 400, damping: 30, duration: 0.18 }
+											}
+										/>
+									)}
 								</TabsTrigger>
 							))}
 						</TabsList>

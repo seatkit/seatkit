@@ -13,12 +13,23 @@ function Toaster(props: ToasterProps) {
 		<Sonner
 			theme={resolvedTheme}
 			className="toaster group"
+			style={{ '--width': '300px' } as React.CSSProperties}
 			toastOptions={{
 				classNames: {
 					toast: 'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
 					description: 'group-[.toast]:text-muted-foreground',
-					actionButton: 'group-[.toast]:text-amber-400 group-[.toast]:hover:text-amber-300 group-[.toast]:font-semibold group-[.toast]:underline group-[.toast]:bg-transparent group-[.toast]:p-0',
 					cancelButton: 'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
+				},
+				actionButtonStyle: {
+					color: 'hsl(38, 92%, 50%)',
+					fontWeight: '600',
+					textDecoration: 'underline',
+					background: 'transparent',
+					border: 'none',
+					padding: 0,
+					cursor: 'pointer',
+					height: 'auto',
+					fontSize: '14px',
 				},
 			}}
 			{...props}

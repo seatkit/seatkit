@@ -49,7 +49,7 @@ export function TimelineBlock({
 				top: '4px',
 				height: '40px',
 			}}
-			className="rounded-md px-1 text-xs font-semibold overflow-hidden whitespace-nowrap text-ellipsis cursor-pointer hover:brightness-95 active:brightness-90 transition-[filter] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 min-w-[4px]"
+			className="rounded-md px-1 text-xs font-semibold overflow-hidden whitespace-nowrap text-ellipsis cursor-pointer hover:brightness-95 hover:scale-[1.02] active:brightness-90 transition-[filter,transform] duration-150 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 min-w-[4px]"
 		>
 			{guestName}
 		</button>

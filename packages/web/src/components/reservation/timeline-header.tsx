@@ -40,10 +40,10 @@ export function TimelineHeader({ startHour, endHour, selectedDate }: TimelineHea
 				minWidth: `${TABLE_LABEL_WIDTH + (endHour - startHour) * SLOTS_PER_HOUR * SLOT_WIDTH}px`,
 			}}
 		>
-			{/* Table label placeholder (120px) */}
+			{/* Table label placeholder (120px) — sticky on horizontal scroll */}
 			<div
 				style={{ width: TABLE_LABEL_WIDTH, minWidth: TABLE_LABEL_WIDTH }}
-				className="border-r border-border shrink-0"
+				className="sticky left-0 z-10 border-r border-border shrink-0 bg-background"
 			/>
 
 			{/* Time slots */}

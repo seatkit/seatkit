@@ -160,10 +160,10 @@ export function ReservationTimelineView({
 												virtualRow.index % 2 === 0 ? 'bg-background' : 'bg-muted/30',
 											].join(' ')}
 										>
-											{/* Table label — 120px fixed */}
+											{/* Table label — 120px fixed, sticky on horizontal scroll */}
 											<div
 												style={{ width: TABLE_LABEL_WIDTH, minWidth: TABLE_LABEL_WIDTH }}
-												className="px-3 text-sm font-semibold text-foreground border-r border-border shrink-0 overflow-hidden whitespace-nowrap text-ellipsis"
+												className="sticky left-0 z-10 px-3 text-sm font-semibold text-foreground border-r border-border shrink-0 overflow-hidden whitespace-nowrap text-ellipsis bg-inherit"
 											>
 												{table.name}
 											</div>

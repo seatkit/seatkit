@@ -52,17 +52,17 @@ export class ErrorBoundary extends Component<
 			}
 
 			return (
-				<div className="flex min-h-screen flex-col items-center justify-center p-24">
+				<div role="alert" className="flex min-h-screen flex-col items-center justify-center p-24">
 					<div className="text-center">
-						<h1 className="text-4xl font-bold mb-4 text-red-600">
+						<h1 className="text-4xl font-bold mb-4 text-destructive">
 							Something went wrong
 						</h1>
-						<p className="text-xl text-gray-600 mb-8">
+						<p className="text-xl text-muted-foreground mb-8">
 							{this.state.error.message}
 						</p>
 						<button
 							onClick={this.reset}
-							className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+							className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
 						>
 							Try again
 						</button>

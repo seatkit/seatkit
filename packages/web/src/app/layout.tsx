@@ -4,6 +4,9 @@ import type { Metadata } from 'next';
 
 import { ErrorBoundary } from '@/components/error-boundary';
 import { AppPresenceBadgeRow } from '@/components/presence-badge';
+import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Toaster } from '@/components/ui/sonner';
 import { QueryProvider } from '@/providers/query-provider';
 
 import './globals.css';
@@ -19,22 +22,28 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<body className="min-h-screen bg-background text-foreground">
-				<ErrorBoundary>
-					<QueryProvider>
-						{/* App nav bar — h-14, border-b */}
-						<header className="h-14 bg-background flex items-center justify-between px-6 sticky top-0 z-30">
-							<Link href="/reservations" className="font-semibold text-lg tracking-tight">
-								SeatKit
-							</Link>
-							<AppPresenceBadgeRow />
-						</header>
-						<main className="flex flex-col flex-1">
-							{children}
-						</main>
-					</QueryProvider>
-				</ErrorBoundary>
+				<ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange storageKey="seatkit-theme">
+					<ErrorBoundary>
+						<QueryProvider>
+							{/* App nav bar — h-14, border-b */}
+							<header className="h-14 bg-background border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
+								<Link href="/reservations" className="font-semibold text-lg tracking-tight">
+									SeatKit
+								</Link>
+								<div className="flex items-center gap-2">
+									<ThemeToggle />
+									<AppPresenceBadgeRow />
+								</div>
+							</header>
+							<main className="flex flex-col flex-1">
+								{children}
+							</main>
+						</QueryProvider>
+					</ErrorBoundary>
+					<Toaster />
+				</ThemeProvider>
 			</body>
 		</html>
 	);

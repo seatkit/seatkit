@@ -9,6 +9,7 @@ import { FloorPlanView } from '@/components/reservation/floor-plan-view';
 import { ReservationDrawer } from '@/components/reservation/reservation-drawer';
 import { ReservationListView } from '@/components/reservation/reservation-list-view';
 import { ReservationTimelineView } from '@/components/reservation/reservation-timeline-view';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSession } from '@/lib/auth-client';
 import { useReservations } from '@/lib/queries/reservations';
 
@@ -116,57 +117,41 @@ export default function ReservationsPage() {
 
 			{/* Tab strip — view tabs left, category tabs right */}
 			<div className="h-10 px-6 bg-muted flex items-center justify-between border-b border-border shrink-0">
-				{/* View tabs */}
-				<div className="flex items-center gap-0" role="tablist" aria-label="View">
-					{viewTabs.map((tab) => (
-						<button
-							key={tab.id}
-							role="tab"
-							aria-selected={activeView === tab.id}
-							type="button"
-							onClick={() => {
-								setActiveView(tab.id);
-							}}
-							className={[
-								'px-4 h-10 text-sm font-medium transition-colors',
-								activeView === tab.id
-									? 'border-b-2 border-foreground font-semibold text-foreground'
-									: 'text-muted-foreground hover:text-foreground',
-							].join(' ')}
-						>
-							{tab.label}
-						</button>
-					))}
-				</div>
+				{/* View tabs — Radix Tabs provides arrow-key navigation and ARIA roles */}
+				<Tabs value={activeView} onValueChange={(v) => setActiveView(v as ViewTab)}>
+					<TabsList className="bg-transparent h-10 p-0 gap-0 rounded-none">
+						{viewTabs.map((tab) => (
+							<TabsTrigger
+								key={tab.id}
+								value={tab.id}
+								className="px-4 h-10 text-sm font-medium rounded-none bg-transparent shadow-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-foreground data-[state=active]:font-semibold data-[state=active]:text-foreground text-muted-foreground hover:text-foreground transition-colors"
+							>
+								{tab.label}
+							</TabsTrigger>
+						))}
+					</TabsList>
+				</Tabs>
 
 				{/* Service category tabs (not shown in list view — context is date-level) */}
 				{(activeView === 'timeline' || activeView === 'floorplan') && (
-					<div className="flex items-center gap-0" role="tablist" aria-label="Service category">
-						{categoryTabs.map((tab) => (
-							<button
-								key={tab.id}
-								role="tab"
-								aria-selected={selectedCategory === tab.id}
-								type="button"
-								onClick={() => {
-									setSelectedCategory(tab.id);
-								}}
-								className={[
-									'px-4 h-10 text-sm font-medium transition-colors',
-									selectedCategory === tab.id
-										? 'border-b-2 border-foreground font-semibold text-foreground'
-										: 'text-muted-foreground hover:text-foreground',
-								].join(' ')}
-							>
-								{tab.label}
-							</button>
-						))}
-					</div>
+					<Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as ServiceCategory)}>
+						<TabsList className="bg-transparent h-10 p-0 gap-0 rounded-none">
+							{categoryTabs.map((tab) => (
+								<TabsTrigger
+									key={tab.id}
+									value={tab.id}
+									className="px-4 h-10 text-sm font-medium rounded-none bg-transparent shadow-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-foreground data-[state=active]:font-semibold data-[state=active]:text-foreground text-muted-foreground hover:text-foreground transition-colors"
+								>
+									{tab.label}
+								</TabsTrigger>
+							))}
+						</TabsList>
+					</Tabs>
 				)}
 			</div>
 
 			{/* Tab content */}
-			<div className="flex-1 overflow-auto" role="tabpanel">
+			<div className="flex-1 overflow-auto">
 				{activeView === 'timeline' && (
 					<ReservationTimelineView
 						date={selectedDate}

@@ -8,6 +8,7 @@ import {
 } from '@seatkit/ui';
 import { useState } from 'react';
 
+import { Skeleton } from '../../../components/ui/skeleton.js';
 import { useSession } from '../../../lib/auth-client.js';
 import { useTables, useCreateTable, useDeleteTable } from '../../../lib/queries/settings.js';
 
@@ -65,7 +66,14 @@ export default function TablesSettingsPage() {
 
 	return (
 		<SettingsPage heading="Tables">
-			{isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
+			{isLoading && (
+				<div className="space-y-3">
+					<Skeleton className="h-8 w-48" />
+					<Skeleton className="h-12 w-full" />
+					<Skeleton className="h-12 w-full" />
+					<Skeleton className="h-12 w-full" />
+				</div>
+			)}
 
 			{/* Table list */}
 			<div className="space-y-2 mb-8">

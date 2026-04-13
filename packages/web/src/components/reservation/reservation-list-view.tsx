@@ -4,6 +4,7 @@ import { Search } from 'lucide-react';
 import React, { Fragment, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 import { useAllReservations, useRecoverReservation } from '../../lib/queries/reservations.js';
+import { Skeleton } from '../ui/skeleton.js';
 
 import { FilterChip } from './filter-chip.js';
 
@@ -51,12 +52,12 @@ function isoWeek(date: Date): string {
 }
 
 function statusBadgeClass(status: string): string {
-	if (status === 'confirmed') return 'bg-green-600 text-white';
-	if (status === 'seated') return 'bg-blue-500 text-white';
-	if (status === 'completed') return 'bg-slate-400 text-white';
-	if (status === 'cancelled') return 'bg-red-500 text-white';
-	if (status === 'no_show') return 'bg-gray-600 text-white';
-	return 'bg-amber-500 text-amber-900';
+	if (status === 'confirmed') return 'bg-status-confirmed text-white';
+	if (status === 'seated') return 'bg-status-seated text-white';
+	if (status === 'completed') return 'bg-status-completed text-white';
+	if (status === 'cancelled') return 'bg-status-cancelled text-white';
+	if (status === 'no_show') return 'bg-status-no-show text-white';
+	return 'bg-status-pending text-amber-900';
 }
 
 function compareReservations(a: Reservation, b: Reservation, field: SortField): number {
@@ -221,7 +222,7 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 			</div>
 
 			{/* Filter bar */}
-			<div className="px-6 py-2 border-b border-border overflow-x-auto">
+			<div className="px-6 py-2 border-b border-border overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 				<div className="flex items-center gap-2 min-w-max">
 					<span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-1">
 						Filter:
@@ -321,7 +322,11 @@ export function ReservationListView({ onReservationClick }: ReservationListViewP
 			{/* List content */}
 			<div className="flex-1 overflow-auto">
 				{isLoading && (
-					<div className="py-16 text-center text-muted-foreground text-sm">Loading...</div>
+					<div className="flex flex-col gap-2 p-6">
+						{Array.from({ length: 5 }, (_, i) => (
+							<Skeleton key={i} className="h-12 w-full" />
+						))}
+					</div>
 				)}
 
 				{!isLoading && isEmpty && (

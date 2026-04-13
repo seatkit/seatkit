@@ -3,6 +3,8 @@
 import { SettingsPage, ForbiddenBanner } from '@seatkit/ui';
 import { useState, useEffect } from 'react';
 
+import { Skeleton } from '../../../components/ui/skeleton.js';
+
 import { useSession } from '../../../lib/auth-client.js';
 import { useRestaurantSettings, useUpdateRestaurantSettings } from '../../../lib/queries/settings.js';
 
@@ -77,7 +79,14 @@ export default function ServiceSettingsPage() {
 
 	return (
 		<SettingsPage heading="Service">
-			{isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
+			{isLoading && (
+				<div className="space-y-3">
+					<Skeleton className="h-12 w-full" />
+					<Skeleton className="h-12 w-full" />
+					<Skeleton className="h-12 w-full" />
+					<Skeleton className="h-12 w-full" />
+				</div>
+			)}
 
 			<form onSubmit={e => void handleSave(e)} className="space-y-8">
 				{/* Service categories */}
